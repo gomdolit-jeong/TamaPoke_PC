@@ -1,0 +1,102 @@
+﻿<UserControl x:Class="TamaPoke.Views.CleanGameView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+             Height="320" Width="350"
+             MouseMove="GameArea_MouseMove"
+             RenderOptions.BitmapScalingMode="NearestNeighbor"
+             RenderOptions.EdgeMode="Aliased">
+
+    <Grid Background="Transparent">
+        <!-- 다마고치 기기 테두리 -->
+        <Border Width="320" Height="320" CornerRadius="160" BorderBrush="#333333" BorderThickness="4" ClipToBounds="True">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#4DD0E1" Offset="0.0" />
+                    <GradientStop Color="#00BCD4" Offset="0.48" />
+                    <GradientStop Color="#0097A7" Offset="0.48" />
+                    <GradientStop Color="#006064" Offset="1.0" />
+                </LinearGradientBrush>
+            </Border.Background>
+
+            <Grid Width="288" Height="288" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent">
+                <Grid.Clip>
+                    <EllipseGeometry Center="144,144" RadiusX="144" RadiusY="144" />
+                </Grid.Clip>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="45*"/>
+                    <RowDefinition Height="20*"/>
+                    <RowDefinition Height="35*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 청소 테마에 맞춘 밝고 산뜻한 배경 -->
+                <Border Grid.Row="0" Background="#B2EBF2"/>
+                <Border Grid.Row="1" Background="#80DEEA"/>
+                <Border Grid.Row="2" Background="#FFF59D"/>
+
+                <Grid Grid.RowSpan="3">
+
+                    <!-- 최고 점수 (HI) -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="40,55,0,0">
+                        <TextBlock Text="HI:" FontSize="12" FontWeight="Bold" Foreground="#555555" Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding CleanHighScore}" FontSize="12" FontWeight="Bold" Foreground="#555555"/>
+                    </StackPanel>
+
+                    <!-- 상태 안내 및 현재 점수 -->
+                    <TextBlock Text="{Binding CleanStatusText}" Foreground="#006064" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,25,0,0"/>
+                    <TextBlock Text="{Binding CleanScore, StringFormat=SCORE: {0}}" Foreground="#00838F" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,50,0,0"/>
+
+                    <!-- 포켓몬 이미지 -->
+                    <Image Source="{Binding CurrentFrame}" Width="90" Height="90" Margin="0,15,0,0" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                        <Image.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform ScaleX="{Binding FlipX}" ScaleY="1"/>
+                                <TranslateTransform X="{Binding PosX}" Y="{Binding PosY}"/>
+                            </TransformGroup>
+                        </Image.RenderTransform>
+                    </Image>
+
+                    <!-- 🌟 핵심: 오염 물질(세균)들을 캔버스 위에 동적으로 흩뿌려주는 컨트롤 -->
+                    <ItemsControl ItemsSource="{Binding DirtItems}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas Width="288" Height="288" ClipToBounds="True"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <!-- 각각의 아이템 렌더링 방식 -->
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- 🌟 템플릿을 덮어씌워 기본 버튼의 회색 네모 배경을 완벽하게 없앱니다 -->
+                                <Button Cursor="Hand" PreviewMouseLeftButtonDown="Dirt_Click" Tag="{Binding Id}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Grid Background="Transparent">
+                                                <emoji:TextBlock Text="🦠" FontSize="30"/>
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                        <!-- 각각의 아이템 X, Y 좌표 지정 -->
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+                    </ItemsControl>
+
+                    <Button Content="그만하기" Width="70" Height="22" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15" Click="QuitGame_Click" Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11" Cursor="Hand">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

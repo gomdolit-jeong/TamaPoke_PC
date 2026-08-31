@@ -1,0 +1,287 @@
+﻿<UserControl x:Class="TamaPoke.Views.ProfileCardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TamaPoke.Utils.Service"
+             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+             Height="288" Width="288" 
+             HorizontalAlignment="Center" VerticalAlignment="Center">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style TargetType="Border" x:Key="MedalBadgeStyle">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Background" Value="#DDDDDD"/>
+            <Setter Property="TextBlock.Foreground" Value="#999999"/>
+            <Setter Property="Height" Value="24"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="#F8F9FA" ClipToBounds="True">
+        <Grid.Clip>
+            <EllipseGeometry Center="144,144" RadiusX="144" RadiusY="144" />
+        </Grid.Clip>
+
+        <Button Content="X 닫기" FontSize="11" FontWeight="Bold" Background="#E53935" Foreground="White" Width="60" Height="22" Margin="0,15,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Click="Close_Click" Cursor="Hand">
+            <Button.Resources>
+                <Style TargetType="Border">
+                    <Setter Property="CornerRadius" Value="11"/>
+                </Style>
+            </Button.Resources>
+        </Button>
+
+        <Button Content="◀" FontSize="20" FontWeight="Bold" Background="Transparent" BorderThickness="0" Foreground="#888" Width="30" Height="60" Margin="5,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Cursor="Hand" Click="PrevPage_Click"/>
+        <Button Content="▶" FontSize="20" FontWeight="Bold" Background="Transparent" BorderThickness="0" Foreground="#888" Width="30" Height="60" Margin="0,0,5,0" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand" Click="NextPage_Click"/>
+
+        <Grid Margin="35,40,35,35">
+
+            <!-- 페이지 1: 기본 프로필 -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="0">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center"/>
+                    <Image Source="{Binding CurrentFrame}" Width="64" Height="64" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,5"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <emoji:TextBlock Text="🔥" FontSize="11" VerticalAlignment="Center"/>
+                        <TextBlock Text=" 연속 돌봄" FontSize="11" Foreground="#777" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding Streak, StringFormat={}{0}일째}" FontSize="14" FontWeight="Bold" Foreground="#E65100" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <emoji:TextBlock Text="💖" FontSize="11" VerticalAlignment="Center"/>
+                        <TextBlock Text=" 유대감 (Bond)" FontSize="11" Foreground="#777" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <ProgressBar Value="{Binding Bond}" Maximum="100" Width="100" Height="8" Foreground="#E91E63" Margin="0,2,0,5"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <emoji:TextBlock Text="😋" FontSize="11" VerticalAlignment="Center"/>
+                        <TextBlock Text=" 좋아하는 열매" FontSize="11" Foreground="#777" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <emoji:TextBlock Text="{Binding FavoriteBerryName}" FontSize="13" FontWeight="Bold" Foreground="#2E7D32" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- 페이지 2: 전투 능력치 -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="1">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="160">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                        <emoji:TextBlock Text="⚔️" FontSize="16" VerticalAlignment="Center"/>
+                        <TextBlock Text=" 전투 능력치" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Grid Margin="0,4">
+                        <TextBlock Text="공격 (Atk)" FontSize="11" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding TrAtk}" FontSize="11" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Right"/>
+                        <ProgressBar Value="{Binding TrAtk}" Maximum="100" Height="6" Foreground="#D32F2F" Margin="0,15,0,0"/>
+                    </Grid>
+                    <Grid Margin="0,4">
+                        <TextBlock Text="방어 (Def)" FontSize="11" FontWeight="Bold" Foreground="#1976D2" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding TrDef}" FontSize="11" FontWeight="Bold" Foreground="#1976D2" HorizontalAlignment="Right"/>
+                        <ProgressBar Value="{Binding TrDef}" Maximum="100" Height="6" Foreground="#1976D2" Margin="0,15,0,0"/>
+                    </Grid>
+                    <Grid Margin="0,4">
+                        <TextBlock Text="속도 (Spe)" FontSize="11" FontWeight="Bold" Foreground="#FBC02D" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding TrSpeed}" FontSize="11" FontWeight="Bold" Foreground="#FBC02D" HorizontalAlignment="Right"/>
+                        <ProgressBar Value="{Binding TrSpeed}" Maximum="100" Height="6" Foreground="#FBC02D" Margin="0,15,0,0"/>
+                    </Grid>
+
+                    <!-- 🌟 버튼을 StackPanel 안쪽으로 이동하여 겹침 문제를 완벽히 해결! -->
+                    <Button Content="⚔️ 야생 배틀 시작" Width="130" Height="30" Margin="0,20,0,0" Background="#E53935" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="StartBattle_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="8"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- 페이지 3: 획득한 메달 -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="2">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
+                        <emoji:TextBlock Text="🏅" FontSize="16" VerticalAlignment="Center"/>
+                        <TextBlock Text=" 메달 현황" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding MedalCount, StringFormat=획득: {0} / 8}" FontSize="11" Foreground="#777" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+                    <WrapPanel Width="220" ItemWidth="110" HorizontalAlignment="Center">
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMedalLv10}" Value="True">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="Lv.10 달성" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMedalLv25}" Value="True">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="Lv.25 달성" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMedalLv50}" Value="True">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="Lv.50 달성" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMedalBerry}" Value="True">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="입맛 발견" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMedalStreak7}" Value="True">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="7일 돌봄" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMedalBond}" Value="True">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="유대감 MAX" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMedalFinal}" Value="True">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="최종 진화" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMedalFit}" Value="True">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="퍼펙트 바디" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </WrapPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- 페이지 4: 성장 진행도 -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="3">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="160">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                        <emoji:TextBlock Text="📈" FontSize="16" VerticalAlignment="Center"/>
+                        <TextBlock Text=" 성장 진행도" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="다음 레벨까지" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
+                    <ProgressBar Value="{Binding AgeMinutes}" Maximum="60" Height="10" Foreground="#4CAF50" Margin="0,4,0,10"/>
+
+                    <TextBlock Text="진화 조건" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
+                    <ProgressBar Value="{Binding EvolveProgressPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="#8E24AA" Margin="0,4,0,2"/>
+                    <TextBlock Text="{Binding EvolveProgressText}" FontSize="11" Foreground="#8E24AA" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="돌봄 실수 (진화 지연)" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding CareMistakes, StringFormat={}{0} 회}" FontSize="13" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- 하단 페이지 인디케이터 -->
+        <TextBlock Text="{Binding ProfilePageDisplay}" FontSize="11" Foreground="#999" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15"/>
+    </Grid>
+</UserControl>

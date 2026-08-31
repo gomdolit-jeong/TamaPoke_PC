@@ -1,0 +1,513 @@
+﻿<UserControl x:Class="TamaPoke.Views.IdleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:conv="clr-namespace:TamaPoke.Converters"
+             xmlns:views="clr-namespace:TamaPoke.Views"
+             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+             mc:Ignorable="d" 
+             Height="320" Width="350">
+
+    <UserControl.Resources>
+        <conv:ProgressBarColorConverter x:Key="BarColorConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:IdToImageConverter x:Key="IdToImage"/>
+
+        <Style TargetType="TextBlock" x:Key="DynamicTextStyle">
+            <Setter Property="Foreground" Value="#2a2a36"/>
+
+            <!-- 낮 모드: 어두운 글씨를 강조하기 위해 하얀색 외곽선(그림자) 효과를 줍니다 -->
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="White" BlurRadius="5" ShadowDepth="0" Opacity="0.9"/>
+                </Setter.Value>
+            </Setter>
+
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsNight}" Value="True">
+                    <Setter Property="Foreground" Value="#d8dcf0"/>
+
+                    <!-- 밤 모드: 밝은 글씨를 강조하기 위해 검은색 그림자 효과를 줍니다 -->
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.9"/>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="ProgressBar">
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="#E0E0E0"/>
+        </Style>
+
+        <Style TargetType="Button" x:Key="PhysicalButton">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Margin" Value="5,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse Fill="#999999" Margin="1,2,0,0"/>
+                            <Ellipse Stroke="#777777" StrokeThickness="1">
+                                <Ellipse.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#FFFFFF" Offset="0.0"/>
+                                        <GradientStop Color="#DDDDDD" Offset="0.8"/>
+                                        <GradientStop Color="#BBBBBB" Offset="1.0"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse Margin="3,2,3,14">
+                                <Ellipse.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#CCFFFFFF" Offset="0"/>
+                                        <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform X="1" Y="1"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 씻기(거품) 애니메이션 -->
+        <Style TargetType="emoji:TextBlock" x:Key="BubbleStyle">
+            <Setter Property="Opacity" Value="0"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsBathing}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard Name="bubbleAnim">
+                            <Storyboard>
+                                <ThicknessAnimation Storyboard.TargetProperty="Margin" From="0,30,0,0" To="0,-120,0,0" Duration="0:0:1.5" RepeatBehavior="Forever"/>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1.5" RepeatBehavior="Forever"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="bubbleAnim"/>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 밥 먹기 애니메이션 -->
+        <Style TargetType="emoji:TextBlock" x:Key="FoodAnimStyle">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsEating}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard Name="eatAnim">
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="1.2" To="0" Duration="0:0:2.5" />
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="1.2" To="0" Duration="0:0:2.5" />
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:2.5" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="eatAnim"/>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid HorizontalAlignment="Center">
+        <Border Width="320" Height="320" CornerRadius="160" BorderBrush="#333333" BorderThickness="4" ClipToBounds="True">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#E53935" Offset="0.0" />
+                    <GradientStop Color="#E53935" Offset="0.48" />
+                    <GradientStop Color="#222222" Offset="0.48" />
+                    <GradientStop Color="#222222" Offset="0.52" />
+                    <GradientStop Color="#F5F5F5" Offset="0.52" />
+                    <GradientStop Color="#F5F5F5" Offset="1.0" />
+                </LinearGradientBrush>
+            </Border.Background>
+
+            <!-- 메인 게임 영역 -->
+            <Grid Width="288" Height="288" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent">
+
+                <Grid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="📖 포켓몬 도감 열기" Click="MenuDex_Click"/>
+                        <MenuItem Header="📋 상세 프로필 열기" Click="MenuProfile_Click"/>
+                        <Separator/>
+                        <MenuItem Header="🍃 자연으로 놔주기" Click="MenuRelease_Click"/>
+                    </ContextMenu>
+                </Grid.ContextMenu>
+
+                <Grid>
+                    <Grid.Clip>
+                        <EllipseGeometry Center="144,144" RadiusX="144" RadiusY="144" />
+                    </Grid.Clip>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="45*"/>
+                        <RowDefinition Height="20*"/>
+                        <RowDefinition Height="35*"/>
+                    </Grid.RowDefinitions>
+
+                    <Image Grid.RowSpan="3" Source="{Binding BackgroundImage}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+
+                    <Grid Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,25,30,0">
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNight}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <Ellipse Width="35" Height="35" Fill="#FFE082" Margin="30,5,0,0"/>
+                            <emoji:TextBlock Text="☁️" FontSize="45" Foreground="White" Opacity="0.95" Margin="0,-15,20,0"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNight}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <emoji:TextBlock Text="🌙" FontSize="32" Foreground="#FFF59D" Margin="30,5,0,0"/>
+                            <emoji:TextBlock Text="✨" FontSize="20" Foreground="White" Opacity="0.8" Margin="0,-10,25,0"/>
+                        </Grid>
+                    </Grid>
+
+                    <StackPanel Grid.Row="0" Margin="0,20,0,0" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" Style="{StaticResource DynamicTextStyle}" FontSize="16" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,5,0"/>
+                            <TextBlock Text="{Binding LevelDisplay}" Style="{StaticResource DynamicTextStyle}" FontSize="16" FontWeight="Bold" FontFamily="Consolas"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding MoodText}" Style="{StaticResource DynamicTextStyle}" Opacity="0.8" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0" FontFamily="Consolas" TextAlignment="Center"/>
+                    </StackPanel>
+
+                    <Grid Grid.RowSpan="3">
+                        <Grid Visibility="{Binding IsEgg, Converter={StaticResource BoolToVis}}">
+                            <Image Source="{Binding CurrentFrame}" Width="90" Height="90" Cursor="Hand" MouseLeftButtonDown="PetImage_MouseLeftButtonDown" RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <Image.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </Image.RenderTransform>
+                                <Image.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="-15" To="15" Duration="0:0:0.5" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </Image.Triggers>
+                            </Image>
+                        </Grid>
+
+                        <Grid Visibility="{Binding IsAliveAndNotEgg, Converter={StaticResource BoolToVis}}">
+                            <Image Source="{Binding CurrentFrame}" Width="90" Height="90" Margin="0,15,0,0" Cursor="Hand" 
+                                   MouseLeftButtonDown="PetImage_MouseLeftButtonDown" 
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <Image.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform ScaleX="{Binding FlipX}"/>
+                                        <TranslateTransform X="{Binding PosX}" Y="{Binding PosY}"/>
+                                    </TransformGroup>
+                                </Image.RenderTransform>
+                            </Image>
+
+                            <emoji:TextBlock Text="{Binding PoopDisplay}" FontSize="24" Foreground="#795548" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,90"/>
+                            <emoji:TextBlock Text="{Binding CurrentFoodIcon}" Style="{StaticResource FoodAnimStyle}" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="80,20,0,0"/>
+                            <emoji:TextBlock Text="💤" Visibility="{Binding IsSleeping, Converter={StaticResource BoolToVis}}" FontSize="20" Foreground="#1E88E5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-30,-20,0,0"/>
+
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding IsBathing, Converter={StaticResource BoolToVis}}">
+                                <emoji:TextBlock Text="🫧" Style="{StaticResource BubbleStyle}" FontSize="24" Margin="-40,20,0,0"/>
+                                <emoji:TextBlock Text="🫧" Style="{StaticResource BubbleStyle}" FontSize="32" Margin="30,40,0,0"/>
+                                <emoji:TextBlock Text="🫧" Style="{StaticResource BubbleStyle}" FontSize="20" Margin="5,50,0,0"/>
+                            </Grid>
+
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-30,-80,0" Opacity="0">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPetting}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <ThicknessAnimation Storyboard.TargetProperty="Margin" From="80,100,0,0" To="100,20,-50,0" Duration="0:0:1.0" />
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1.0" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <emoji:TextBlock Text="❤️" FontSize="36"/>
+                            </Grid>
+                        </Grid>
+
+                        <Grid Visibility="{Binding CanShowEvolvePrompt, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="✨ 진화하기 ✨" FontSize="14" FontWeight="Bold" Background="#E53935" Foreground="#FFFFFF" Padding="15,8" BorderThickness="0" Cursor="Hand" Click="Evolve_Click" Margin="0,0,5,0">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="15"/>
+                                        </Style>
+                                    </Button.Resources>
+                                </Button>
+                                <Button Content="💤 다음에" FontSize="12" FontWeight="Bold" Background="#757575" Foreground="#FFFFFF" Padding="10,8" BorderThickness="0" Cursor="Hand" Click="PostponeEvolve_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="15"/>
+                                        </Style>
+                                    </Button.Resources>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Visibility="{Binding CanShowFarewellPrompt, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="⭐ 작별하기 ⭐" FontSize="12" FontWeight="Bold" Background="#FFD54F" Foreground="#4E342E" Padding="12,8" BorderThickness="0" Cursor="Hand" Click="StartFarewell_Click" Margin="0,0,5,0">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="15"/>
+                                        </Style>
+                                    </Button.Resources>
+                                </Button>
+                                <Button Content="💤 다음에" FontSize="12" FontWeight="Bold" Background="#757575" Foreground="#FFFFFF" Padding="10,8" BorderThickness="0" Cursor="Hand" Click="PostponeFarewell_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="15"/>
+                                        </Style>
+                                    </Button.Resources>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Visibility="{Binding CanRunawayNow, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
+                            <Button Content="🌧️ 포켓몬이 떠나려 합니다..." FontSize="14" FontWeight="Bold" Background="#78909C" Foreground="#FFFFFF" Padding="15,10" BorderThickness="0" Cursor="Hand" Click="StartRunaway_Click">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="20"/>
+                                    </Style>
+                                </Button.Resources>
+                            </Button>
+                        </Grid>
+                    </Grid>
+
+                    <Grid Grid.Row="2" Margin="25,10,25,0" VerticalAlignment="Top">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="포만" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
+                        <ProgressBar Grid.Row="0" Grid.Column="1" Value="{Binding Fullness}" Foreground="{Binding Fullness, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Fullness, StringFormat={}{0} / 100}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="행복" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="15,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
+                        <ProgressBar Grid.Row="0" Grid.Column="3" Value="{Binding Joy}" Foreground="{Binding Joy, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Joy, StringFormat={}{0} / 100}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="기력" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
+                        <ProgressBar Grid.Row="1" Grid.Column="1" Value="{Binding Energy}" Foreground="{Binding Energy, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Energy, StringFormat={}{0} / 100}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="청결" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="15,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
+                        <ProgressBar Grid.Row="1" Grid.Column="3" Value="{Binding Hygiene}" Foreground="{Binding Hygiene, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Hygiene, StringFormat={}{0} / 100}"/>
+                    </Grid>
+
+                    <!-- 밥 주기 메뉴 -->
+                    <Border Grid.Row="2" Width="180" Height="48" CornerRadius="24" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Style="{StaticResource PhysicalButton}" ToolTip="빨간 열매" Click="FeedItem_Click" Tag="0">
+                                <emoji:TextBlock Text="🍒" FontSize="16" Foreground="#E53935"/>
+                            </Button>
+                            <Button Style="{StaticResource PhysicalButton}" ToolTip="파란 열매" Click="FeedItem_Click" Tag="1">
+                                <emoji:TextBlock Text="🫐" FontSize="16" Foreground="#1E88E5"/>
+                            </Button>
+                            <Button Style="{StaticResource PhysicalButton}" ToolTip="초록 열매" Click="FeedItem_Click" Tag="2">
+                                <emoji:TextBlock Text="🍏" FontSize="16" Foreground="#43A047"/>
+                            </Button>
+                            <Button Style="{StaticResource PhysicalButton}" ToolTip="사탕 (비만 주의!)" Click="FeedItem_Click" Tag="3">
+                                <emoji:TextBlock Text="🍬" FontSize="16" Foreground="#F06292"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 미니게임 메뉴 -->
+                    <Border Grid.Row="2" Width="220" Height="55" CornerRadius="28" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Style="{StaticResource PhysicalButton}" ToolTip="BALL: 공 튕기기" Click="PlayBall_Click">
+                                <emoji:TextBlock Text="⚽" FontSize="14" Foreground="#1E88E5"/>
+                            </Button>
+                            <Button Style="{StaticResource PhysicalButton}" ToolTip="CATCH: 과일 받기" Click="PlayCatch_Click">
+                                <emoji:TextBlock Text="🍎" FontSize="14" Foreground="#E53935"/>
+                            </Button>
+                            <Button Style="{StaticResource PhysicalButton}" ToolTip="MEMO: 리듬 메모리" Click="PlayMemo_Click">
+                                <emoji:TextBlock Text="🎹" FontSize="14" Foreground="#8E24AA"/>
+                            </Button>
+                            <Button Style="{StaticResource PhysicalButton}" ToolTip="CLEAN: 오염 청소" Click="PlayClean_Click">
+                                <emoji:TextBlock Text="✨" FontSize="14" Foreground="#00ACC1"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 하단 메인 메뉴 버튼 -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsProfileOpen}" Value="True">
+                                        <Setter Property="Visibility" Value="Hidden"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="밥 주기 메뉴" Click="ToggleFeedMenu_Click" IsEnabled="{Binding IsAlive}">
+                            <emoji:TextBlock Text="🍎" FontSize="13" Foreground="#E53935"/>
+                        </Button>
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="미니게임 선택" Click="TogglePlayMenu_Click" IsEnabled="{Binding IsAlive}">
+                            <emoji:TextBlock Text="🎮" FontSize="13" Foreground="#8E24AA"/>
+                        </Button>
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="수면" Click="SleepButton_Click" IsEnabled="{Binding IsAlive}">
+                            <emoji:TextBlock Text="🌙" FontSize="13" Foreground="#FBC02D"/>
+                        </Button>
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="목욕" Click="CleanButton_Click" IsEnabled="{Binding IsAlive}">
+                            <emoji:TextBlock Text="🫧" FontSize="13" Foreground="#4DD0E1"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- 뷰 컨트롤 -->
+                    <views:ProfileCardView Grid.RowSpan="3" Visibility="{Binding IsProfileOpen, Converter={StaticResource BoolToVis}}"/>
+                    <views:BattleView Grid.RowSpan="3" Visibility="{Binding IsBattleOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1500"/>
+                    <views:PokemonDexView Grid.RowSpan="3" Visibility="{Binding IsDexOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1400"/>
+
+                    <!-- 🌟 진화 연출 전용 뷰 (빛나는 하얀색 실루엣 이펙트 포함) -->
+                    <Grid Visibility="{Binding IsCeremony, Converter={StaticResource BoolToVis}}" Background="#EE1A1A1A" Grid.RowSpan="3" Panel.ZIndex="99999" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="-15">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,-30,0,0">
+
+                            <!-- 🌟 포켓몬 이미지와 빛 마스크 겹치기 -->
+                            <Grid Width="100" Height="100">
+                                <Image Source="{Binding CurrentFrame}" Width="100" Height="100" RenderOptions.BitmapScalingMode="NearestNeighbor" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                    <Image.RenderTransform>
+                                        <TransformGroup>
+                                            <ScaleTransform x:Name="EvolveScale" ScaleX="1" ScaleY="1"/>
+                                            <TranslateTransform X="{Binding PosX}" Y="{Binding PosY}"/>
+                                        </TransformGroup>
+                                    </Image.RenderTransform>
+                                    <Image.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.3" To="1.0" Duration="0:0:0.3"/>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" From="0.9" To="1.15" Duration="0:0:0.3"/>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" From="0.9" To="1.15" Duration="0:0:0.3"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Image.Triggers>
+                                </Image>
+
+                                <!-- 🌟 하얀색 빛 이펙트 -->
+                                <Rectangle Fill="White" Width="100" Height="100" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding IsEvolvingFlash, Converter={StaticResource BoolToVis}}">
+                                    <Rectangle.RenderTransform>
+                                        <TransformGroup>
+                                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                            <TranslateTransform X="{Binding PosX}" Y="{Binding PosY}"/>
+                                        </TransformGroup>
+                                    </Rectangle.RenderTransform>
+                                    <Rectangle.OpacityMask>
+                                        <ImageBrush ImageSource="{Binding CurrentFrame}" Stretch="Uniform"/>
+                                    </Rectangle.OpacityMask>
+                                    <Rectangle.Style>
+                                        <Style TargetType="Rectangle">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEvolvingFlash}" Value="True">
+                                                    <DataTrigger.EnterActions>
+                                                        <BeginStoryboard Name="FlashAnim">
+                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.0" To="1.0" Duration="0:0:0.15"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </DataTrigger.EnterActions>
+                                                    <DataTrigger.ExitActions>
+                                                        <StopStoryboard BeginStoryboardName="FlashAnim"/>
+                                                    </DataTrigger.ExitActions>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Rectangle.Style>
+                                </Rectangle>
+                            </Grid>
+
+                            <!-- 🌟 대사 텍스트 추가 -->
+                            <TextBlock Text="{Binding MoodText}" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,20,0,0" FontFamily="Consolas"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- 소리 설정 버튼 -->
+        <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,-15,0" Width="40" Height="40" Click="MuteButton_Click" ToolTip="소리 설정" Cursor="Hand">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="bg" Background="#E8F5E9" BorderBrush="#4CAF50" BorderThickness="2" CornerRadius="20">
+                                    <emoji:TextBlock x:Name="icon" Text="🔊" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bg" Property="Opacity" Value="0.8"/>
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                        <Setter TargetName="bg" Property="Background" Value="#FFEBEE"/>
+                                        <Setter TargetName="bg" Property="BorderBrush" Value="#E53935"/>
+                                        <Setter TargetName="icon" Property="Text" Value="🔇"/>
+                                    </DataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+    </Grid>
+</UserControl>

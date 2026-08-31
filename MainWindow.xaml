@@ -1,0 +1,56 @@
+﻿<Window x:Class="TamaPoke.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TamaPoke"
+        mc:Ignorable="d"
+        Title="TamaPoke" Height="360" Width="360" 
+        WindowStyle="None" 
+        AllowsTransparency="True" 
+        Background="Transparent"
+        Topmost="True"
+        Icon="/Assets/Resource/monsterball.ico"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Grid>
+        <!-- 1. 화면이 교체될 빈 공간 (다마포케 320x320 영역) -->
+        <ContentControl x:Name="MainContentFrame" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+        <!-- 2. 우측 상단 윈도우 제어 버튼 영역 -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,10,0" Panel.ZIndex="1">
+
+            <Button x:Name="PinButton" Width="24" Height="24" Margin="0,0,8,0" Foreground="White" FontWeight="Bold" Click="PinButton_Click" ToolTip="항상 위 고정 토글">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="PinBorder" Background="#802196F3" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock Text="📌" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Button>
+
+            <Button Content="-" Width="24" Height="24" Margin="0,0,8,0" Foreground="White" FontWeight="Bold" Click="MinimizeButton_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#80000000" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <Button Content="X" Width="24" Height="24" Foreground="White" FontWeight="Bold" Click="CloseButton_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#80D32F2F" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+        </StackPanel>
+    </Grid>
+</Window>

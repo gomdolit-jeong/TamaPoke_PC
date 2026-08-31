@@ -1,0 +1,270 @@
+﻿<UserControl x:Class="TamaPoke.Views.BattleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TamaPoke.Utils.Service"
+             Height="288" Width="288"
+             HorizontalAlignment="Center" VerticalAlignment="Center">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid Background="#F2EFE1" ClipToBounds="True">
+        <Grid.Clip>
+            <EllipseGeometry Center="144,144" RadiusX="144" RadiusY="144" />
+        </Grid.Clip>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="115"/>
+        </Grid.RowDefinitions>
+
+        <!-- 상단 배틀 화면 영역 -->
+        <Grid Grid.Row="0">
+            <!-- 적 포켓몬 정보창 -->
+            <Border Margin="60,25,0,0" Background="#FAFAFA" CornerRadius="8" Padding="8,4" BorderBrush="#555" BorderThickness="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="120">
+                <StackPanel>
+                    <Grid>
+                        <TextBlock Text="{Binding EnemyName}" FontSize="12" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding EnemyLevel, StringFormat={} Lv.{0}}" FontSize="11" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Right"/>
+                    </Grid>
+                    <ProgressBar Value="{Binding EnemyHp}" Maximum="{Binding EnemyMaxHp}" Height="8" Margin="0,4,0,0">
+                        <ProgressBar.Style>
+                            <Style TargetType="ProgressBar">
+                                <Setter Property="Foreground" Value="{Binding EnemyHpColor}"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="BorderBrush" Value="#888"/>
+                                <Setter Property="Background" Value="#E0E0E0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEnemyTakingDamage}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard Name="EnemyFlash">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.2" Duration="0:0:0.1" AutoReverse="True" RepeatBehavior="3x"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="EnemyFlash"/>
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ProgressBar.Style>
+                    </ProgressBar>
+                </StackPanel>
+            </Border>
+
+            <!-- 적 포켓몬 이미지 -->
+            <Image Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,30,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+
+            <!-- 내 포켓몬 이미지 -->
+            <Image Source="{Binding CurrentFrame}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="40,0,0,10" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                <Image.RenderTransform>
+                    <ScaleTransform ScaleX="-1" ScaleY="1" CenterX="36" CenterY="36"/>
+                </Image.RenderTransform>
+            </Image>
+
+            <!-- 몬스터볼 이펙트 -->
+            <Grid x:Name="PokeballIcon" Width="24" Height="24" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="70,0,0,40" Visibility="Collapsed" Panel.ZIndex="10">
+                <Grid.RenderTransform>
+                    <TransformGroup>
+                        <RotateTransform x:Name="PokeballRotate" Angle="0" CenterX="12" CenterY="12"/>
+                        <TranslateTransform x:Name="PokeballTranslate" X="0" Y="0"/>
+                    </TransformGroup>
+                </Grid.RenderTransform>
+                <Path Fill="#E53935" Data="M 0,12 A 12,12 0 0 1 24,12 Z"/>
+                <Path Fill="White" Data="M 0,12 A 12,12 0 0 0 24,12 Z"/>
+                <Ellipse Stroke="#333" StrokeThickness="2"/>
+                <Rectangle Height="2" Fill="#333" VerticalAlignment="Center"/>
+                <Ellipse Width="8" Height="8" Fill="White" Stroke="#333" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- 플레이어 포켓몬 정보창 -->
+            <Border Margin="0,0,50,5" Background="#FAFAFA" CornerRadius="8" Padding="8,4" BorderBrush="#555" BorderThickness="2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="120">
+                <StackPanel>
+                    <Grid>
+                        <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding Level, StringFormat={} Lv.{0}}" FontSize="11" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Right"/>
+                    </Grid>
+                    <ProgressBar Value="{Binding PlayerHp}" Maximum="{Binding PlayerMaxHp}" Height="8" Margin="0,4,0,0">
+                        <ProgressBar.Style>
+                            <Style TargetType="ProgressBar">
+                                <Setter Property="Foreground" Value="{Binding PlayerHpColor}"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="BorderBrush" Value="#888"/>
+                                <Setter Property="Background" Value="#E0E0E0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPlayerTakingDamage}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard Name="PlayerFlash">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.2" Duration="0:0:0.1" AutoReverse="True" RepeatBehavior="3x"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="PlayerFlash"/>
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ProgressBar.Style>
+                    </ProgressBar>
+                    <TextBlock HorizontalAlignment="Right" FontSize="9" FontWeight="Bold" Foreground="#333" Margin="0,2,0,0">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0}/{1}">
+                                <Binding Path="PlayerHp"/>
+                                <Binding Path="PlayerMaxHp"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- 하단 텍스트 및 메뉴 영역 -->
+        <Border Grid.Row="1" Background="#333333" CornerRadius="0" Padding="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 대화창 텍스트 -->
+                <TextBlock Grid.Row="0" Text="{Binding BattleMessage}" Foreground="White" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,0,5" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" MinHeight="30"/>
+
+                <!-- 메인 메뉴 -->
+                <UniformGrid x:Name="MainMenuGrid" Grid.Row="1" HorizontalAlignment="Center" Columns="2" Margin="0,0,0,10" Rows="2" 
+                             Visibility="{Binding IsMainMenuVisible, Converter={StaticResource BoolToVis}}">
+                    <Button Content="공격" Width="50" Height="20" Margin="2" Background="#E53935" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="ShowAttackMenu_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="6"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                    <Button Content="회피" Width="50" Height="20" Margin="2" Background="#1E88E5" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="Dodge_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="6"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                    <Button Content="가방" Width="50" Height="20" Margin="2" Background="#FFB300" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="OpenBag_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="6"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                    <Button Content="도망" Width="50" Height="20" Margin="2" Background="#757575" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="Run_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="6"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </UniformGrid>
+
+                <!-- 스킬 선택 메뉴 -->
+                <Grid Grid.Row="0" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#333333" 
+                      Visibility="{Binding IsAttackMenuVisible, Converter={StaticResource BoolToVis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <ItemsControl ItemsSource="{Binding CurrentSkills}" Grid.Row="0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2" Rows="2"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="80" Height="28" Margin="3" Background="#FAFAFA" BorderBrush="#333" BorderThickness="1.5" Cursor="Hand" Click="SkillButton_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="6"/>
+                                        </Style>
+                                    </Button.Resources>
+                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0">
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,1"/>
+                                        <Border CornerRadius="3" Background="#78909C" Padding="4,0" HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding Type}" Foreground="White" FontSize="8" FontWeight="Bold"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Grid.Row="1" Content="◀️" Height="22" Width="40" Margin="0,6,0,0" Background="#E0D8C8" BorderBrush="#333" BorderThickness="1.5" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CancelAttack_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="10"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Grid>
+
+                <!-- 가방 화면 (아이템 목록) -->
+                <Grid Grid.Row="0" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#333333" 
+                      Visibility="{Binding IsBagOpen, Converter={StaticResource BoolToVis}}">
+
+                    <!-- 🌟 내부 요소들을 중앙에 예쁘게 모아주는 StackPanel 추가 -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+
+                        <!-- 🌟 아이템이 0개일 때만 나타나는 안내 텍스트 -->
+                        <TextBlock Text="가방이 텅 비어있습니다." Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,5,0,10">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Inventory.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- 아이템 리스트 -->
+                        <ItemsControl ItemsSource="{Binding Inventory}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Width="80" Height="28" Margin="3" Background="#FAFAFA" BorderBrush="#333" BorderThickness="1.5" Cursor="Hand" Click="UseItem_Click">
+                                        <Button.Resources>
+                                            <Style TargetType="Border">
+                                                <Setter Property="CornerRadius" Value="6"/>
+                                            </Style>
+                                        </Button.Resources>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding Quantity, StringFormat={}x{0}}" FontSize="10" Foreground="#1E88E5" FontWeight="Bold"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- 뒤로 가기 버튼 -->
+                        <Button Content="◀️" Height="22" Width="40" Margin="0,6,0,0" Background="#E0D8C8" BorderBrush="#333" BorderThickness="1.5" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CloseBag_Click">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="10"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

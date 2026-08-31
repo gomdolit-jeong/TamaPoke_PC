@@ -1,0 +1,98 @@
+﻿<UserControl x:Class="TamaPoke.Views.BallGameView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+             Height="320" Width="350"
+             MouseMove="GameArea_MouseMove"
+             RenderOptions.BitmapScalingMode="NearestNeighbor"
+             RenderOptions.EdgeMode="Aliased">
+
+    <!-- 바깥쪽 배경 투명 처리로 네 모서리 동그랗게 유지 -->
+    <Grid Background="Transparent">
+        <Border Width="320" Height="320" CornerRadius="160" BorderBrush="#333333" BorderThickness="4" ClipToBounds="True">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#E53935" Offset="0.0" />
+                    <GradientStop Color="#E53935" Offset="0.48" />
+                    <GradientStop Color="#222222" Offset="0.48" />
+                    <GradientStop Color="#222222" Offset="0.52" />
+                    <GradientStop Color="#F5F5F5" Offset="0.52" />
+                    <GradientStop Color="#F5F5F5" Offset="1.0" />
+                </LinearGradientBrush>
+            </Border.Background>
+
+            <Grid Width="288" Height="288" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent">
+                <Grid.Clip>
+                    <EllipseGeometry Center="144,144" RadiusX="144" RadiusY="144" />
+                </Grid.Clip>
+
+                <!-- 배경 분할 (주간 고정 색상 적용) -->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="45*"/>
+                    <RowDefinition Height="20*"/>
+                    <RowDefinition Height="35*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 낮 시간대에 해당하는 화사한 색상 코드로 직접 고정합니다 -->
+                <Border Grid.Row="0" Background="#B5DBE8"/>
+                <Border Grid.Row="1" Background="#7EC07F"/>
+                <Border Grid.Row="2" Background="#F2EFE1"/>
+
+                <!-- 포켓몬 및 UI -->
+                <Grid Grid.RowSpan="3">
+                    <Image Source="{Binding CurrentFrame}" Width="90" Height="90" Margin="0,15,0,0" 
+                           RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5"
+                           Cursor="Hand" MouseLeftButtonDown="TapBall_Click">
+                        <Image.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform ScaleX="{Binding FlipX}" ScaleY="1"/>
+                                <TranslateTransform X="{Binding PosX}" Y="0"/>
+                            </TransformGroup>
+                        </Image.RenderTransform>
+                    </Image>
+
+                    <!-- 점수 표시 -->
+                    <TextBlock Text="{Binding GameScore}" FontSize="40" FontWeight="Bold" Foreground="#88000000" HorizontalAlignment="Center" Margin="0,40,0,0"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="40,90,0,0">
+                        <TextBlock Text="HI:" FontSize="12" FontWeight="Bold" Foreground="#555555" Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding GameHighScore}" FontSize="12" FontWeight="Bold" Foreground="#555555"/>
+                    </StackPanel>
+
+                    <!-- 공 캔버스 (즉발형 터치를 위한 PreviewMouseLeftButtonDown 유지) -->
+                    <Canvas Width="288" Height="288" ClipToBounds="True" IsHitTestVisible="False">
+                        <!-- 공(Button)에 있던 PreviewMouseLeftButtonDown 이벤트를 삭제했습니다 -->
+                        <Button Width="32" Height="32" Background="Transparent" BorderThickness="0">
+                            <!-- ... (공 그리는 ControlTemplate 영역은 기존과 동일하게 유지) ... -->
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid Width="28" Height="28">
+                                        <Ellipse Fill="#EEEEEE" Stroke="#222" StrokeThickness="1.5"/>
+                                        <Path Data="M 1,14 A 13,13 0 0,1 27,14 Z" Fill="#E53935" Stroke="#222" StrokeThickness="1"/>
+                                        <Rectangle Height="3" Fill="#222" VerticalAlignment="Center"/>
+                                        <Ellipse Width="10" Height="10" Fill="#EEEEEE" Stroke="#222" StrokeThickness="1.5"/>
+                                        <Ellipse Width="4" Height="4" Fill="White" Stroke="#999" StrokeThickness="0.5"/>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <Canvas.Left>
+                                <Binding Path="BallX"/>
+                            </Canvas.Left>
+                            <Canvas.Top>
+                                <Binding Path="BallY"/>
+                            </Canvas.Top>
+                        </Button>
+                    </Canvas>
+
+                    <!-- 그만하기 버튼 -->
+                    <Button Content="그만하기" Width="70" Height="22" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15" Click="QuitGame_Click" Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11" Cursor="Hand">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
