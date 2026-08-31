@@ -65,6 +65,7 @@ namespace TamaPoke.Models
         }
 
         // 🌟 알에서 깨어날 때 포켓몬을 랜덤으로 정해주는 함수
+        // 🌟 알에서 깨어날 때 포켓몬을 정하고 파티에 등록하는 함수
         public void Hatch()
         {
             Random rand = new Random();
@@ -72,14 +73,12 @@ namespace TamaPoke.Models
             if (shinyBase < 8) shinyBase = 8;
             IsShiny = (rand.Next(shinyBase) == 0);
 
-            // 🌟 1. DexTable에 정의된 '진화 후 형태(자식)'들의 ID를 모두 모아줍니다.
             var childIds = DexTable.Values.SelectMany(v => v.NextSpeciesIds).ToHashSet();
 
-            // 🌟 2. 동적 필터링: 진화형(childIds)이 아니고, 전설이 아니면 기본 형태입니다!
             var baseSpeciesIds = PokemonDex.AllPokemons
                 .Where(p => p.Id <= 493
-                            && !childIds.Contains(p.Id)      // 조건 A: 진화 형태가 아닐 것
-                            && !LegendaryIds.Contains(p.Id)) // 조건 B: 전설이 아닐 것
+                            && !childIds.Contains(p.Id)
+                            && !LegendaryIds.Contains(p.Id))
                 .Select(p => p.Id).ToList();
 
             if (RegisteredCount >= 30 && rand.Next(100) < 3)
@@ -98,7 +97,57 @@ namespace TamaPoke.Models
 
             BerryKnown = false; NeglectTicks = 0; _ageSeconds = 0; AgeMinutes = 0; ResetPosition(); IsEvolutionPostponed = false; IsFarewellPostponed = false; Ceremony = 0;
 
-            if (SpeciesId > 0 && !UnlockedPokemon.Contains(SpeciesId)) { UnlockedPokemon.Add(SpeciesId); UnlockedPokemon.Sort(); RegisteredCount = UnlockedPokemon.Count; }
+            if (SpeciesId > 0 && !UnlockedPokemon.Contains(SpeciesId))
+            {
+                UnlockedPokemon.Add(SpeciesId);
+                UnlockedPokemon.Sort();
+                RegisteredCount = UnlockedPokemon.Count;
+            }
+
+            // ==========================================
+            // 🌟 [추가됨] 부화한 포켓몬을 파티 시스템에 자동 등록
+            // ==========================================
+            var newbornMember = new PartyMember
+            {
+                SpeciesId = this.SpeciesId,
+                Name = this.Name,
+                Level = this.Level,
+                IsShiny = this.IsShiny,
+                TrAtk = this.TrAtk,
+                TrDef = this.TrDef,
+                TrSpeed = this.TrSpeed,
+                Skills = (int[])this.Skills.Clone(),
+                Genes = new PokemonGene
+                {
+                    HpGene = this.Genes.HpGene,
+                    AtkGene = this.Genes.AtkGene,
+                    DefGene = this.Genes.DefGene,
+                    SpeGene = this.Genes.SpeGene
+                }
+            };
+
+            // 파티가 비어있다면 곧바로 추가하고, 자리가 있다면 첫 자리에 넣어줍니다.
+            if (Party.Count == 0)
+            {
+                Party.Add(newbornMember);
+            }
+            else
+            {
+                // 원하시는 경우 기존 파티의 첫 번째 자리를 갱신하거나 리스트에 추가할 수 있습니다.
+                // 여기서는 새 생명이 탄생했을 때 파티에 자리가 남았다면 자동 추가되도록 처리합니다.
+                if (Party.Count < 6)
+                {
+                    Party.Add(newbornMember);
+                }
+                else
+                {
+                    // 파티가 이미 6마리로 꽉 찬 상태라면 첫 번째 멤버를 교체하거나 
+                    // 혹은 기존처럼 벤치에 두는 등의 정책을 쓸 수 있습니다. 
+                    // 여기서는 안전하게 첫 번째 슬롯을 새로 태어난 아이로 갱신해 줍니다.
+                    Party[0] = newbornMember;
+                }
+            }
+
             RefreshPokedex(); Save();
             OnPropertyChanged(nameof(Name));
         }
