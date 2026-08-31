@@ -322,5 +322,13 @@ namespace TamaPoke.Views
                 SoundManager.Play(SoundManager.N_DENY);
             }
         }
+        private void MenuItem_OpenParty_Click(object sender, RoutedEventArgs e)
+        {
+            // DataContext가 PokemonState인지 확인하고 상태를 변경합니다.
+            if (this.DataContext is PokemonState state)
+            {
+                state.OpenParty();
+            }
+        }
     }
 }

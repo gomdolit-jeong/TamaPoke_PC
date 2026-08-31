@@ -1,0 +1,91 @@
+﻿<UserControl x:Class="TamaPoke.Views.PartyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="Transparent">
+
+    <!-- 🌟 수정됨: 크기를 288x288로 맞추고 둥글기를 144로 수정하여 메인 뷰에 쏙 들어가게 합니다. -->
+    <Border Background="#F7F3E8" CornerRadius="144" Width="288" Height="288" BorderBrush="Black" BorderThickness="1.5">
+        <Grid Margin="10,15,10,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 1. 상단 타이틀 영역 (크기 조절) -->
+            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,5,0,0">
+                <TextBlock Text="파티 멤버" FontSize="18" FontWeight="Bold" FontFamily="Malgun Gothic" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Party.Count, StringFormat='CHOSEN {0}/6'}" FontSize="9" Foreground="#A9A9A9" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+            </StackPanel>
+
+            <!-- 2. 파티 멤버 6칸 그리드 (작아진 화면에 맞춰 카드 크기 축소) -->
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Party}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,5,0,5">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="2" Rows="3" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!-- 🌟 카드 크기를 Width=125, Height=55로 아담하게 줄였습니다 -->
+                        <Border BorderBrush="#333333" BorderThickness="1" CornerRadius="6" Background="White" Margin="3" Width="125" Height="55">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="45"/>
+                                    <!-- 이미지 영역 축소 -->
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Background="#EEEEEE" CornerRadius="4" Margin="3"/>
+                                <!-- 🌟 실제 스프라이트 이미지가 들어가는 곳 (크기 축소) -->
+                                <Image Grid.Column="0" Source="{Binding SpriteImage}" Width="36" Height="36" 
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="NearestNeighbor" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="3,0,0,0">
+                                    <TextBlock Text="{Binding Name}" FontFamily="Consolas" FontWeight="Bold" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding LevelDisplay}" FontFamily="Consolas" FontSize="10" Margin="0,0,0,2"/>
+                                    <TextBlock Text="{Binding Type1Display}" FontFamily="Consolas" FontSize="8" Foreground="#E53935" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Type2Display}" FontFamily="Consolas" FontSize="8" Foreground="#1E88E5" FontWeight="Bold"/>
+                                </StackPanel>
+
+                                <Ellipse Grid.Column="1" Fill="#66BB6A" Width="8" Height="8" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- 3. 하단 버튼 영역 (버튼 크기 축소) -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+
+                <!-- 닫기 버튼 -->
+                <Button Width="80" Height="28" Margin="0,0,8,0" Click="CloseButton_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="#E0DBC8" BorderBrush="Black" BorderThickness="1" CornerRadius="6">
+                                <TextBlock Text="◀️ 돌아가기" FontFamily="Malgun Gothic" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- 배틀 버튼 -->
+                <Button Width="80" Height="28" Margin="8,0,0,0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="#66BB6A" BorderBrush="Black" BorderThickness="1" CornerRadius="6">
+                                <TextBlock Text="배틀 출전" FontFamily="Malgun Gothic" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

@@ -44,5 +44,23 @@ namespace TamaPoke.Models
                 System.Diagnostics.Debug.WriteLine("파티가 가득 차서 직접 교체해야 합니다!");
             }
         }
+
+        private bool _isPartyOpen = false;
+        public bool IsPartyOpen
+        {
+            get => _isPartyOpen;
+            set
+            {
+                if (SetProperty(ref _isPartyOpen, value))
+                {
+                    OnPropertyChanged(nameof(IsAliveAndNotEgg));
+                    OnPropertyChanged(nameof(MoodText));
+                }
+            }
+        }
+
+        // 🌟 화면을 열고 닫는 간단한 헬퍼 함수
+        public void OpenParty() { IsPartyOpen = true; }
+        public void CloseParty() { IsPartyOpen = false; }
     }
 }
