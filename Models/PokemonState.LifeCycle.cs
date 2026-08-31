@@ -31,13 +31,15 @@ namespace TamaPoke.Models
             }
 
             // 2. 다중 진화(여러 갈래로 진화하는 포켓몬) 예외 처리 수동 등록
-            DexTable[44] = (36, new int[] { 45, 182 }); // 냄새꼬
-            DexTable[61] = (36, new int[] { 62, 186 }); // 슈륙챙이
-            DexTable[79] = (37, new int[] { 80, 199 }); // 야돈
-            DexTable[133] = (30, new int[] { 134, 135, 136, 196, 197, 470, 471 }); // 이브이
-            DexTable[236] = (20, new int[] { 106, 107, 237 }); // 배루키
-            DexTable[265] = (7, new int[] { 266, 268 }); // 개무소
-            DexTable[361] = (42, new int[] { 362, 478 }); // 눈꼬마
+            DexTable[44] = (36, new int[] { 45, 182 }); // 냄새꼬 -> 라플레시아 / 아르코
+            DexTable[61] = (36, new int[] { 62, 186 }); // 슈륙챙이 -> 강챙이 / 왕구리
+            DexTable[79] = (37, new int[] { 80, 199 }); // 야돈 -> 야도란 / 야도킹
+            DexTable[133] = (30, new int[] { 134, 135, 136, 196, 197, 470, 471 }); // 이브이 -> 7종
+            DexTable[236] = (20, new int[] { 106, 107, 237 }); // 배루키 -> 시라소몬 / 홍수몬 / 카포에라
+            DexTable[265] = (7, new int[] { 266, 268 }); // 개무소 -> 실쿤 / 카스쿤
+            DexTable[281] = (30, new int[] { 282, 475 }); // 🌟 [추가] 킬리아 -> 가디안 / 엘레이드
+            DexTable[361] = (42, new int[] { 362, 478 }); // 눈꼬마 -> 얼음귀신 / 눈여아
+            DexTable[412] = (20, new int[] { 413, 414 }); // 🌟 [추가] 도롱충이 -> 도롱마담 / 나메일
         }
 
         // ==========================================
@@ -204,32 +206,30 @@ namespace TamaPoke.Models
         }
 
         // 🌟 실제 포켓몬 아이디(SpeciesId)를 다음 진화 단계로 바꾸는 헬퍼 함수
+        // 🌟 모든 다중 진화 포켓몬이 공평한 무작위 확률로 진화하도록 개선된 함수
         private void ExecuteActualEvolve()
         {
             if (!DexTable.ContainsKey(SpeciesId)) return;
 
+            // 해당 포켓몬이 진화할 수 있는 모든 다음 형태의 목록을 가져옵니다.
             int[] possibleNextForms = DexTable[SpeciesId].NextSpeciesIds;
 
             int nextSpeciesId = -1;
-            if (SpeciesId == 133)
+
+            // 🌟 이브이 및 기타 다중 진화 포켓몬 구분 없이 모두 공평한 랜덤으로 결정합니다.
+            if (possibleNextForms != null && possibleNextForms.Length > 0)
             {
-                int[] eveeForms = new[] { 134, 135, 136 };
-                List<int> uncollectedForms = new List<int>();
-                foreach (int form in eveeForms)
-                {
-                    if (!UnlockedPokemon.Contains(form)) uncollectedForms.Add(form);
-                }
-                nextSpeciesId = uncollectedForms.Count > 0 ? uncollectedForms[new Random().Next(uncollectedForms.Count)] : eveeForms[new Random().Next(eveeForms.Length)];
+                int randomIndex = new Random().Next(possibleNextForms.Length);
+                nextSpeciesId = possibleNextForms[randomIndex];
             }
-            else
-            {
-                nextSpeciesId = possibleNextForms[new Random().Next(possibleNextForms.Length)];
-            }
+
+            if (nextSpeciesId == -1) return;
 
             SpeciesId = nextSpeciesId;
             IsEvolutionPostponed = false;
             _ageSeconds = 0; AgeMinutes = 0; ResetPosition();
 
+            // 진화한 형태가 최초 발견이라면 도감에 등록합니다.
             if (SpeciesId > 0 && !UnlockedPokemon.Contains(SpeciesId))
             {
                 UnlockedPokemon.Add(SpeciesId);
