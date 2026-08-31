@@ -11,6 +11,15 @@ namespace TamaPoke.Models
         public ObservableCollection<PartyMember> Party { get; set; } = new();
 
         // 🌟 작별(Farewell) 또는 방생 시 호출하여 현재 포켓몬을 파티에 추가하는 함수입니다.
+        private PartyMember? _pendingRetiree = null;
+
+        private bool _isSwapMode = false;
+        public bool IsSwapMode
+        {
+            get => _isSwapMode;
+            set => SetProperty(ref _isSwapMode, value);
+        }
+
         public void RetireToParty()
         {
             var retiredPokemon = new PartyMember
@@ -32,16 +41,16 @@ namespace TamaPoke.Models
                 }
             };
 
-            // 파티 슬롯이 6칸 미만일 때만 들어갈 수 있습니다.
             if (Party.Count < 6)
             {
                 Party.Add(retiredPokemon);
             }
             else
             {
-                // 파티가 6마리로 꽉 찼을 때의 임시 처리
-                // 추후 UI에서 교체 대상을 직접 선택하는 화면을 띄워야 합니다.
-                System.Diagnostics.Debug.WriteLine("파티가 가득 차서 직접 교체해야 합니다!");
+                // 🌟 파티가 꽉 찼다면 교체 모드로 진입하고 파티 화면을 강제로 엽니다.
+                _pendingRetiree = retiredPokemon;
+                IsSwapMode = true;
+                IsPartyOpen = true;
             }
         }
 
@@ -57,6 +66,25 @@ namespace TamaPoke.Models
                     OnPropertyChanged(nameof(MoodText));
                 }
             }
+        }
+
+        public void ExecuteSwap(PartyMember targetToReplace)
+        {
+            if (_pendingRetiree != null && Party.Contains(targetToReplace))
+            {
+                int index = Party.IndexOf(targetToReplace);
+                Party[index] = _pendingRetiree; // 기존 멤버를 밀어내고 새 멤버를 넣습니다.
+
+                _pendingRetiree = null;
+                IsSwapMode = false;
+            }
+        }
+
+        // 🌟 교체를 취소하고 7번째 포켓몬을 그냥 놔주는 함수입니다.
+        public void CancelSwap()
+        {
+            _pendingRetiree = null;
+            IsSwapMode = false;
         }
 
         // 🌟 화면을 열고 닫는 간단한 헬퍼 함수
