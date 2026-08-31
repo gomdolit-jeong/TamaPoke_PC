@@ -12,6 +12,38 @@ namespace TamaPoke.Models
     {
         #region 생애 주기 (Life Cycle)
 
+        // ==========================================
+        // 🌟 [추가됨] 동적 진화 테이블 시스템
+        // ==========================================
+        public static Dictionary<int, (int EvolveLevel, int[] NextSpeciesIds)> DexTable { get; private set; } = new();
+
+        public static void InitializeEvolutionTable()
+        {
+            DexTable.Clear();
+
+            // 1. JSON 파일의 649마리 데이터를 모두 읽어옵니다.
+            foreach (var p in PokemonDex.AllPokemons)
+            {
+                if (p.EvolveTo > 0 && p.EvolveLevel > 0)
+                {
+                    DexTable[p.Id] = (p.EvolveLevel, new int[] { p.EvolveTo });
+                }
+            }
+
+            // 2. 다중 진화(여러 갈래로 진화하는 포켓몬) 예외 처리 수동 등록
+            DexTable[44] = (36, new int[] { 45, 182 }); // 냄새꼬
+            DexTable[61] = (36, new int[] { 62, 186 }); // 슈륙챙이
+            DexTable[79] = (37, new int[] { 80, 199 }); // 야돈
+            DexTable[133] = (30, new int[] { 134, 135, 136, 196, 197, 470, 471 }); // 이브이
+            DexTable[236] = (20, new int[] { 106, 107, 237 }); // 배루키
+            DexTable[265] = (7, new int[] { 266, 268 }); // 개무소
+            DexTable[361] = (42, new int[] { 362, 478 }); // 눈꼬마
+        }
+
+        // ==========================================
+        // 🌟 기존 생애 주기 로직
+        // ==========================================
+
         // 🌟 도감 데이터를 갱신하는 헬퍼 함수
         public void RefreshPokedex()
         {
@@ -19,7 +51,7 @@ namespace TamaPoke.Models
             {
                 foreach (var p in PokemonDex.AllPokemons)
                 {
-                    if (p.Id <= 493)
+                    if (p.Id <= 493) // 4세대까지만 도감에 표시
                     {
                         FullPokedex.Add(new PokedexEntry { Id = p.Id, SpeciesName = p.DisplayName, IsUnlocked = false });
                     }
@@ -40,14 +72,14 @@ namespace TamaPoke.Models
             if (shinyBase < 8) shinyBase = 8;
             IsShiny = (rand.Next(shinyBase) == 0);
 
-            // 🌟 1. DexTable에 정의된 '진화 후 형태(자식)'들의 ID를 모두 모아줍니다. (예: 이상해풀, 리자몽 등)
+            // 🌟 1. DexTable에 정의된 '진화 후 형태(자식)'들의 ID를 모두 모아줍니다.
             var childIds = DexTable.Values.SelectMany(v => v.NextSpeciesIds).ToHashSet();
 
-            // 🌟 2. 동적 필터링: 진화형(childIds)이 아니고, 전설이 아니면 무조건 알에서 나올 수 있는 기본 형태입니다!
+            // 🌟 2. 동적 필터링: 진화형(childIds)이 아니고, 전설이 아니면 기본 형태입니다!
             var baseSpeciesIds = PokemonDex.AllPokemons
                 .Where(p => p.Id <= 493
-                            && !childIds.Contains(p.Id)      // 조건 A: 누군가로부터 진화한 형태가 아닐 것
-                            && !LegendaryIds.Contains(p.Id)) // 조건 B: 전설의 포켓몬이 아닐 것
+                            && !childIds.Contains(p.Id)      // 조건 A: 진화 형태가 아닐 것
+                            && !LegendaryIds.Contains(p.Id)) // 조건 B: 전설이 아닐 것
                 .Select(p => p.Id).ToList();
 
             if (RegisteredCount >= 30 && rand.Next(100) < 3)
@@ -56,7 +88,6 @@ namespace TamaPoke.Models
             }
             else
             {
-                // 이제 2~4세대의 단일 포켓몬(헤라크로스 등)도 정상적으로 후보(baseSpeciesIds)에 포함되어 등장합니다!
                 SpeciesId = baseSpeciesIds.Count > 0 ? baseSpeciesIds[rand.Next(baseSpeciesIds.Count)] : 1;
             }
 
@@ -161,11 +192,20 @@ namespace TamaPoke.Models
         // 🌟 새 게임(알 상태)을 준비하는 함수
         public void PrepareNewEgg()
         {
-            SpeciesId = -1; EggTaps = 0; _ageSeconds = 0; AgeMinutes = 0; Fullness = 80; Joy = 80; Energy = 80; Hygiene = 100; Poops = 0; Weight = 10; CareMistakes = 0; Bond = 0; NeglectTicks = 0; IsSleeping = false; IsShiny = false; Genes = new PokemonGene(); BerryKnown = false;
+            SpeciesId = -1; EggTaps = 0; _ageSeconds = 0; AgeMinutes = 0;
+            Fullness = 80; Joy = 80; Energy = 80; Hygiene = 100;
+            Poops = 0; Weight = 10; CareMistakes = 0; Bond = 0; NeglectTicks = 0;
+            IsSleeping = false; IsShiny = false; Genes = new PokemonGene(); BerryKnown = false;
             Ceremony = 0; IsEvolutionPostponed = false; IsFarewellPostponed = false;
 
+            // 기존 창 닫기 로직
             IsBallGameOpen = false; IsCatchGameOpen = false; IsMemoGameOpen = false; IsCleanGameOpen = false;
             IsBattleOpen = false; IsAttackMenuOpen = false; IsBattleResolved = false; IsCatchOffered = false;
+
+            // 🌟 추가됨: 파티 창과 교체 모드 상태를 강제로 닫아 IdleView로 돌아가게 합니다.
+            IsPartyOpen = false;
+            IsSwapMode = false;
+            _pendingRetiree = null; // 대기 중인 은퇴 포켓몬도 비워줍니다.
 
             TrAtk = 0; TrDef = 0; TrSpeed = 0; Medals = 0;
             for (int i = 0; i < 4; i++) Skills[i] = 0;
@@ -192,10 +232,20 @@ namespace TamaPoke.Models
         // 🌟 데이터를 완전히 지우고 처음으로 되돌리는 함수
         public void FactoryReset()
         {
-            if (File.Exists(SaveFilePath)) File.Delete(SaveFilePath);
+            if (System.IO.File.Exists(SaveFilePath)) System.IO.File.Delete(SaveFilePath);
+
             UnlockedPokemon.Clear(); FullPokedex.Clear(); RegisteredCount = 0; Streak = 0; LastEnd = 1; LastPlayedDate = DateTime.Now.Date;
             GameHighScore = 0; CatchHighScore = 0; MemoHighScore = 0; CleanHighScore = 0;
-            PrepareNewEgg(); RefreshPokedex(); Save();
+
+            // 🌟 추가됨: 공장 초기화 시 파티에 보관된 포켓몬 데이터도 완벽하게 삭제합니다.
+            if (Party != null)
+            {
+                Party.Clear();
+            }
+
+            PrepareNewEgg(); // 이 함수가 호출되면서 파티 창도 자동으로 닫힙니다.
+            RefreshPokedex();
+            Save();
         }
 
         #endregion

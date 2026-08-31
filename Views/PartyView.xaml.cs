@@ -11,7 +11,7 @@ namespace TamaPoke.Views
             InitializeComponent();
         }
 
-        // 🌟 포켓몬 카드를 클릭했을 때의 스왑 처리
+        // 🌟 카드를 클릭했을 때
         private void PartyMemberCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (sender is Border border &&
@@ -20,41 +20,64 @@ namespace TamaPoke.Views
             {
                 if (state.IsSwapMode)
                 {
-                    state.ExecuteSwap(clickedMember); // 🌟 클릭한 카드와 자리를 바꿉니다!
+                    state.ExecuteSwap(clickedMember); // 교체 모드일 때는 자리를 바꿉니다.
+                }
+                else
+                {
+                    // 🌟 교체 모드가 아닐 때는 포켓몬을 '선택'합니다.
+                    // 1. 모든 멤버의 선택 상태를 해제합니다.
+                    foreach (var member in state.Party)
+                    {
+                        member.IsSelected = false;
+                    }
+                    // 2. 지금 클릭한 포켓몬만 선택 상태로 만듭니다.
+                    clickedMember.IsSelected = true;
                 }
             }
         }
 
-        // 🌟 액션 버튼 (배틀 출전 / 교체 취소) 클릭 처리
+        // 🌟 액션(배틀 출전/방생) 버튼을 클릭했을 때
         private void ActionButton_Click(object sender, RoutedEventArgs e)
         {
             if (this.DataContext is PokemonState state)
             {
                 if (state.IsSwapMode)
                 {
-                    // 교체 모드일 때는 '교체 취소' 버튼으로 작동합니다.
                     state.CancelSwap();
                     state.CloseParty();
                 }
                 else
                 {
-                    // 교체 모드가 아닐 때는 '배틀 출전' 버튼으로 작동합니다.
-                    // (배틀 출전 로직은 아직 비어있습니다)
-                    System.Diagnostics.Debug.WriteLine("배틀 출전 버튼이 눌렸습니다!");
+                    // 🌟 파티에서 현재 선택된(IsSelected == true) 포켓몬을 찾습니다.
+                    PartyMember? selectedMember = null;
+                    foreach (var member in state.Party)
+                    {
+                        if (member.IsSelected) { selectedMember = member; break; }
+                    }
+
+                    if (selectedMember != null)
+                    {
+                        // TODO: 이 멤버를 출전시키는 배틀 로직을 여기에 구현합니다!
+                        System.Diagnostics.Debug.WriteLine($"{selectedMember.Name} 출전 준비 완료!");
+                        state.CloseParty();
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("출전할 포켓몬을 먼저 선택해 주세요.");
+                    }
                 }
             }
         }
 
-        // 돌아가기 버튼 클릭 처리
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             if (this.DataContext is PokemonState state)
             {
-                // 화면을 강제로 닫을 때도 안전하게 교체를 취소해 줍니다.
-                if (state.IsSwapMode)
-                {
-                    state.CancelSwap();
-                }
+                if (state.IsSwapMode) state.CancelSwap();
+
+                // 창을 닫을 때 선택 상태를 초기화해 줍니다.
+                foreach (var member in state.Party) member.IsSelected = false;
+
                 state.CloseParty();
             }
         }
