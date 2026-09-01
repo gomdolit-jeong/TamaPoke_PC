@@ -6,7 +6,7 @@ namespace TamaPoke.Models
     // 아이템의 종류를 구분하는 열거형
     public enum ItemType
     {
-        Pokeball,   // 몬스터볼 (포획용)
+        monsterball,   // 몬스터볼 (포획용)
         Potion,     // 상처약 (회복용)
         Berry       // 나무열매 (기분/포만감 용)
     }

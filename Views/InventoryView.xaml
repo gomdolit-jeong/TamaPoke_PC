@@ -1,0 +1,48 @@
+﻿<UserControl x:Class="TamaPoke.Views.InventoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="288" Height="288">
+
+    <!-- 가방 배경 (반투명 어두운 배경) -->
+    <Border Background="#DD000000" CornerRadius="15" Padding="15">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- 제목 -->
+                <RowDefinition Height="*"/>
+                <!-- 아이템 목록 -->
+                <RowDefinition Height="Auto"/>
+                <!-- 닫기 버튼 -->
+            </Grid.RowDefinitions>
+
+            <!-- 상단 제목 -->
+            <TextBlock Grid.Row="0" Text="🎒 가방 (인벤토리)" Foreground="White" 
+                       FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+            <!-- 아이템 리스트 -->
+            <StackPanel Grid.Row="1" Orientation="Vertical" VerticalAlignment="Center">
+
+                <!-- 몬스터볼 -->
+                <Border Background="#33FFFFFF" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                    <Grid>
+                        <TextBlock Text="🔴 몬스터볼" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding MonsterBalls, StringFormat='x {0}'}" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+                <!-- 치료약 -->
+                <Border Background="#33FFFFFF" CornerRadius="8" Padding="10">
+                    <Grid>
+                        <TextBlock Text="🧪 치료약" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding Potions, StringFormat='x {0}'}" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+
+            <!-- 닫기 버튼 (구현해두신 토글 커맨드 등에 연결) -->
+            <Button Grid.Row="2" Content="닫기" Padding="0,5" Margin="50,15,50,0"
+                    FontSize="16" FontWeight="Bold" Background="#FF5555" Foreground="White"/>
+        </Grid>
+    </Border>
+</UserControl>

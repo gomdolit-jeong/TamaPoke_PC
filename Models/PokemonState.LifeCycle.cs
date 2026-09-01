@@ -287,13 +287,18 @@ namespace TamaPoke.Models
             UnlockedPokemon.Clear(); FullPokedex.Clear(); RegisteredCount = 0; Streak = 0; LastEnd = 1; LastPlayedDate = DateTime.Now.Date;
             GameHighScore = 0; CatchHighScore = 0; MemoHighScore = 0; CleanHighScore = 0;
 
-            // 🌟 추가됨: 공장 초기화 시 파티에 보관된 포켓몬 데이터도 완벽하게 삭제합니다.
             if (Party != null)
             {
                 Party.Clear();
             }
 
-            PrepareNewEgg(); // 이 함수가 호출되면서 파티 창도 자동으로 닫힙니다.
+            // ==========================================
+            // 🌟 [추가됨] 새 게임 시작 시 기본 아이템 지급
+            // ==========================================
+            MonsterBalls = 2; // 포켓볼 2개 지급
+            Potions = 1;   // 치료약 1개 지급
+
+            PrepareNewEgg();
             RefreshPokedex();
             Save();
         }

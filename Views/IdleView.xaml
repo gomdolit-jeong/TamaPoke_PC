@@ -160,6 +160,7 @@
                         <MenuItem Header="📖 포켓몬 도감 열기" Click="MenuDex_Click"/>
                         <MenuItem Header="📋 상세 프로필 열기" Click="MenuProfile_Click"/>
                         <MenuItem Header="📂 파티 보기" Click="MenuItem_OpenParty_Click"/>
+                        <MenuItem Header="🎒 가방 열기" Click="MenuInventory_Click"/>
                         <Separator/>
                         <MenuItem Header="🍃 자연으로 놔주기" Click="MenuRelease_Click"/>
                     </ContextMenu>
@@ -417,10 +418,11 @@
                     <views:ProfileCardView Grid.RowSpan="3" Visibility="{Binding IsProfileOpen, Converter={StaticResource BoolToVis}}"/>
                     <views:BattleView Grid.RowSpan="3" Visibility="{Binding IsBattleOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1500"/>
                     <views:PokemonDexView Grid.RowSpan="3" Visibility="{Binding IsDexOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1400"/>
-
                     <!-- 🌟 새로 추가된 파티 뷰 -->
                     <views:PartyView Grid.RowSpan="3" Visibility="{Binding IsPartyOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1450"/>
-
+                    <!-- 🌟 가방(인벤토리) 팝업 창 -->
+                    <views:InventoryView Visibility="{Binding IsInventoryOpen, Converter={StaticResource BoolToVis}}" 
+                       Panel.ZIndex="10"/>
                     <!-- 🌟 진화 연출 전용 뷰 (빛나는 하얀색 실루엣 이펙트 포함) -->
                     <Grid Visibility="{Binding IsCeremony, Converter={StaticResource BoolToVis}}" Background="#EE1A1A1A" Grid.RowSpan="3" Panel.ZIndex="99999" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="-15">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,-30,0,0">

@@ -298,6 +298,22 @@ namespace TamaPoke.Views
                 if (pet.IsProfileOpen) pet.IsDexOpen = false;
             }
         }
+        private void MenuInventory_Click(object sender, RoutedEventArgs e)
+        {
+            // 현재 화면의 데이터를 담당하는 PokemonState를 가져옵니다.
+            if (this.DataContext is Models.PokemonState state && state.IsAlive)
+            {
+                // 가방이 열려있으면 닫고, 닫혀있으면 엽니다.
+                state.IsInventoryOpen = !state.IsInventoryOpen;
+
+                // UI가 겹쳐서 지저분해지는 것을 막기 위해, 가방을 열 때는 다른 하위 메뉴들을 닫아줍니다.
+                if (state.IsInventoryOpen)
+                {
+                    state.IsFeedMenuOpen = false;
+                    state.IsPlayMenuOpen = false;
+                }
+            }
+        }
 
         private void MenuRelease_Click(object sender, RoutedEventArgs e)
         {

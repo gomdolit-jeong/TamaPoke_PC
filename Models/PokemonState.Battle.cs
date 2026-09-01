@@ -62,8 +62,8 @@ namespace TamaPoke.Models
             }
         }
 
-        [JsonIgnore] public bool IsMainMenuVisible => !IsCatchOffered && !IsBattleResolved && !IsAttackMenuOpen && !IsBagOpen && IsPlayerTurn;
-        [JsonIgnore] public bool IsAttackMenuVisible => !IsCatchOffered && !IsBattleResolved && IsAttackMenuOpen && !IsBagOpen && IsPlayerTurn;
+        [JsonIgnore] public bool IsMainMenuVisible => !IsCatchOffered && !IsBattleResolved && !IsAttackMenuOpen && !IsInventoryOpen && IsPlayerTurn;
+        [JsonIgnore] public bool IsAttackMenuVisible => !IsCatchOffered && !IsBattleResolved && IsAttackMenuOpen && !IsInventoryOpen && IsPlayerTurn;
 
         private bool _isBattleResolved = false;
 
@@ -74,9 +74,6 @@ namespace TamaPoke.Models
 
         private bool _isAttackMenuOpen = false;
         public bool IsAttackMenuOpen { get => _isAttackMenuOpen; set { if (SetProperty(ref _isAttackMenuOpen, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
-
-        private bool _isBagOpen = false;
-        public bool IsBagOpen { get => _isBagOpen; set { if (SetProperty(ref _isBagOpen, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); } } }
 
         private bool _isEnemyVisible = true;
         public bool IsEnemyVisible { get => _isEnemyVisible; set => SetProperty(ref _isEnemyVisible, value); }
@@ -370,7 +367,7 @@ namespace TamaPoke.Models
             {
                 Name = "몬스터볼",
                 Description = "야생 포켓몬을 잡을 때 쓴다.",
-                Type = ItemType.Pokeball,
+                Type = ItemType.monsterball,
                 EffectValue = 1,
                 Quantity = 5
             });
@@ -394,8 +391,8 @@ namespace TamaPoke.Models
             }
             else
             {
-                if (type == ItemType.Pokeball)
-                    Inventory.Add(new ItemInfo { Name = "몬스터볼", Description = "야생 포켓몬을 잡을 때 쓴다.", Type = ItemType.Pokeball, EffectValue = 1, Quantity = amount });
+                if (type == ItemType.monsterball)
+                    Inventory.Add(new ItemInfo { Name = "몬스터볼", Description = "야생 포켓몬을 잡을 때 쓴다.", Type = ItemType.monsterball, EffectValue = 1, Quantity = amount });
                 else if (type == ItemType.Potion)
                     Inventory.Add(new ItemInfo { Name = "상처약", Description = "포켓몬의 체력을 20 회복한다.", Type = ItemType.Potion, EffectValue = 20, Quantity = amount });
             }
@@ -646,7 +643,7 @@ namespace TamaPoke.Models
                 {
                     if (rand.Next(100) < 70) // 그 중 70%는 몬스터볼
                     {
-                        AddItemToInventory(ItemType.Pokeball, 1);
+                        AddItemToInventory(ItemType.monsterball, 1);
                         dropMessage = "\n몬스터볼 1개를 얻었다!";
                     }
                     else // 나머지 30%는 상처약

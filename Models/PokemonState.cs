@@ -138,6 +138,40 @@ namespace TamaPoke.Models
         }
         #endregion
 
+        #region 인벤토리 (아이템)
+
+        // 🌟 가방 창 토글 상태
+        private bool _isInventoryOpen;
+        public bool IsInventoryOpen
+        {
+            get => _isInventoryOpen;
+            set { _isInventoryOpen = value; OnPropertyChanged(nameof(IsInventoryOpen)); }
+        }
+
+        private int _monsterBalls;
+        public int MonsterBalls
+        {
+            get => _monsterBalls;
+            set
+            {
+                _monsterBalls = value;
+                OnPropertyChanged(nameof(MonsterBalls)); // UI에 개수가 바뀌었다고 알려줍니다.
+            }
+        }
+
+        private int _potions;
+        public int Potions
+        {
+            get => _potions;
+            set
+            {
+                _potions = value;
+                OnPropertyChanged(nameof(Potions));
+            }
+        }
+
+        #endregion
+
         #region 포켓몬 정보 및 상태 속성 (Pokemon Info & Status)
         private int _speciesId = -1;
         public int SpeciesId

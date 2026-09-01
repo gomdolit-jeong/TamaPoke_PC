@@ -149,16 +149,16 @@ namespace TamaPoke.Views
         }
 
         // 🌟 가방 열기/닫기 이벤트
-        private void OpenBag_Click(object sender, RoutedEventArgs e)
+        private void OpenInventory_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null) pet.IsBagOpen = true;
+            if (pet != null) pet.IsInventoryOpen = true;
         }
 
-        private void CloseBag_Click(object sender, RoutedEventArgs e)
+        private void CloseInventory_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null) pet.IsBagOpen = false;
+            if (pet != null) pet.IsInventoryOpen = false;
         }
 
         // 🌟 가방에서 아이템 클릭 시 실행되는 이벤트
@@ -176,10 +176,10 @@ namespace TamaPoke.Views
                 }
 
                 // 가방을 닫습니다.
-                pet.IsBagOpen = false;
+                pet.IsInventoryOpen = false;
 
                 // 🌟 아이템 종류에 따라 알맞은 로직 실행
-                if (selectedItem.Type == ItemType.Pokeball)
+                if (selectedItem.Type == ItemType.monsterball)
                 {
                     selectedItem.Quantity--; // 몬스터볼 개수 차감
                     Catch_Click(sender, e);  // 기존 포획 로직 실행
