@@ -62,11 +62,11 @@ namespace TamaPoke.Models
             }
         }
 
+        // 🌟 개발자님의 자동화 시스템!
         [JsonIgnore] public bool IsMainMenuVisible => !IsCatchOffered && !IsBattleResolved && !IsAttackMenuOpen && !IsInventoryOpen && IsPlayerTurn;
         [JsonIgnore] public bool IsAttackMenuVisible => !IsCatchOffered && !IsBattleResolved && IsAttackMenuOpen && !IsInventoryOpen && IsPlayerTurn;
 
         private bool _isBattleResolved = false;
-
         public bool IsBattleResolved { get => _isBattleResolved; set { if (SetProperty(ref _isBattleResolved, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
 
         private bool _isCatchOffered = false;
@@ -74,6 +74,21 @@ namespace TamaPoke.Models
 
         private bool _isAttackMenuOpen = false;
         public bool IsAttackMenuOpen { get => _isAttackMenuOpen; set { if (SetProperty(ref _isAttackMenuOpen, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
+
+        // 🌟 가방이 열렸을 때 IsBattleInventoryOpen 상태를 갱신하도록 신호(OnPropertyChanged)를 추가했습니다!
+        private bool _isBattleInventoryOpen = false;
+        public bool IsBattleInventoryOpen
+        {
+            get => _isBattleInventoryOpen;
+            set
+            {
+                if (SetProperty(ref _isBattleInventoryOpen, value))
+                {
+                    OnPropertyChanged(nameof(IsMainMenuVisible));
+                    OnPropertyChanged(nameof(IsAttackMenuVisible));
+                }
+            }
+        }
 
         private bool _isEnemyVisible = true;
         public bool IsEnemyVisible { get => _isEnemyVisible; set => SetProperty(ref _isEnemyVisible, value); }
@@ -401,7 +416,6 @@ namespace TamaPoke.Models
 
 
         #region 배틀 로직 (Battle Logic)
-        // async 키워드가 추가된 새로운 함수입니다.
         public async void StartWildBattle()
         {
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
@@ -424,17 +438,12 @@ namespace TamaPoke.Models
             GenerateEnemySkills();
             UpdateEnemyAnimation(ANIM_IDLE);
 
-            // -----------------------------------------------------
-            // 🌟 턴제 텍스트 연출 적용
-            // -----------------------------------------------------
             IsBattleOpen = true;
-            IsPlayerTurn = false; // 내 턴을 끄면서 하단 스킬 메뉴들을 모두 숨깁니다.
+            IsPlayerTurn = false;
             BattleMessage = $"앗! 야생 {EnemyName}이(가) 나타났다!";
 
-            // 🌟 1.5초(1500ms) 대기하며 유저가 대사를 읽을 시간을 줍니다.
             await Task.Delay(1500);
 
-            // 대기 완료 후, 행동을 물어보며 메뉴를 다시 띄웁니다.
             BattleMessage = "행동을 선택하세요.";
             IsPlayerTurn = true;
         }
@@ -466,12 +475,11 @@ namespace TamaPoke.Models
 
             if (playerAction == BattleAction.QuickAttack || playerAction == BattleAction.HeavyAttack)
             {
-                // 범용 배틀 액션은 스킬 기반 배틀 턴에서 무시됩니다.
                 IsPlayerTurn = true;
                 return;
             }
 
-            if (EnemyHp <= 0) { await CheckBattleEndAsync(); IsPlayerTurn = true; return; }
+            if (EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
 
             await EnemyTurnAction(playerDodged);
         }
@@ -534,39 +542,32 @@ namespace TamaPoke.Models
                 await Task.Delay(1500);
             }
 
-            if (EnemyHp <= 0) { await CheckBattleEndAsync(); IsPlayerTurn = true; return; }
+            if (EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
 
             await EnemyTurnAction(false);
         }
 
-        // 🌟 새로 추가: 아이템을 사용했을 때 턴을 처리하는 로직
         public async Task ExecuteItemTurnAsync(ItemInfo selectedItem)
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
 
-            // 아이템을 사용하므로 내 턴을 종료합니다.
             IsPlayerTurn = false;
 
             if (selectedItem.Type == ItemType.Potion)
             {
-                // 체력 회복 (최대 체력을 넘지 않도록 Math.Min 사용)
                 int healAmount = selectedItem.EffectValue;
                 PlayerHp = Math.Min(PlayerMaxHp, PlayerHp + healAmount);
 
                 BattleMessage = $"{Name}에게 {selectedItem.Name}을(를) 사용했다!\n체력이 {healAmount} 회복되었다!";
 
-                // 기분 좋게 회복하는 애니메이션
                 _tempActionId = ANIM_HOP;
                 _tempActionTimer = 30;
                 CheckStateAndAnimate();
 
-                // 유저가 메시지를 읽을 시간을 줍니다.
                 await Task.Delay(1500);
 
-                // 아이템을 사용하느라 턴을 소모했으므로 적의 턴으로 넘어갑니다.
                 await EnemyTurnAction(false);
             }
-            // (참고: 몬스터볼은 UI에서 투척 애니메이션과 함께 따로 처리되고 있으므로 여기에 적지 않습니다.)
         }
 
         private async Task EnemyTurnAction(bool playerDodged)
@@ -633,55 +634,48 @@ namespace TamaPoke.Models
             }
             else if (EnemyHp <= 0)
             {
+                // 🌟 승리 시 메인 메뉴를 자동으로 가려주는 속성입니다.
                 IsBattleResolved = true;
 
-                // 🌟 아이템 드롭(전리품) 확률 계산
                 Random rand = new Random();
                 string dropMessage = "";
 
-                if (rand.Next(100) < 60) // 60% 확률로 무언가를 떨어뜨림
+                if (rand.Next(100) < 60)
                 {
-                    if (rand.Next(100) < 70) // 그 중 70%는 몬스터볼
+                    if (rand.Next(100) < 70)
                     {
                         AddItemToInventory(ItemType.monsterball, 1);
                         dropMessage = "\n몬스터볼 1개를 얻었다!";
                     }
-                    else // 나머지 30%는 상처약
+                    else
                     {
                         AddItemToInventory(ItemType.Potion, 1);
                         dropMessage = "\n상처약 1개를 얻었다!";
                     }
                 }
 
-                // 🌟 승리 메시지와 함께 획득한 아이템을 알려줍니다.
-                BattleMessage = $"배틀에서 승리했다!{dropMessage}";
+                BattleMessage = $"배틀에서 승리했다!{dropMessage}\n어떻게 할까?";
 
                 TrAtk = Math.Min(100, TrAtk + 5);
                 Bond = Math.Min(100, Bond + 5);
 
-                await Task.Delay(2500); // 메시지를 읽을 수 있게 잠시 대기
+                await Task.Delay(2500);
 
-                // 포획은 가방에서 진행하도록 변경했으므로, 적이 쓰러지면 바로 배틀을 종료합니다.
-                CloseBattle();
-                IsPlayerTurn = true;
+                // 🌟 여기서 배틀을 강제 종료하지 않고, 포획 선택창(잡아보기/그냥 가기)을 띄웁니다!
+                IsCatchOffered = true;
             }
         }
 
-        // 🌟 포획 확률 계산 및 결과 처리 로직
         public async Task ExecuteCatchResultAsync()
         {
-            // 1. 남은 체력(HP)의 백분율을 계산합니다.
             double hpPercent = (double)EnemyHp / EnemyMaxHp;
+            int catchRate = 10;
 
-            // 2. 기본 포획 확률 설정
-            int catchRate = 10; // 체력이 가득 차 있을 때는 10%의 낮은 확률
-
-            // 3. 체력이 적을수록 확률이 대폭 상승합니다.
-            if (hpPercent <= 0.2) // 체력이 20% 이하 (빨간피)
+            if (hpPercent <= 0.2)
             {
                 catchRate = 70;
             }
-            else if (hpPercent <= 0.5) // 체력이 50% 이하 (노란피)
+            else if (hpPercent <= 0.5)
             {
                 catchRate = 35;
             }
@@ -691,25 +685,18 @@ namespace TamaPoke.Models
 
             if (isCaught)
             {
-                // 포획 성공!
                 BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!";
                 await Task.Delay(2000);
 
-                // 추후 도감에 추가하거나 파티에 넣는 로직을 이 부분에 추가할 수 있습니다.
-
-                IsBattleOpen = false; // 배틀 종료
+                IsBattleOpen = false;
             }
             else
             {
-                // 🌟 수정됨: 포획 실패 시 적 포켓몬을 화면에 다시 나타나게 합니다!
                 IsEnemyVisible = true;
-
-                // 포획 실패 메시지 출력
-                BattleMessage = "아아! 포켓몬이 볼에서 빠져나왔다!";
+                BattleMessage = "아아! 포켓몬이 볼에서 빠져나왔다!\n어떻게 할까?";
                 await Task.Delay(2000);
 
-                // 실패하면 적의 턴으로 넘어갑니다.
-                await EnemyTurnAction(false);
+                IsCatchOffered = true;
             }
         }
         #endregion

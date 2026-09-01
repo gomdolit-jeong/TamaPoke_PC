@@ -1,12 +1,39 @@
 ﻿<UserControl x:Class="TamaPoke.Views.BattleView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:TamaPoke.Utils.Service"
              Height="288" Width="288"
              HorizontalAlignment="Center" VerticalAlignment="Center">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- 공통 버튼 스타일 (메인 메뉴 및 승리 팝업용) -->
+        <Style TargetType="Button" x:Key="RoundedButtonStyle">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform X="1" Y="1"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid Background="#F2EFE1" ClipToBounds="True">
@@ -19,7 +46,9 @@
             <RowDefinition Height="115"/>
         </Grid.RowDefinitions>
 
-        <!-- 상단 배틀 화면 영역 -->
+        <!-- ========================================== -->
+        <!-- 1. 상단 배틀 화면 영역 (적 / 플레이어 정보) -->
+        <!-- ========================================== -->
         <Grid Grid.Row="0">
             <!-- 적 포켓몬 정보창 -->
             <Border Margin="60,25,0,0" Background="#FAFAFA" CornerRadius="8" Padding="8,4" BorderBrush="#555" BorderThickness="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="120">
@@ -36,16 +65,18 @@
                                 <Setter Property="BorderBrush" Value="#888"/>
                                 <Setter Property="Background" Value="#E0E0E0"/>
                                 <Style.Triggers>
+                                    <!-- 데미지를 입고 있을 때(True) 실행 -->
                                     <DataTrigger Binding="{Binding IsEnemyTakingDamage}" Value="True">
                                         <DataTrigger.EnterActions>
-                                            <BeginStoryboard Name="EnemyFlash">
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.2" Duration="0:0:0.1" AutoReverse="True" RepeatBehavior="3x"/>
+                                            <BeginStoryboard Name="EnemyBlinkAnim">
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.3" Duration="0:0:0.1" AutoReverse="True"/>
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </DataTrigger.EnterActions>
+                                        <!-- 데미지 상태가 끝났을 때(False) 종료 -->
                                         <DataTrigger.ExitActions>
-                                            <StopStoryboard BeginStoryboardName="EnemyFlash"/>
+                                            <StopStoryboard BeginStoryboardName="EnemyBlinkAnim"/>
                                         </DataTrigger.ExitActions>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -65,7 +96,7 @@
                 </Image.RenderTransform>
             </Image>
 
-            <!-- 몬스터볼 이펙트 -->
+            <!-- 몬스터볼 이펙트 애니메이션 객체 -->
             <Grid x:Name="PokeballIcon" Width="24" Height="24" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="70,0,0,40" Visibility="Collapsed" Panel.ZIndex="10">
                 <Grid.RenderTransform>
                     <TransformGroup>
@@ -95,16 +126,18 @@
                                 <Setter Property="BorderBrush" Value="#888"/>
                                 <Setter Property="Background" Value="#E0E0E0"/>
                                 <Style.Triggers>
+                                    <!-- 데미지를 입고 있을 때(True) 실행 -->
                                     <DataTrigger Binding="{Binding IsPlayerTakingDamage}" Value="True">
                                         <DataTrigger.EnterActions>
-                                            <BeginStoryboard Name="PlayerFlash">
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.2" Duration="0:0:0.1" AutoReverse="True" RepeatBehavior="3x"/>
+                                            <BeginStoryboard Name="PlayerBlinkAnim">
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.3" Duration="0:0:0.1" AutoReverse="True"/>
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </DataTrigger.EnterActions>
+                                        <!-- 데미지 상태가 끝났을 때(False) 종료 -->
                                         <DataTrigger.ExitActions>
-                                            <StopStoryboard BeginStoryboardName="PlayerFlash"/>
+                                            <StopStoryboard BeginStoryboardName="PlayerBlinkAnim"/>
                                         </DataTrigger.ExitActions>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -123,175 +156,122 @@
             </Border>
         </Grid>
 
-        <!-- 하단 텍스트 및 메뉴 영역 -->
-        <Border Grid.Row="1" Background="#333333" CornerRadius="0" Padding="10">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- ========================================== -->
+        <!-- 2. 중앙 팝업: 승리 시 포획 / 도망 선택 창 -->
+        <!-- ========================================== -->
+        <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsCatchOffered, Converter={StaticResource BoolToVis}}" Panel.ZIndex="100">
+            <Border Background="#FAFAFA" CornerRadius="15" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
+                <StackPanel>
+                    <TextBlock Text="배틀에서 승리했다!" FontSize="14" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="포획하기" Width="90" Height="35" Margin="0,0,10,0" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="Catch_Click"/>
+                        <Button Content="그냥가기" Width="90" Height="35" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="Leave_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
 
-                <!-- 대화창 텍스트 -->
-                <TextBlock Grid.Row="0" Text="{Binding BattleMessage}" Foreground="White" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,0,5" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" MinHeight="30"/>
+        <!-- ========================================== -->
+        <!-- 3. 하단 컨트롤 영역 (메뉴 / 스킬 / 가방 전환) -->
+        <!-- ========================================== -->
+        <Grid Grid.Row="1" Background="#333333">
+            <Grid.RowDefinitions>
+                <!-- 대화창을 위한 고정 공간 -->
+                <RowDefinition Height="*"/>
+                <!-- 버튼들을 위한 하단 공간 -->
+                <RowDefinition Height="Auto" MinHeight="65"/>
+            </Grid.RowDefinitions>
 
-                <!-- 메인 메뉴 -->
-                <UniformGrid x:Name="MainMenuGrid" Grid.Row="1" HorizontalAlignment="Center" Columns="2" Margin="0,0,0,10" Rows="2" 
+            <!-- 🌟 3-A. 대화창 (이제 어떤 메뉴를 열어도 항상 고정되어 보입니다!) -->
+            <TextBlock Grid.Row="0" Text="{Binding BattleMessage}" Foreground="White" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Margin="10,5,10,5" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+
+            <!-- 🌟 3-B. 버튼 메뉴 영역 -->
+            <Grid Grid.Row="1">
+
+                <!-- 메인 전투 메뉴 -->
+                <UniformGrid HorizontalAlignment="Center" Columns="2" Margin="0,0,0,10" Rows="2" 
                              Visibility="{Binding IsMainMenuVisible, Converter={StaticResource BoolToVis}}">
-                    <Button Content="공격" Width="50" Height="20" Margin="2" Background="#E53935" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="ShowAttackMenu_Click">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="6"/>
-                            </Style>
-                        </Button.Resources>
-                    </Button>
-                    <Button Content="회피" Width="50" Height="20" Margin="2" Background="#1E88E5" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="Dodge_Click">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="6"/>
-                            </Style>
-                        </Button.Resources>
-                    </Button>
-                    <Button Content="가방" Width="50" Height="20" Margin="2" Background="#FFB300" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="OpenInventory_Click">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="6"/>
-                            </Style>
-                        </Button.Resources>
-                    </Button>
-                    <Button Content="도망" Width="50" Height="20" Margin="2" Background="#757575" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="Run_Click">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="6"/>
-                            </Style>
-                        </Button.Resources>
-                    </Button>
+                    <Button Content="공격" Width="55" Height="24" Margin="3" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="ShowAttackMenu_Click"/>
+                    <Button Content="회피" Width="55" Height="24" Margin="3" Background="#1E88E5" Style="{StaticResource RoundedButtonStyle}" Click="Dodge_Click"/>
+                    <Button Content="가방" Width="55" Height="24" Margin="3" Background="#FFB300" Style="{StaticResource RoundedButtonStyle}" Click="OpenInventory_Click"/>
+                    <Button Content="도망" Width="55" Height="24" Margin="3" Background="#757575" Style="{StaticResource RoundedButtonStyle}" Click="Run_Click"/>
                 </UniformGrid>
 
-                <!-- 스킬 선택 메뉴 -->
-                <Grid Grid.Row="0" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#333333" 
-                      Visibility="{Binding IsAttackMenuVisible, Converter={StaticResource BoolToVis}}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <ItemsControl ItemsSource="{Binding CurrentSkills}" Grid.Row="0">
+                <!-- 공격 선택 시 나타나는 스킬 메뉴 (메인 메뉴를 확실히 덮도록 Background 추가) -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="#333333" 
+                            Visibility="{Binding IsAttackMenuOpen, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl ItemsSource="{Binding CurrentSkills}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <UniformGrid Columns="2" Rows="2"/>
+                                <UniformGrid Columns="2" Rows="2" HorizontalAlignment="Center"/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Width="80" Height="28" Margin="3" Background="#FAFAFA" BorderBrush="#333" BorderThickness="1.5" Cursor="Hand" Click="SkillButton_Click">
+                                <Button Width="100" Height="26" Margin="4" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="SkillButton_Click">
                                     <Button.Resources>
                                         <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="6"/>
+                                            <Setter Property="CornerRadius" Value="4"/>
                                         </Style>
                                     </Button.Resources>
-                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0">
-                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,1"/>
-                                        <Border CornerRadius="3" Background="#78909C" Padding="4,0" HorizontalAlignment="Left">
-                                            <TextBlock Text="{Binding Type}" Foreground="White" FontSize="8" FontWeight="Bold"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,5,0"/>
+                                        <Border CornerRadius="3" Background="#78909C" Padding="4,1">
+                                            <TextBlock Text="{Binding Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                         </Border>
                                     </StackPanel>
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-
-                    <Button Grid.Row="1" Content="◀️" Height="22" Width="40" Margin="0,6,0,0" Background="#E0D8C8" BorderBrush="#333" BorderThickness="1.5" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CancelAttack_Click">
+                    <Button Content="◀" Width="45" Height="22" Margin="0,8,0,0" Background="#E0D8C8" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CancelAttack_Click">
                         <Button.Resources>
                             <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="10"/>
+                                <Setter Property="CornerRadius" Value="11"/>
                             </Style>
                         </Button.Resources>
                     </Button>
-                </Grid>
+                </StackPanel>
 
-                <!-- 가방 화면 (아이템 목록) -->
-                <Grid Grid.Row="0" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#333333" 
-                      Visibility="{Binding IsInventoryOpen, Converter={StaticResource BoolToVis}}">
-
-                    <!-- 🌟 내부 요소들을 중앙에 예쁘게 모아주는 StackPanel 추가 -->
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-
-                        <!-- 🌟 아이템이 0개일 때만 나타나는 안내 텍스트 -->
-                        <TextBlock Text="가방이 텅 비어있습니다." Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,5,0,10">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Inventory.Count}" Value="0">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-
-                        <!-- 인벤토리 아이템 리스트 (직접 고정 버튼 매핑 방식) -->
-                        <UniformGrid Columns="2" HorizontalAlignment="Center" VerticalAlignment="Center">
-
-                            <!-- 몬스터볼 버튼 -->
-                            <Button Width="90" Height="32" Margin="4" Background="#FAFAFA" BorderBrush="#333" BorderThickness="1.5" Cursor="Hand" Click="UseMonsterBall_Click">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="6"/>
-                                    </Style>
-                                </Button.Resources>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="🔴 몬스터볼 " FontWeight="Bold" FontSize="10" Foreground="#333"/>
-                                    <!-- PokemonState의 MonsterBalls 변수와 직접 바인딩 -->
-                                    <TextBlock Text="{Binding MonsterBalls, StringFormat={}x{0}}" FontSize="10" Foreground="#E53935" FontWeight="Bold"/>
-                                </StackPanel>
-                            </Button>
-
-                            <!-- 상처약 버튼 -->
-                            <Button Width="90" Height="32" Margin="4" Background="#FAFAFA" BorderBrush="#333" BorderThickness="1.5" Cursor="Hand" Click="UsePotion_Click">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="6"/>
-                                    </Style>
-                                </Button.Resources>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="🧪 상처약 " FontWeight="Bold" FontSize="10" Foreground="#333"/>
-                                    <!-- PokemonState의 Potions 변수와 직접 바인딩 -->
-                                    <TextBlock Text="{Binding Potions, StringFormat={}x{0}}" FontSize="10" Foreground="#1E88E5" FontWeight="Bold"/>
-                                </StackPanel>
-                            </Button>
-
-                        </UniformGrid>
-
-                        <!-- 뒤로 가기 버튼 -->
-                        <Button Content="◀️" Height="22" Width="40" Margin="0,6,0,0" Background="#E0D8C8" BorderBrush="#333" BorderThickness="1.5" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CloseInventory_Click">
+                <!-- 예전 사진 감성의 미니멀 가방(인벤토리) UI (메인 메뉴를 확실히 덮도록 Background 추가) -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="#333333" 
+                        Visibility="{Binding IsBattleInventoryOpen, Converter={StaticResource BoolToVis}}">
+                    <UniformGrid Columns="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,10">
+                        <!-- 몬스터볼 버튼 -->
+                        <Button Width="85" Height="26" Margin="4" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="UseMonsterBall_Click">
                             <Button.Resources>
                                 <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="10"/>
+                                    <Setter Property="CornerRadius" Value="4"/>
                                 </Style>
                             </Button.Resources>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="몬스터볼 " FontWeight="Bold" FontSize="11" Foreground="#333"/>
+                                <TextBlock Text="{Binding MonsterBalls, StringFormat={}x{0}}" FontSize="11" Foreground="#1E88E5" FontWeight="Bold"/>
+                            </StackPanel>
                         </Button>
-                    </StackPanel>
-
-                    <UniformGrid x:Name="CatchMenuGrid" Grid.Row="1" HorizontalAlignment="Center" Columns="2" Rows="1" Margin="0,5,0,0"
-             Visibility="{Binding IsCatchOffered, Converter={StaticResource BoolToVis}}">
-                        <Button Content="포획하기" Width="75" Height="24" Margin="4" Background="#4CAF50" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="Catch_Click">
+                        <!-- 상처약 버튼 -->
+                        <Button Width="85" Height="26" Margin="4" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="UsePotion_Click">
                             <Button.Resources>
                                 <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
+                                    <Setter Property="CornerRadius" Value="4"/>
                                 </Style>
                             </Button.Resources>
-                        </Button>
-                        <Button Content="그냥 가기" Width="75" Height="24" Margin="4" Background="#757575" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="Leave_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="상처약 " FontWeight="Bold" FontSize="11" Foreground="#333"/>
+                                <TextBlock Text="{Binding Potions, StringFormat={}x{0}}" FontSize="11" Foreground="#1E88E5" FontWeight="Bold"/>
+                            </StackPanel>
                         </Button>
                     </UniformGrid>
-                </Grid>
+                    <!-- 뒤로 가기 ◀ 버튼 -->
+                    <Button Content="◀" Width="45" Height="22" Background="#E0D8C8" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CloseInventory_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="11"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </StackPanel>
             </Grid>
-        </Border>
+        </Grid>
     </Grid>
 </UserControl>

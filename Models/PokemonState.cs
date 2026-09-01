@@ -155,7 +155,7 @@ namespace TamaPoke.Models
             set
             {
                 _monsterBalls = value;
-                OnPropertyChanged(nameof(MonsterBalls)); // UI에 개수가 바뀌었다고 알려줍니다.
+                OnPropertyChanged(nameof(MonsterBalls));
             }
         }
 
@@ -168,6 +168,14 @@ namespace TamaPoke.Models
                 _potions = value;
                 OnPropertyChanged(nameof(Potions));
             }
+        }
+
+        // 🌟 대기 화면(IdleView)의 열려있는 하단 메뉴들을 깔끔하게 닫아주는 함수
+        public void ResetIdleMenus()
+        {
+            IsInventoryOpen = false;
+            IsFeedMenuOpen = false;
+            IsPlayMenuOpen = false;
         }
 
         #endregion
@@ -306,11 +314,9 @@ namespace TamaPoke.Models
         public bool IsMuted { get => _isMuted; set { if (SetProperty(ref _isMuted, value)) OnPropertyChanged(nameof(SoundIcon)); } }
         [JsonIgnore] public string SoundIcon => IsMuted ? "🔇" : "🔊";
 
-        // 🌟 진화 연출 전용 메시지
         private string _evolutionMessage = "";
         public string EvolutionMessage { get => _evolutionMessage; set { SetProperty(ref _evolutionMessage, value); OnPropertyChanged(nameof(MoodText)); } }
 
-        // 🌟 진화 연출용 플래시 효과 트리거
         private bool _isEvolvingFlash = false;
         public bool IsEvolvingFlash { get => _isEvolvingFlash; set => SetProperty(ref _isEvolvingFlash, value); }
 
@@ -337,7 +343,6 @@ namespace TamaPoke.Models
         {
             get
             {
-                // 🌟 수정됨: 진화 상태일 때는 진화 전용 대사를 띄웁니다.
                 if (Ceremony == 4) return string.IsNullOrEmpty(EvolutionMessage) ? "✨ 진화하는 중입니다... ✨" : EvolutionMessage;
 
                 if (IsBattleOpen) return "야생 포켓몬과 배틀 중!";
@@ -406,14 +411,41 @@ namespace TamaPoke.Models
         }
 
         private bool _isDexOpen = false;
-        public bool IsDexOpen { get => _isDexOpen; set { if (SetProperty(ref _isDexOpen, value)) { OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        public bool IsDexOpen
+        {
+            get => _isDexOpen;
+            set
+            {
+                if (SetProperty(ref _isDexOpen, value))
+                {
+                    OnPropertyChanged(nameof(IsAliveAndNotEgg));
+                    OnPropertyChanged(nameof(MoodText));
+                    // 🌟 도감이 열릴 때 대기 화면 메뉴 닫기
+                    if (value) ResetIdleMenus();
+                }
+            }
+        }
 
         private bool _isFeedMenuOpen = false;
         public bool IsFeedMenuOpen { get => _isFeedMenuOpen; set => SetProperty(ref _isFeedMenuOpen, value); }
         private bool _isPlayMenuOpen = false;
         public bool IsPlayMenuOpen { get => _isPlayMenuOpen; set => SetProperty(ref _isPlayMenuOpen, value); }
+
         private bool _isProfileOpen = false;
-        public bool IsProfileOpen { get => _isProfileOpen; set { if (SetProperty(ref _isProfileOpen, value)) { OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        public bool IsProfileOpen
+        {
+            get => _isProfileOpen;
+            set
+            {
+                if (SetProperty(ref _isProfileOpen, value))
+                {
+                    OnPropertyChanged(nameof(IsAliveAndNotEgg));
+                    OnPropertyChanged(nameof(MoodText));
+                    // 🌟 프로필이 열릴 때 대기 화면 메뉴 닫기
+                    if (value) ResetIdleMenus();
+                }
+            }
+        }
 
         private int _profilePage = 0;
         public int ProfilePage { get => _profilePage; set { SetProperty(ref _profilePage, value); OnPropertyChanged(nameof(ProfilePageDisplay)); } }
@@ -567,13 +599,11 @@ namespace TamaPoke.Models
             _frameTickCounter++;
             if (_frameTickCounter >= 6) { _frameTickCounter = 0; if (_animationFrames != null && _animationFrames.Length > 0) { _currentFrameIndex = (_currentFrameIndex + 1) % _animationFrames.Length; CurrentFrame = _animationFrames[_currentFrameIndex]; } }
 
-            // 🌟 문워크 해결이 반영된 걷기 타이머 로직
             if (_tempActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
             {
                 PosX = Math.Max(-80, Math.Min(80, PosX + (-FlipX * 1.5)));
             }
 
-            // 🌟 꼬임 해결: 애니메이션 틱 처리는 모두 여기서 통합 관리합니다.
             if (_tempActionTimer > 0)
             {
                 _tempActionTimer--;
@@ -610,8 +640,7 @@ namespace TamaPoke.Models
                     Random moveRand = new Random(); int r = moveRand.Next(100);
                     if (r < 35)
                     {
-                        // 0.003% 확률로 야생 포켓몬 배틀 발생
-                        if (moveRand.Next(10000) < 3) 
+                        if (moveRand.Next(10000) < 3)
                         {
                             StartWildBattle();
                         }
@@ -776,13 +805,10 @@ namespace TamaPoke.Models
             return ANIM_IDLE;
         }
 
-        // 🌟 수정됨: 애니메이션 상태가 끝났을 때 UI(XAML)가 확실히 알 수 있도록 새로고침 알림을 추가합니다.
         private void CheckStateAndAnimate()
         {
             OnPropertyChanged(nameof(MoodText));
             OnPropertyChanged(nameof(CanEvolveNow));
-
-            // 👇 추가된 부분: 밥 먹기와 놀기 상태가 변경되었음을 꼼꼼하게 UI에 알려줍니다.
             OnPropertyChanged(nameof(IsEating));
             OnPropertyChanged(nameof(IsPlaying));
 
@@ -876,13 +902,7 @@ namespace TamaPoke.Models
                     var pet = JsonSerializer.Deserialize<PokemonState>(File.ReadAllText(SaveFilePath));
                     if (pet != null)
                     {
-                        // 🌟 구버전 세이브 파일 호환성 유지: 예전 세이브라서 가방이 없으면 만들어줍니다.
-                        if (pet.Inventory == null)
-                        {
-                            pet.Inventory = new System.Collections.ObjectModel.ObservableCollection<ItemInfo>();
-                            pet.InitializeInventory();
-                        }
-
+                        // 정상적으로 불러왔다면 초기화 진행
                         pet.InitializeAfterLoad();
                         return pet;
                     }
@@ -893,9 +913,9 @@ namespace TamaPoke.Models
             // 세이브 파일이 없어서 처음부터 새로 시작하는 경우
             PokemonState newPet = new PokemonState();
 
-            // 🌟 새 게임을 시작하는 유저에게 최초 1회 아이템을 지급합니다.
-            if (newPet.Inventory == null) newPet.Inventory = new System.Collections.ObjectModel.ObservableCollection<ItemInfo>();
-            newPet.InitializeInventory();
+            // 🌟 새 게임을 시작하는 유저에게 최초 1회 아이템(몬스터볼, 상처약)을 지급합니다!
+            newPet.MonsterBalls = 5;
+            newPet.Potions = 3;
 
             newPet.InitializeAfterLoad();
             return newPet;
