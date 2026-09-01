@@ -854,6 +854,7 @@ namespace TamaPoke.Models
         }
 
         public int CareBonus() { int s = Streak > 30 ? 30 : Streak; return (s / 3) + (Bond / 25); }
+
         #endregion
 
         #region 저장 및 불러오기 (Save & Load)

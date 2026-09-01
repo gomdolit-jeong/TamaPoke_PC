@@ -412,6 +412,9 @@
                         <Button Style="{StaticResource PhysicalButton}" ToolTip="목욕" Click="CleanButton_Click" IsEnabled="{Binding IsAlive}">
                             <emoji:TextBlock Text="🫧" FontSize="13" Foreground="#4DD0E1"/>
                         </Button>
+                        <!-- <Button Style="{StaticResource PhysicalButton}" ToolTip="시간 가속" Click="SkipTimeButton_Click" IsEnabled="{Binding IsAlive}"> -->
+                    <!--                             <emoji:TextBlock Text="⏩" FontSize="13" Foreground="#8E24AA"/> -->
+                    <!--                         </Button> -->
                     </StackPanel>
 
                     <!-- 🌟 뷰 컨트롤 (화면 오버레이 관리 영역) 🌟 -->
