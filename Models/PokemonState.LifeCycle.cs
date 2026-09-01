@@ -66,6 +66,28 @@ namespace TamaPoke.Models
             UpdateFilteredPokedex();
         }
 
+        // 🌟 포획한 포켓몬을 도감에 해금하는 메서드
+        public void UnlockPokemonInPokedex(int speciesId)
+        {
+            if (UnlockedPokemon == null)
+            {
+                UnlockedPokemon = new List<int>();
+            }
+
+            // 아직 도감에 등록되지 않은 포켓몬이라면 추가합니다.
+            if (!UnlockedPokemon.Contains(speciesId))
+            {
+                UnlockedPokemon.Add(speciesId);
+                RegisteredCount = UnlockedPokemon.Count;
+
+                // 도감 데이터를 새로고침하여 화면에 즉시 반영되도록 합니다.
+                RefreshPokedex();
+
+                // 변경된 도감 상태를 세이브 파일에 저장합니다.
+                Save();
+            }
+        }
+
         // 🌟 알에서 깨어날 때 포켓몬을 랜덤으로 정해주는 함수
         // 🌟 알에서 깨어날 때 포켓몬을 정하고 파티에 등록하는 함수
         public void Hatch()
@@ -296,7 +318,7 @@ namespace TamaPoke.Models
             // 🌟 [추가됨] 새 게임 시작 시 기본 아이템 지급
             // ==========================================
             MonsterBalls = 5; // 포켓볼 5개 지급
-            Potions = 1;   // 치료약 1개 지급
+            Potions = 3;   // 치료약 1개 지급
 
             PrepareNewEgg();
             RefreshPokedex();

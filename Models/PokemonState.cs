@@ -353,12 +353,12 @@ namespace TamaPoke.Models
                 if (IsCleanGameOpen) return "먼지를 깨끗하게 청소하세요!";
                 if (Ceremony == 1) return "마지막 인사를 하고 있어요...";
                 if (Ceremony == 2) return "너무 슬퍼서 집을 나갔어요...";
-                if (Ceremony == 3) return "자연으로 돌아가고 있어요... 안녕!";
+                if (Ceremony == 3) return "자연으로 돌아가고 있어요...\n안녕!";
                 if (IsEgg) return "부화를 기다리는 중...";
                 if (IsSleeping) return "쿨쿨 자고 있어요";
-                if (CanRunawayNow) return "아무도 돌봐주지 않아 외로워요...";
+                if (CanRunawayNow) return "아무도 돌봐주지 않아\n외로워요...";
                 if (CanFarewellNow) return "당신에게 할 말이 있나 봐요!";
-                if (Poops > 0) return "응가를 했어요! 청소해줘";
+                if (Poops > 0) return "응가를 했어요!\n청소해줘";
                 if (Hygiene < 30) return "몸이 더러워서 가려워요";
                 if (LowestStat < 30) return "기분이 아주 안 좋아요...";
                 if (LowestStat < 50) return "조금 기운이 없어요";

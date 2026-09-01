@@ -685,6 +685,8 @@ namespace TamaPoke.Models
 
             if (isCaught)
             {
+                UnlockPokemonInPokedex(EnemySpeciesId);
+
                 BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!";
                 await Task.Delay(2000);
 
