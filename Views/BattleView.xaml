@@ -272,6 +272,24 @@
                             </Button.Resources>
                         </Button>
                     </StackPanel>
+
+                    <UniformGrid x:Name="CatchMenuGrid" Grid.Row="1" HorizontalAlignment="Center" Columns="2" Rows="1" Margin="0,5,0,0"
+             Visibility="{Binding IsCatchOffered, Converter={StaticResource BoolToVis}}">
+                        <Button Content="포획하기" Width="75" Height="24" Margin="4" Background="#4CAF50" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="Catch_Click">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="6"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        <Button Content="그냥 가기" Width="75" Height="24" Margin="4" Background="#757575" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="Leave_Click">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="6"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </UniformGrid>
                 </Grid>
             </Grid>
         </Border>
