@@ -459,7 +459,7 @@ namespace TamaPoke.Models
             bool playerDodged = false;
             if (playerAction == BattleAction.Dodge)
             {
-                if (rand.Next(100) < 70) { playerDodged = true; _isCounterReady = true; BattleMessage = "적의 공격을 피할 준비를 했다! (카운터 대기)"; }
+                if (rand.Next(100) < 70) { playerDodged = true; _isCounterReady = true; BattleMessage = "적의 공격을 피할 준비를 했다!\n(카운터 대기)"; }
                 else { BattleMessage = "회피 준비에 실패했다..."; }
                 await Task.Delay(1500);
             }

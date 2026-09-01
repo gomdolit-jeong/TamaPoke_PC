@@ -610,7 +610,8 @@ namespace TamaPoke.Models
                     Random moveRand = new Random(); int r = moveRand.Next(100);
                     if (r < 35)
                     {
-                        if (moveRand.Next(100) < 5)
+                        // 0.003% 확률로 야생 포켓몬 배틀 발생
+                        if (moveRand.Next(10000) < 3) 
                         {
                             StartWildBattle();
                         }
@@ -743,6 +744,8 @@ namespace TamaPoke.Models
         #endregion
 
         #region 내부 헬퍼 (Helpers)
+
+        public Action? RequestCatchAnimation;
         private void CheckMedals()
         {
             if (IsEgg) return;

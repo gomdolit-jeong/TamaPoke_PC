@@ -421,8 +421,7 @@
                     <!-- 🌟 새로 추가된 파티 뷰 -->
                     <views:PartyView Grid.RowSpan="3" Visibility="{Binding IsPartyOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1450"/>
                     <!-- 🌟 가방(인벤토리) 팝업 창 -->
-                    <views:InventoryView Visibility="{Binding IsInventoryOpen, Converter={StaticResource BoolToVis}}" 
-                       Panel.ZIndex="10"/>
+                    <views:InventoryView Grid.RowSpan="3" Visibility="{Binding IsInventoryOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="10"/>
                     <!-- 🌟 진화 연출 전용 뷰 (빛나는 하얀색 실루엣 이펙트 포함) -->
                     <Grid Visibility="{Binding IsCeremony, Converter={StaticResource BoolToVis}}" Background="#EE1A1A1A" Grid.RowSpan="3" Panel.ZIndex="99999" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="-15">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,-30,0,0">

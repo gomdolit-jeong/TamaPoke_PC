@@ -230,29 +230,38 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <!-- 아이템 리스트 -->
-                        <ItemsControl ItemsSource="{Binding Inventory}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="2"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Width="80" Height="28" Margin="3" Background="#FAFAFA" BorderBrush="#333" BorderThickness="1.5" Cursor="Hand" Click="UseItem_Click">
-                                        <Button.Resources>
-                                            <Style TargetType="Border">
-                                                <Setter Property="CornerRadius" Value="6"/>
-                                            </Style>
-                                        </Button.Resources>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,5,0"/>
-                                            <TextBlock Text="{Binding Quantity, StringFormat={}x{0}}" FontSize="10" Foreground="#1E88E5" FontWeight="Bold"/>
-                                        </StackPanel>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <!-- 인벤토리 아이템 리스트 (직접 고정 버튼 매핑 방식) -->
+                        <UniformGrid Columns="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+
+                            <!-- 몬스터볼 버튼 -->
+                            <Button Width="90" Height="32" Margin="4" Background="#FAFAFA" BorderBrush="#333" BorderThickness="1.5" Cursor="Hand" Click="UseMonsterBall_Click">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="6"/>
+                                    </Style>
+                                </Button.Resources>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="🔴 몬스터볼 " FontWeight="Bold" FontSize="10" Foreground="#333"/>
+                                    <!-- PokemonState의 MonsterBalls 변수와 직접 바인딩 -->
+                                    <TextBlock Text="{Binding MonsterBalls, StringFormat={}x{0}}" FontSize="10" Foreground="#E53935" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- 상처약 버튼 -->
+                            <Button Width="90" Height="32" Margin="4" Background="#FAFAFA" BorderBrush="#333" BorderThickness="1.5" Cursor="Hand" Click="UsePotion_Click">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="6"/>
+                                    </Style>
+                                </Button.Resources>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="🧪 상처약 " FontWeight="Bold" FontSize="10" Foreground="#333"/>
+                                    <!-- PokemonState의 Potions 변수와 직접 바인딩 -->
+                                    <TextBlock Text="{Binding Potions, StringFormat={}x{0}}" FontSize="10" Foreground="#1E88E5" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Button>
+
+                        </UniformGrid>
 
                         <!-- 뒤로 가기 버튼 -->
                         <Button Content="◀️" Height="22" Width="40" Margin="0,6,0,0" Background="#E0D8C8" BorderBrush="#333" BorderThickness="1.5" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CloseInventory_Click">

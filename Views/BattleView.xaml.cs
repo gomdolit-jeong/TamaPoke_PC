@@ -13,6 +13,26 @@ namespace TamaPoke.Views
         public BattleView()
         {
             InitializeComponent();
+            this.DataContextChanged += BattleView_DataContextChanged;
+        }
+        private void BattleView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            // 이전 데이터의 연결 해제
+            if (e.OldValue is PokemonState oldState)
+            {
+                oldState.RequestCatchAnimation -= TriggerCatchAnimation;
+            }
+            // 새로운 데이터(PokemonState)의 신호탄에 반응하도록 연결
+            if (e.NewValue is PokemonState newState)
+            {
+                newState.RequestCatchAnimation += TriggerCatchAnimation;
+            }
+        }
+
+        // 🌟 인벤토리에서 신호탄이 날아오면 실행되는 함수
+        private void TriggerCatchAnimation()
+        {
+            Catch_Click(this, new RoutedEventArgs());
         }
 
         private PokemonState? GetPet() => DataContext as PokemonState;
@@ -192,6 +212,43 @@ namespace TamaPoke.Views
                     await pet.ExecuteItemTurnAsync(selectedItem);
                 }
             }
+        }
+
+        // 🌟 몬스터볼 버튼 클릭 이벤트 (배틀 중 연동)
+        private void UseMonsterBall_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet == null) return;
+
+            if (pet.MonsterBalls <= 0)
+            {
+                pet.BattleMessage = "몬스터볼이 부족합니다!";
+                return;
+            }
+
+            pet.IsInventoryOpen = false;
+            pet.MonsterBalls--;
+
+            // 기존에 작성해두신 완벽한 포획 애니메이션 실행!
+            Catch_Click(sender, e);
+        }
+
+        // 🌟 상처약 버튼 클릭 이벤트 (배틀 중 연동)
+        private void UsePotion_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet == null) return;
+
+            if (pet.Potions <= 0)
+            {
+                pet.BattleMessage = "상처약이 부족합니다!";
+                return;
+            }
+
+            pet.IsInventoryOpen = false;
+            pet.Potions--;
+            pet.PlayerHp = Math.Min(pet.PlayerMaxHp, pet.PlayerHp + 30);
+            pet.BattleMessage = "상처약을 사용하여 포켓몬의 체력을 회복했다!";
         }
     }
 }
