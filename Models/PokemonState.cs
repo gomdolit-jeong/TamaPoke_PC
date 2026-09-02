@@ -584,6 +584,11 @@ namespace TamaPoke.Models
             if (UnlockedPokemon == null) UnlockedPokemon = new List<int>();
             if (UnlockedPokemon.Count == 0 && SpeciesId > 0) { UnlockedPokemon.Add(SpeciesId); RegisteredCount = UnlockedPokemon.Count; }
 
+            if (DexTable.Count == 0)
+            {
+                InitializeEvolutionTable();
+            }
+
             RefreshPokedex(); UpdateDayNightCycle(); CheckDailyStreak(); UpdateBackgroundImage();
 
             if (_mainLoopTimer == null)

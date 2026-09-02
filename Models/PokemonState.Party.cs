@@ -98,15 +98,15 @@ namespace TamaPoke.Models
             }
         }
 
-        // 🌟 복사 버그를 방지하고 모든 상태를 완벽하게 유지하는 스왑 메서드
+        // 🌟 복사 버그를 방지하고 레벨이 꼬이지 않도록 완벽하게 분리된 스왑 메서드
         public void SwapMainWithParty(PartyMember targetMember)
         {
             if (targetMember == null || !Party.Contains(targetMember)) return;
 
             int targetIndex = Party.IndexOf(targetMember);
-            if (targetIndex == 0) return; // 대표를 클릭했다면 무시
+            if (targetIndex == 0) return; // 0번(대표)을 클릭한 경우 무시
 
-            // 1. 꺼낼 포켓몬 데이터 백업
+            // 1. 선택한 타겟 포켓몬 데이터 백업 (메인으로 올라갈 포켓몬)
             var newLeader = new PartyMember
             {
                 SpeciesId = targetMember.SpeciesId,
@@ -135,7 +135,7 @@ namespace TamaPoke.Models
                 } : new PokemonGene()
             };
 
-            // 2. 들어갈 포켓몬(현재 메인) 데이터 백업
+            // 2. 현재 메인 화면의 포켓몬 데이터 백업 (파티로 내려갈 포켓몬)
             var oldLeader = new PartyMember
             {
                 SpeciesId = this.SpeciesId,
@@ -164,7 +164,7 @@ namespace TamaPoke.Models
                 } : new PokemonGene()
             };
 
-            // 3. UI 꼬임 방지를 위한 안전한 교체 (Remove 후 Insert)
+            // 3. UI 바인딩 꼬임 방지를 위한 안전한 리스트 재배치 (Remove 후 Insert)
             Party.RemoveAt(targetIndex);
             Party.Insert(targetIndex, oldLeader);
 
@@ -176,7 +176,7 @@ namespace TamaPoke.Models
             this.Name = newLeader.Name;
             this.Level = newLeader.Level;
 
-            // 시간 및 컨디션 복원
+            // 시간 및 컨디션 데이터 복원
             this.AgeMinutes = newLeader.AgeMinutes;
             _ageSeconds = this.AgeMinutes * 60;
             this.IsShiny = newLeader.IsShiny;
@@ -204,7 +204,7 @@ namespace TamaPoke.Models
                 };
             }
 
-            // 5. 플래그 정리
+            // 5. 플래그 정리 및 화면 갱신
             for (int i = 0; i < Party.Count; i++)
             {
                 Party[i].IsFirst = (i == 0);

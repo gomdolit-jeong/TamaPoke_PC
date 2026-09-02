@@ -255,6 +255,11 @@ namespace TamaPoke.Models
             if (nextSpeciesId == -1) return;
 
             SpeciesId = nextSpeciesId;
+
+            // 🌟 [핵심 해결책] 덮어씌워져 있던 옛날 이름을 지워서, 새 종족값에 맞는 이름(비퀸)을 도감에서 다시 불러오도록 합니다!
+            _overrideName = null;
+            OnPropertyChanged(nameof(Name));
+
             IsEvolutionPostponed = false;
             _ageSeconds = 0; AgeMinutes = 0; ResetPosition();
 
