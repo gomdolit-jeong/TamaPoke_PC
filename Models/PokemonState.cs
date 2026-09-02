@@ -574,6 +574,9 @@ namespace TamaPoke.Models
         #region 초기화 및 게임 루프 (Init & Main Loop)
         public void InitializeAfterLoad()
         {
+            // 🌟 [수정됨] IsPartyOpen = false; 를 추가하여 게임 시작 시 파티 창이 무조건 닫혀있도록 합니다.
+            IsPartyOpen = false;
+
             IsProfileOpen = false; IsFeedMenuOpen = false; IsPlayMenuOpen = false; IsDexOpen = false; IsBattleOpen = false;
             IsBallGameOpen = false; IsCatchGameOpen = false; IsMemoGameOpen = false; IsCleanGameOpen = false;
             IsBathing = false; IsPetting = false;
@@ -761,15 +764,11 @@ namespace TamaPoke.Models
         public void PostponeEvolve() => IsEvolutionPostponed = true;
         public void PostponeFarewell() => IsFarewellPostponed = true;
 
-        public void NextProfilePage() { ProfilePage = (ProfilePage + 1) % 4; }
-        public void PrevProfilePage() { ProfilePage = (ProfilePage + 3) % 4; }
-        public void SkipTimeForTest()
-        {
-            if (IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
-            _ageSeconds += 3600; AgeMinutes += MINUTES_PER_LEVEL; IsEvolutionPostponed = false;
-            OnPropertyChanged(nameof(Level)); OnPropertyChanged(nameof(LevelDisplay)); OnPropertyChanged(nameof(CanEvolveNow)); OnPropertyChanged(nameof(CanShowEvolvePrompt)); OnPropertyChanged(nameof(EvolveProgressText)); OnPropertyChanged(nameof(EvolveProgressPercent));
-            CheckStateAndAnimate();
-        }
+        public void NextProfilePage() { ProfilePage = (ProfilePage + 1) % 5; }
+        public void PrevProfilePage() { ProfilePage = (ProfilePage + 4) % 5; }
+
+        // 🌟 디버그 모드에서만 화면(UI) 요소를 보여주기 위한 전용 스위치입니다.
+
         #endregion
 
         #region 내부 헬퍼 (Helpers)
@@ -919,6 +918,43 @@ namespace TamaPoke.Models
 
             newPet.InitializeAfterLoad();
             return newPet;
+        }
+        #endregion
+
+        #region 디버그용
+        [JsonIgnore]
+        public bool IsDebugMode
+        {
+            get
+            {
+#if DEBUG
+                return true;  // 디버그 모드일 때는 true를 반환하여 화면에 보여줍니다.
+#else
+                return false; // 릴리즈(배포) 모드일 때는 false를 반환하여 완벽하게 숨깁니다.
+#endif
+            }
+        }
+
+        public void SkipTimeForTest()
+        {
+            if (IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
+
+            _ageSeconds += 3600;
+            AgeMinutes += MINUTES_PER_LEVEL;
+            IsEvolutionPostponed = false;
+
+            // 🌟 [추가됨] 테스트용 데미지(공격력) 증가 로직
+            // 버튼을 누를 때마다 TrAtk가 10씩 오르며, 최대 100까지만 증가합니다.
+            TrAtk = Math.Min(100, TrAtk + 10);
+
+            OnPropertyChanged(nameof(Level));
+            OnPropertyChanged(nameof(LevelDisplay));
+            OnPropertyChanged(nameof(CanEvolveNow));
+            OnPropertyChanged(nameof(CanShowEvolvePrompt));
+            OnPropertyChanged(nameof(EvolveProgressText));
+            OnPropertyChanged(nameof(EvolveProgressPercent));
+
+            CheckStateAndAnimate();
         }
         #endregion
 

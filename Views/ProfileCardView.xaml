@@ -36,7 +36,7 @@
 
         <Grid Margin="35,40,35,35">
 
-            <!-- 페이지 1: 기본 프로필 -->
+            <!-- 페이지 1: 기본 프로필 (ProfilePage == 0) -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -74,7 +74,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 페이지 2: 전투 능력치 -->
+            <!-- 페이지 2: 전투 능력치 (ProfilePage == 1) -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -109,7 +109,6 @@
                         <ProgressBar Value="{Binding TrSpeed}" Maximum="100" Height="6" Foreground="#FBC02D" Margin="0,15,0,0"/>
                     </Grid>
 
-                    <!-- 🌟 버튼을 StackPanel 안쪽으로 이동하여 겹침 문제를 완벽히 해결! -->
                     <Button Content="⚔️ 야생 배틀 시작" Width="130" Height="30" Margin="0,20,0,0" Background="#E53935" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="StartBattle_Click">
                         <Button.Resources>
                             <Style TargetType="Border">
@@ -120,13 +119,63 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 페이지 3: 획득한 메달 -->
+            <!-- 🌟 새로 추가된 페이지 3: 보유 스킬 (ProfilePage == 2) -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding ProfilePage}" Value="2">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="180">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
+                        <emoji:TextBlock Text="✨" FontSize="16" VerticalAlignment="Center"/>
+                        <TextBlock Text=" 보유 스킬" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- 배틀 뷰와 유사하게 보유 스킬을 2x2 그리드로 나열합니다 -->
+                    <ItemsControl ItemsSource="{Binding CurrentSkills}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2" Rows="2" HorizontalAlignment="Center"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- 🌟 높이(Height)를 35에서 45로 살짝 늘려 두 줄이 넉넉히 들어가게 했습니다. -->
+                                <Border Width="85" Height="45" Margin="2" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4">
+
+                                    <!-- 🌟 Orientation을 Vertical(세로)로 변경했습니다! -->
+                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+
+                                        <!-- 🌟 오른쪽 여백 대신 아래쪽 여백(Margin="0,0,0,4")을 주어 배지와 간격을 띄웁니다. -->
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+
+                                        <Border CornerRadius="3" Background="#78909C" Padding="4,1" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                        </Border>
+
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Grid>
+
+            <!-- 페이지 4: 획득한 메달 (ProfilePage == 3 으로 밀려남) -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <!-- 🌟 Value를 3으로 변경했습니다 -->
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="3">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -249,13 +298,14 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 페이지 4: 성장 진행도 -->
+            <!-- 페이지 5: 성장 진행도 (ProfilePage == 4 로 밀려남) -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding ProfilePage}" Value="3">
+                            <!-- 🌟 Value를 4로 변경했습니다 -->
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="4">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -281,7 +331,7 @@
             </Grid>
         </Grid>
 
-        <!-- 하단 페이지 인디케이터 -->
+        <!-- 하단 페이지 인디케이터 (자동으로 5페이지 기준 텍스트가 표시됩니다) -->
         <TextBlock Text="{Binding ProfilePageDisplay}" FontSize="11" Foreground="#999" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15"/>
     </Grid>
 </UserControl>

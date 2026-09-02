@@ -687,10 +687,34 @@ namespace TamaPoke.Models
             {
                 UnlockPokemonInPokedex(EnemySpeciesId);
 
-                BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!";
-                await Task.Delay(2000);
+                if (Party != null && Party.Count >= 6)
+                {
+                    // TODO: 교체 창 또는 놓아주기 선택 팝업을 띄우는 플래그 활성화 (예: IsPartyFullChoiceOpen = true;)
+                    BattleMessage = $"{EnemyName}을(를) 잡았지만, 파티가 꽉 찼다!\n(교체 또는 놓아주기 구현 필요)";
+                    await Task.Delay(2500);
+                }
+                else if (Party != null)
+                {
+                    // 3. 자리가 널널한 경우 기존대로 바로 합류
+                    var newMember = new PartyMember
+                    {
+                        SpeciesId = EnemySpeciesId,
+                        Name = EnemyName,
+                        Level = EnemyLevel,
+                        IsShiny = false,
+                        TrAtk = 0,
+                        TrDef = 0,
+                        TrSpeed = 0,
+                        Skills = (int[])EnemySkills.Clone(),
+                        Genes = new PokemonGene()
+                    };
 
-                IsBattleOpen = false;
+                    Party.Add(newMember);
+                    BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다.";
+                    await Task.Delay(2000);
+                }
+
+                IsBattleOpen = false; // 배틀 종료
             }
             else
             {
