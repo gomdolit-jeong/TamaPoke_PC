@@ -944,6 +944,12 @@ namespace TamaPoke.Models
             OnPropertyChanged(nameof(EvolveProgressText));
             OnPropertyChanged(nameof(EvolveProgressPercent));
 
+            // 🌟 추가된 부분: 시간이 지나서 레벨과 스탯이 변했으니, 파티 리스트의 0번(대표) 자리도 최신 상태로 갱신해 줍니다!
+            if (Party != null && Party.Count > 0)
+            {
+                SyncMainToLeader();
+            }
+
             CheckStateAndAnimate();
         }
         #endregion

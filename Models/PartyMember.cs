@@ -1,26 +1,52 @@
 ﻿using System;
 using System.Linq;
-using System.ComponentModel; // 🌟 추가됨
-using System.Runtime.CompilerServices; // 🌟 추가됨
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
 namespace TamaPoke.Models
 {
-    // 🌟 INotifyPropertyChanged 인터페이스를 상속받습니다.
+    // 🌟 포켓몬의 모든 고유 상태를 완벽하게 기억하는 파티 멤버 클래스입니다.
     public class PartyMember : INotifyPropertyChanged
     {
         public int SpeciesId { get; set; }
         public string Name { get; set; } = string.Empty;
         public int Level { get; set; }
+        public int AgeMinutes { get; set; }
         public bool IsShiny { get; set; }
 
         public int TrAtk { get; set; }
         public int TrDef { get; set; }
         public int TrSpeed { get; set; }
+
+        // 🌟 포켓몬의 컨디션과 고유 상태 완벽 보존
+        public int Fullness { get; set; }
+        public int Joy { get; set; }
+        public int Energy { get; set; }
+        public int Hygiene { get; set; }
+        public int Bond { get; set; }
+        public int Weight { get; set; }
+        public bool IsEvolutionPostponed { get; set; }
+        public int Medals { get; set; } // 비트마스크 정수형 유지
+
         public int[] Skills { get; set; } = new int[4];
         public PokemonGene Genes { get; set; } = new PokemonGene();
 
-        // 🌟 화면에서 이 카드가 선택되었는지 여부를 저장합니다. (저장 파일에는 무시됨)
+        private bool _isFirst;
+        [JsonIgnore]
+        public bool IsFirst
+        {
+            get => _isFirst;
+            set
+            {
+                if (_isFirst != value)
+                {
+                    _isFirst = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         private bool _isSelected;
         [JsonIgnore]
         public bool IsSelected
@@ -80,7 +106,6 @@ namespace TamaPoke.Models
             }
         }
 
-        // 🌟 UI 업데이트를 위한 이벤트 구현
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
