@@ -80,6 +80,72 @@ namespace TamaPoke.Models
             }
         }
 
+        public void SwapMainWithParty(PartyMember targetMember)
+        {
+            if (targetMember == null || !Party.Contains(targetMember)) return;
+
+            int index = Party.IndexOf(targetMember);
+            if (index < 0) return;
+
+            // 1. 현재 메인 포켓몬의 스탯 및 모든 세부 정보를 백업용 객체로 만듭니다.
+            var oldMain = new PartyMember
+            {
+                SpeciesId = this.SpeciesId,
+                Name = this.Name.Replace(" ✨", ""),
+                Level = this.Level,
+                IsShiny = this.IsShiny,
+                TrAtk = this.TrAtk,
+                TrDef = this.TrDef,
+                TrSpeed = this.TrSpeed,
+                Skills = this.Skills != null ? (int[])this.Skills.Clone() : new int[4],
+                Genes = this.Genes != null ? new PokemonGene
+                {
+                    HpGene = this.Genes.HpGene,
+                    AtkGene = this.Genes.AtkGene,
+                    DefGene = this.Genes.DefGene,
+                    SpeGene = this.Genes.SpeGene
+                } : new PokemonGene()
+            };
+
+            // 2. 선택된 파티 멤버의 데이터를 메인 화면(PokemonState)으로 가져옵니다.
+            this.SpeciesId = targetMember.SpeciesId;
+            this.Name = targetMember.Name;
+            this.Level = targetMember.Level;
+            this.IsShiny = targetMember.IsShiny;
+            this.TrAtk = targetMember.TrAtk;
+            this.TrDef = targetMember.TrDef;
+            this.TrSpeed = targetMember.TrSpeed;
+
+            if (targetMember.Skills != null)
+            {
+                this.Skills = (int[])targetMember.Skills.Clone();
+            }
+
+            if (targetMember.Genes != null)
+            {
+                this.Genes = new PokemonGene
+                {
+                    HpGene = targetMember.Genes.HpGene,
+                    AtkGene = targetMember.Genes.AtkGene,
+                    DefGene = targetMember.Genes.DefGene,
+                    SpeGene = targetMember.Genes.SpeGene
+                };
+            }
+
+            // 3. 파티 리스트의 해당 위치(index)에 방금 백업한 옛날 메인 포켓몬을 대입합니다.
+            Party[index] = oldMain;
+
+            // 4. 선택 상태 초기화 및 파티 창 닫기
+            targetMember.IsSelected = false;
+            oldMain.IsSelected = false;
+            IsPartyOpen = false;
+
+            // 5. 화면 갱신 및 저장
+            UpdateBackgroundImage();
+            CheckStateAndAnimate();
+            Save();
+        }
+
         // 🌟 교체를 취소하고 7번째 포켓몬을 그냥 놔주는 함수입니다.
         public void CancelSwap()
         {

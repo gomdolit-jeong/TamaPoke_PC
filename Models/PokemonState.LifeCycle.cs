@@ -92,6 +92,9 @@ namespace TamaPoke.Models
         // 🌟 알에서 깨어날 때 포켓몬을 정하고 파티에 등록하는 함수
         public void Hatch()
         {
+            _overrideName = null;
+            _overrideLevel = null;
+
             Random rand = new Random();
             int shinyBase = (LastEnd == 1 ? 24 : 48) - CareBonus();
             if (shinyBase < 8) shinyBase = 8;

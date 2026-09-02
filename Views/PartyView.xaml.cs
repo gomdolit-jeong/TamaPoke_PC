@@ -14,23 +14,22 @@ namespace TamaPoke.Views
         // 🌟 카드를 클릭했을 때
         private void PartyMemberCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (sender is Border border &&
-                border.DataContext is PartyMember clickedMember &&
-                this.DataContext is PokemonState state)
+            // 💡 디버깅을 위해 이 줄에 중단점(Break point, F9)을 걸어보세요!
+            if (sender is Border border && border.DataContext is PartyMember clickedMember)
             {
+                var state = this.DataContext as PokemonState;
+                if (state == null || state.Party == null) return;
+
                 if (state.IsSwapMode)
                 {
-                    state.ExecuteSwap(clickedMember); // 교체 모드일 때는 자리를 바꿉니다.
+                    state.ExecuteSwap(clickedMember);
                 }
                 else
                 {
-                    // 🌟 교체 모드가 아닐 때는 포켓몬을 '선택'합니다.
-                    // 1. 모든 멤버의 선택 상태를 해제합니다.
                     foreach (var member in state.Party)
                     {
                         member.IsSelected = false;
                     }
-                    // 2. 지금 클릭한 포켓몬만 선택 상태로 만듭니다.
                     clickedMember.IsSelected = true;
                 }
             }
@@ -80,6 +79,58 @@ namespace TamaPoke.Views
 
                 state.CloseParty();
             }
+        }
+
+        private void ChangeMainButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // 1. 현재 데이터 컨텍스트(PokemonState)를 가져옵니다.
+            var state = this.DataContext as PokemonState;
+            if (state == null || state.Party == null) return;
+
+            // 2. 파티에서 IsSelected가 true인 멤버를 찾습니다. (단일 선택이므로 1개만 나옵니다)
+            var selectedMember = state.Party.FirstOrDefault(p => p.IsSelected);
+
+            if (selectedMember == null)
+            {
+                // 선택된 포켓몬이 없다면 그냥 함수를 종료하거나 메시지를 띄웁니다.
+                System.Windows.MessageBox.Show("교체할 파티 멤버를 먼저 선택해 주세요!", "알림");
+                return;
+            }
+
+            // 3. 현재 IdleView에 있는 '메인 포켓몬'의 스탯을 백업하여 새로운 파티 멤버 카드로 만듭니다.
+            var oldMainPokemon = new PartyMember
+            {
+                SpeciesId = state.SpeciesId,
+                Name = state.Name,
+                Level = state.Level,
+                TrAtk = state.TrAtk,
+                TrDef = state.TrDef,
+                TrSpeed = state.TrSpeed,
+                // 💡 필요하다면 체력(Hp), 스킬(Skills), 개체값(Genes) 등도 여기에 추가로 대입해 줍니다.
+            };
+
+            // 4. 선택된 파티 멤버의 정보를 '메인 포켓몬' 상태(PokemonState)로 덮어씌웁니다.
+            state.SpeciesId = selectedMember.SpeciesId;
+            state.Name = selectedMember.Name;
+            state.Level = selectedMember.Level;
+            state.TrAtk = selectedMember.TrAtk;
+            state.TrDef = selectedMember.TrDef;
+            state.TrSpeed = selectedMember.TrSpeed;
+            // 💡 위와 마찬가지로 스킬이나 체력 속성도 넘겨줍니다.
+
+            // 5. 파티 리스트 갱신: 선택된 멤버를 지우고, 그 자리에 백업해둔 예전 메인 포켓몬을 넣습니다.
+            int index = state.Party.IndexOf(selectedMember);
+            state.Party.Remove(selectedMember);
+            state.Party.Insert(index, oldMainPokemon);
+
+            // 6. 상태 초기화 및 UI 갱신
+            oldMainPokemon.IsSelected = false; // 파티에 들어간 예전 녀석의 선택 상태 해제
+            state.IsPartyOpen = false;         // 파티 창 닫기
+
+            // 메인 화면(IdleView)의 이미지가 즉시 바뀌도록 갱신 함수를 호출합니다.
+            state.UpdateBackgroundImage();
+            state.CheckStateAndAnimate();
+            state.Save(); // 교체된 상태를 세이브 파일에 즉시 저장합니다.
         }
     }
 }

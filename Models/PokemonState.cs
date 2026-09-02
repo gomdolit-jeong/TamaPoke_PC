@@ -139,8 +139,6 @@ namespace TamaPoke.Models
         #endregion
 
         #region 인벤토리 (아이템)
-
-        // 🌟 가방 창 토글 상태
         private bool _isInventoryOpen;
         public bool IsInventoryOpen
         {
@@ -152,32 +150,22 @@ namespace TamaPoke.Models
         public int MonsterBalls
         {
             get => _monsterBalls;
-            set
-            {
-                _monsterBalls = value;
-                OnPropertyChanged(nameof(MonsterBalls));
-            }
+            set { _monsterBalls = value; OnPropertyChanged(nameof(MonsterBalls)); }
         }
 
         private int _potions;
         public int Potions
         {
             get => _potions;
-            set
-            {
-                _potions = value;
-                OnPropertyChanged(nameof(Potions));
-            }
+            set { _potions = value; OnPropertyChanged(nameof(Potions)); }
         }
 
-        // 🌟 대기 화면(IdleView)의 열려있는 하단 메뉴들을 깔끔하게 닫아주는 함수
         public void ResetIdleMenus()
         {
             IsInventoryOpen = false;
             IsFeedMenuOpen = false;
             IsPlayMenuOpen = false;
         }
-
         #endregion
 
         #region 포켓몬 정보 및 상태 속성 (Pokemon Info & Status)
@@ -211,10 +199,26 @@ namespace TamaPoke.Models
         public bool IsSleeping { get => _isSleeping; set { if (SetProperty(ref _isSleeping, value)) { if (value) { PosX = 0; PosY = 0; FlipX = 1; TimeOfDay = 3; } else UpdateDayNightCycle(); CheckStateAndAnimate(); OnPropertyChanged(nameof(CanFarewellNow)); OnPropertyChanged(nameof(CanRunawayNow)); OnPropertyChanged(nameof(CanEvolveNow)); } } }
 
         [JsonIgnore] public bool IsEgg => SpeciesId < 0;
-        [JsonIgnore] public int Level => 1 + (AgeMinutes / MINUTES_PER_LEVEL);
-        [JsonIgnore] public int LowestStat => Math.Min(Math.Min(Fullness, Joy), Math.Min(Energy, Hygiene));
 
-        [JsonIgnore] public string Name => IsEgg ? "알" : PokemonDex.GetName(SpeciesId) + (IsShiny ? " ✨" : "");
+        // 🌟 수정됨: 외부 파티 교체 로직에서 덮어씌울 수 있도록 set 개방
+        private string? _overrideName;
+        [JsonIgnore]
+        public string Name
+        {
+            get => _overrideName ?? (IsEgg ? "알" : PokemonDex.GetName(SpeciesId) + (IsShiny ? " ✨" : ""));
+            set { _overrideName = value; OnPropertyChanged(nameof(Name)); }
+        }
+
+        // 🌟 수정됨: 외부 파티 교체 로직에서 덮어씌울 수 있도록 set 개방
+        private int? _overrideLevel;
+        [JsonIgnore]
+        public int Level
+        {
+            get => _overrideLevel ?? (1 + (AgeMinutes / MINUTES_PER_LEVEL));
+            set { _overrideLevel = value; OnPropertyChanged(nameof(Level)); OnPropertyChanged(nameof(LevelDisplay)); }
+        }
+
+        [JsonIgnore] public int LowestStat => Math.Min(Math.Min(Fullness, Joy), Math.Min(Energy, Hygiene));
         [JsonIgnore] public bool IsFinalEvolution => !IsEgg && (PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == SpeciesId)?.EvolveTo == 0);
         [JsonIgnore] public string LevelDisplay => IsEgg ? "" : $"Lv.{Level}";
 
@@ -255,7 +259,6 @@ namespace TamaPoke.Models
         }
 
         [JsonIgnore] public int Biome => IsEgg ? 0 : GetBiomeFromType();
-
         [JsonIgnore] public Brush SkyColor => (Brush)new BrushConverter().ConvertFrom(TimeOfDay == 0 ? "#E29181" : TimeOfDay == 1 ? "#B5DBE8" : TimeOfDay == 2 ? "#DC8457" : "#151C35")!;
         [JsonIgnore] public Brush GrassColor => (Brush)new BrushConverter().ConvertFrom(IsNight ? "#161C30" : Biome == 0 ? "#7EC07F" : Biome == 1 ? "#DCCA94" : Biome == 2 ? "#4F8A55" : Biome == 3 ? "#8A5544" : Biome == 4 ? "#A8906A" : "#E6EEF5")!;
         [JsonIgnore] public Brush GroundColor => (Brush)new BrushConverter().ConvertFrom(IsNight ? "#222638" : "#F2EFE1")!;
@@ -290,7 +293,6 @@ namespace TamaPoke.Models
             }
         }
         #endregion
-
 
         #region 애니메이션 및 메인 UI 상태 (Animations & UI)
         private BitmapSource[]? _animationFrames;
@@ -420,7 +422,6 @@ namespace TamaPoke.Models
                 {
                     OnPropertyChanged(nameof(IsAliveAndNotEgg));
                     OnPropertyChanged(nameof(MoodText));
-                    // 🌟 도감이 열릴 때 대기 화면 메뉴 닫기
                     if (value) ResetIdleMenus();
                 }
             }
@@ -441,7 +442,6 @@ namespace TamaPoke.Models
                 {
                     OnPropertyChanged(nameof(IsAliveAndNotEgg));
                     OnPropertyChanged(nameof(MoodText));
-                    // 🌟 프로필이 열릴 때 대기 화면 메뉴 닫기
                     if (value) ResetIdleMenus();
                 }
             }
@@ -449,7 +449,7 @@ namespace TamaPoke.Models
 
         private int _profilePage = 0;
         public int ProfilePage { get => _profilePage; set { SetProperty(ref _profilePage, value); OnPropertyChanged(nameof(ProfilePageDisplay)); } }
-        [JsonIgnore] public string ProfilePageDisplay => $"페이지 {ProfilePage + 1} / 4";
+        [JsonIgnore] public string ProfilePageDisplay => $"페이지 {ProfilePage + 1} / 5";
 
         private string _currentFoodIcon = "🍎";
         public string CurrentFoodIcon { get => _currentFoodIcon; set => SetProperty(ref _currentFoodIcon, value); }
@@ -574,7 +574,6 @@ namespace TamaPoke.Models
         #region 초기화 및 게임 루프 (Init & Main Loop)
         public void InitializeAfterLoad()
         {
-            // 🌟 [수정됨] IsPartyOpen = false; 를 추가하여 게임 시작 시 파티 창이 무조건 닫혀있도록 합니다.
             IsPartyOpen = false;
 
             IsProfileOpen = false; IsFeedMenuOpen = false; IsPlayMenuOpen = false; IsDexOpen = false; IsBattleOpen = false;
@@ -766,13 +765,9 @@ namespace TamaPoke.Models
 
         public void NextProfilePage() { ProfilePage = (ProfilePage + 1) % 5; }
         public void PrevProfilePage() { ProfilePage = (ProfilePage + 4) % 5; }
-
-        // 🌟 디버그 모드에서만 화면(UI) 요소를 보여주기 위한 전용 스위치입니다.
-
         #endregion
 
         #region 내부 헬퍼 (Helpers)
-
         public Action? RequestCatchAnimation;
         private void CheckMedals()
         {
@@ -804,7 +799,8 @@ namespace TamaPoke.Models
             return ANIM_IDLE;
         }
 
-        private void CheckStateAndAnimate()
+        // 🌟 수정됨: 외부(파티 UI 등)에서 애니메이션을 갱신할 수 있도록 public 선언
+        public void CheckStateAndAnimate()
         {
             OnPropertyChanged(nameof(MoodText));
             OnPropertyChanged(nameof(CanEvolveNow));
@@ -901,7 +897,6 @@ namespace TamaPoke.Models
                     var pet = JsonSerializer.Deserialize<PokemonState>(File.ReadAllText(SaveFilePath));
                     if (pet != null)
                     {
-                        // 정상적으로 불러왔다면 초기화 진행
                         pet.InitializeAfterLoad();
                         return pet;
                     }
@@ -909,10 +904,7 @@ namespace TamaPoke.Models
                 catch { }
             }
 
-            // 세이브 파일이 없어서 처음부터 새로 시작하는 경우
             PokemonState newPet = new PokemonState();
-
-            // 🌟 새 게임을 시작하는 유저에게 최초 1회 아이템(몬스터볼, 상처약)을 지급합니다!
             newPet.MonsterBalls = 5;
             newPet.Potions = 3;
 
@@ -928,9 +920,9 @@ namespace TamaPoke.Models
             get
             {
 #if DEBUG
-                return true;  // 디버그 모드일 때는 true를 반환하여 화면에 보여줍니다.
+                return true;
 #else
-                return false; // 릴리즈(배포) 모드일 때는 false를 반환하여 완벽하게 숨깁니다.
+                return false;
 #endif
             }
         }
@@ -943,8 +935,6 @@ namespace TamaPoke.Models
             AgeMinutes += MINUTES_PER_LEVEL;
             IsEvolutionPostponed = false;
 
-            // 🌟 [추가됨] 테스트용 데미지(공격력) 증가 로직
-            // 버튼을 누를 때마다 TrAtk가 10씩 오르며, 최대 100까지만 증가합니다.
             TrAtk = Math.Min(100, TrAtk + 10);
 
             OnPropertyChanged(nameof(Level));

@@ -6,7 +6,6 @@
              mc:Ignorable="d"
              Background="Transparent">
 
-    <!-- 🌟 이곳에 리소스(도구)를 추가해 줍니다! -->
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
@@ -22,14 +21,14 @@
             <!-- 1. 상단 타이틀 영역 -->
             <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,5,0,0">
                 <TextBlock Text="파티 멤버" FontSize="18" FontWeight="Bold" FontFamily="Malgun Gothic" HorizontalAlignment="Center"/>
-                <TextBlock Text="{Binding Party.Count, StringFormat='CHOSEN {0}/6'}" FontSize="9" Foreground="#A9A9A9" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                <TextBlock Text="{Binding Party.Count, StringFormat='파티원 {0}/6마리'}" FontSize="9" Foreground="#A9A9A9" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                 <TextBlock Text="파티가 꽉 찼습니다! 내보낼 멤버를 클릭하세요." 
                            Foreground="#E53935" FontSize="11" FontWeight="Bold" FontFamily="Malgun Gothic" 
                            HorizontalAlignment="Center" Margin="0,5,0,0"
                            Visibility="{Binding IsSwapMode, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
 
-            <!-- 2. 파티 멤버 6칸 그리드 (중복 태그 수정됨) -->
+            <!-- 2. 파티 멤버 6칸 그리드 -->
             <ItemsControl Grid.Row="1" ItemsSource="{Binding Party}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,5,0,5">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -39,31 +38,54 @@
 
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <!-- 🌟 하나로 깔끔하게 정리된 카드 Border 태그 -->
-                        <Border BorderBrush="#333333" BorderThickness="1" CornerRadius="6" Background="White" 
-                                Margin="3" Width="125" Height="55" Cursor="Hand" 
-                                MouseLeftButtonUp="PartyMemberCard_Click">
+                        <!-- 🌟 개선됨: 선택 상태(IsSelected)에 따라 카드 전체의 테두리와 배경색이 예쁘게 변합니다! -->
+                        <Border CornerRadius="6" Margin="3" Width="125" Height="55" Cursor="Hand" MouseLeftButtonDown="PartyMemberCard_Click">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="#DDDDDD"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="Background" Value="White"/>
+                                    <Style.Triggers>
+                                        <!-- 포켓몬이 선택되었을 때의 화려한 디자인 -->
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BorderBrush" Value="#E53935"/>
+                                            <!-- 강렬한 빨간 테두리 -->
+                                            <Setter Property="BorderThickness" Value="2"/>
+                                            <Setter Property="Background" Value="#FFF0F0"/>
+                                            <!-- 은은한 붉은 배경 -->
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="45"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
+                                <!-- 포켓몬 이미지 배경 및 이미지 -->
                                 <Border Grid.Column="0" Background="#EEEEEE" CornerRadius="4" Margin="3"/>
                                 <Image Grid.Column="0" Source="{Binding SpriteImage}" Width="36" Height="36" 
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        RenderOptions.BitmapScalingMode="NearestNeighbor" />
 
+                                <!-- 포켓몬 정보 텍스트 -->
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="3,0,0,0">
                                     <TextBlock Text="{Binding Name}" FontFamily="Consolas" FontWeight="Bold" FontSize="10" TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{Binding LevelDisplay}" FontFamily="Consolas" FontSize="10" Margin="0,0,0,2"/>
-                                    <TextBlock Text="{Binding Type1Display}" FontFamily="Consolas" FontSize="8" Foreground="#E53935" FontWeight="Bold"/>
-                                    <TextBlock Text="{Binding Type2Display}" FontFamily="Consolas" FontSize="8" Foreground="#1E88E5" FontWeight="Bold"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Type1Display}" FontFamily="Consolas" FontSize="8" Foreground="#E53935" FontWeight="Bold" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding Type2Display}" FontFamily="Consolas" FontSize="8" Foreground="#1E88E5" FontWeight="Bold"/>
+                                    </StackPanel>
                                 </StackPanel>
 
-                                <Ellipse Grid.Column="1" Fill="#66BB6A" Width="8" Height="8" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0">
-                                    <Ellipse.Style>
-                                        <Style TargetType="Ellipse">
+                                <!-- 🌟 개선됨: 초록색 점 대신 귀엽고 명확한 '선택' 뱃지를 달아주었습니다. -->
+                                <Border Grid.Column="1" Background="#E53935" CornerRadius="4" Padding="4,2" 
+                                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
                                             <Setter Property="Visibility" Value="Hidden"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
@@ -71,8 +93,9 @@
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
-                                    </Ellipse.Style>
-                                </Ellipse>
+                                    </Border.Style>
+                                    <TextBlock Text="선택" FontSize="8" FontWeight="Bold" Foreground="White" FontFamily="Malgun Gothic"/>
+                                </Border>
                             </Grid>
                         </Border>
                     </DataTemplate>
@@ -81,7 +104,6 @@
 
             <!-- 3. 하단 버튼 영역 -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-
                 <!-- 닫기 버튼 -->
                 <Button Width="70" Height="28" Margin="0,0,8,0" Click="CloseButton_Click">
                     <Button.Template>
@@ -93,20 +115,22 @@
                     </Button.Template>
                 </Button>
 
-                <!-- 🌟 복구됨: 상태에 따라 변하는 액션 버튼 -->
-                <Button Width="70" Height="28" Margin="8,0,0,0" Click="ActionButton_Click">
+                <!-- 상태에 따라 변하는 액션 버튼 -->
+                <Button Width="70" Height="28" Margin="8,0,0,0" Click="ChangeMainButton_Click">
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
-                                        <Border x:Name="ActionBorder" Background="#66BB6A" BorderBrush="Black" BorderThickness="1" CornerRadius="6">
-                                            <TextBlock x:Name="ActionText" Text="배틀 출전" FontFamily="Malgun Gothic" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Border x:Name="ActionBorder" Background="#1E88E5" BorderBrush="Black" BorderThickness="1" CornerRadius="6">
+                                            <!-- 텍스트를 '메인 교체'로 변경했습니다 -->
+                                            <TextBlock x:Name="ActionText" Text="메인 교체" FontFamily="Malgun Gothic" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
+                                            <!-- 교체 모드일 때의 스타일은 유지합니다 -->
                                             <DataTrigger Binding="{Binding IsSwapMode}" Value="True">
                                                 <Setter TargetName="ActionBorder" Property="Background" Value="#E53935"/>
-                                                <Setter TargetName="ActionText" Property="Text" Value="교체 취소"/>
+                                                <Setter TargetName="ActionText" Property="Text" Value="순서 교체"/>
                                             </DataTrigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -115,7 +139,6 @@
                         </Style>
                     </Button.Style>
                 </Button>
-
             </StackPanel>
         </Grid>
     </Border>
