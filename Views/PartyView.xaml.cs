@@ -98,39 +98,7 @@ namespace TamaPoke.Views
             }
 
             // 3. 현재 IdleView에 있는 '메인 포켓몬'의 스탯을 백업하여 새로운 파티 멤버 카드로 만듭니다.
-            var oldMainPokemon = new PartyMember
-            {
-                SpeciesId = state.SpeciesId,
-                Name = state.Name,
-                Level = state.Level,
-                TrAtk = state.TrAtk,
-                TrDef = state.TrDef,
-                TrSpeed = state.TrSpeed,
-                // 💡 필요하다면 체력(Hp), 스킬(Skills), 개체값(Genes) 등도 여기에 추가로 대입해 줍니다.
-            };
-
-            // 4. 선택된 파티 멤버의 정보를 '메인 포켓몬' 상태(PokemonState)로 덮어씌웁니다.
-            state.SpeciesId = selectedMember.SpeciesId;
-            state.Name = selectedMember.Name;
-            state.Level = selectedMember.Level;
-            state.TrAtk = selectedMember.TrAtk;
-            state.TrDef = selectedMember.TrDef;
-            state.TrSpeed = selectedMember.TrSpeed;
-            // 💡 위와 마찬가지로 스킬이나 체력 속성도 넘겨줍니다.
-
-            // 5. 파티 리스트 갱신: 선택된 멤버를 지우고, 그 자리에 백업해둔 예전 메인 포켓몬을 넣습니다.
-            int index = state.Party.IndexOf(selectedMember);
-            state.Party.Remove(selectedMember);
-            state.Party.Insert(index, oldMainPokemon);
-
-            // 6. 상태 초기화 및 UI 갱신
-            oldMainPokemon.IsSelected = false; // 파티에 들어간 예전 녀석의 선택 상태 해제
-            state.IsPartyOpen = false;         // 파티 창 닫기
-
-            // 메인 화면(IdleView)의 이미지가 즉시 바뀌도록 갱신 함수를 호출합니다.
-            state.UpdateBackgroundImage();
-            state.CheckStateAndAnimate();
-            state.Save(); // 교체된 상태를 세이브 파일에 즉시 저장합니다.
+            state.SwapMainWithParty(selectedMember);
         }
     }
 }

@@ -174,7 +174,7 @@ namespace TamaPoke.Models
             // 4. 메인 화면 속성 덮어쓰기
             this.SpeciesId = newLeader.SpeciesId;
             this.Name = newLeader.Name;
-            this.Level = newLeader.Level;
+            this._overrideLevel = null;
 
             // 시간 및 컨디션 데이터 복원
             this.AgeMinutes = newLeader.AgeMinutes;
