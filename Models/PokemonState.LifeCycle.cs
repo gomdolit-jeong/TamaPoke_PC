@@ -311,7 +311,24 @@ namespace TamaPoke.Models
         public void StartFarewell()
         {
             if (IsEgg || Ceremony != 0) return;
-            ResetPosition(); // 🌟 핵심: 인사를 시작하기 전에 중앙으로 이동시킵니다!
+            ResetPosition();
+
+            // 🌟 [핵심 수정] 파티 전체를 지우지 않고, 현재 메인에 있는 포켓몬과 일치하는 녀석을 파티에서 찾아 제거합니다.
+            if (Party != null && Party.Count > 0)
+            {
+                // 만약 파티에 1마리만 남아있었다면 깔끔하게 비웁니다.
+                if (Party.Count == 1)
+                {
+                    Party.Clear();
+                }
+                else
+                {
+                    // 여러 마리가 있다면 현재 메인 포켓몬의 정보와 일치하는 멤버를 찾아 제거합니다.
+                    var target = Party.FirstOrDefault(p => p.SpeciesId == this.SpeciesId);
+                    if (target != null) Party.Remove(target);
+                }
+            }
+
             LastEnd = 1;
             Ceremony = 1;
             ExecuteCeremonyTimer();
@@ -321,16 +338,45 @@ namespace TamaPoke.Models
         {
             if (IsEgg || Ceremony != 0) return;
             ResetPosition(); // 🌟 가출할 때도 중앙에서 시작!
-            /* 도망은 파티에 포함되지 않으므로 RetireToParty()를 호출하지 않습니다 */
+
+            if (Party != null && Party.Count > 0)
+            {
+                if (Party.Count == 1)
+                {
+                    Party.Clear();
+                }
+                else
+                {
+                    var target = Party.FirstOrDefault(p => p.SpeciesId == this.SpeciesId);
+                    if (target != null) Party.Remove(target);
+                }
+            }
+
             LastEnd = 2;
             Ceremony = 2;
             ExecuteCeremonyTimer();
         }
 
+        // 🌟 방생(Release) 시 파티에서 해당 포켓몬만 깔끔하게 제거
         public void StartRelease()
         {
             if (IsEgg || Ceremony != 0) return;
-            ResetPosition(); // 🌟 방생할 때도 중앙에서 시작!
+            ResetPosition();
+
+            // 🌟 [핵심 수정] 방생할 때도 파티 전체가 아니라 해당 포켓몬만 안전하게 제거합니다.
+            if (Party != null && Party.Count > 0)
+            {
+                if (Party.Count == 1)
+                {
+                    Party.Clear();
+                }
+                else
+                {
+                    var target = Party.FirstOrDefault(p => p.SpeciesId == this.SpeciesId);
+                    if (target != null) Party.Remove(target);
+                }
+            }
+
             LastEnd = 3;
             Ceremony = 3;
             ExecuteCeremonyTimer();

@@ -713,12 +713,12 @@ namespace TamaPoke.Models
                 if (Party != null && Party.Count >= 6) 
                 {
                     // 🌟 [핵심] 파티가 꽉 찼다면 교체 모드로 파티 창을 엽니다!
-                    _pendingRetiree = newMember; // 잡은 녀석을 임시 대기열에 올립니다.[cite: 4]
-                    IsSwapMode = true;           // 교체 모드 ON[cite: 4]
+                    _pendingRetiree = newMember; // 잡은 녀석을 임시 대기열에 올립니다.
+                    IsSwapMode = true;           // 교체 모드 ON
 
-                    SyncMainToLeader();          // UI 업데이트 전 동기화[cite: 4]
-                    UpdatePartyFirstFlags();     //[cite: 4]
-                    IsPartyOpen = true;          // 파티 창 강제 오픈![cite: 4]
+                    SyncMainToLeader();          // UI 업데이트 전 동기화
+                    UpdatePartyFirstFlags();     //
+                    IsPartyOpen = true;          // 파티 창 강제 오픈!
 
                     BattleMessage = $"{EnemyName}을(를) 잡았지만 파티가 꽉 찼다!\n바꿀 포켓몬을 선택해 주세요."; 
                     await Task.Delay(2500); 
