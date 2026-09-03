@@ -685,44 +685,61 @@ namespace TamaPoke.Models
 
             if (isCaught)
             {
-                UnlockPokemonInPokedex(EnemySpeciesId);
+                UnlockPokemonInPokedex(EnemySpeciesId); 
 
-                if (Party != null && Party.Count >= 6)
+                // 🌟 새로 잡은 포켓몬 데이터를 미리 만들어 둡니다.
+                var newMember = new PartyMember
                 {
-                    // TODO: 교체 창 또는 놓아주기 선택 팝업을 띄우는 플래그 활성화 (예: IsPartyFullChoiceOpen = true;)
-                    BattleMessage = $"{EnemyName}을(를) 잡았지만, 파티가 꽉 찼다!\n(교체 또는 놓아주기 구현 필요)";
-                    await Task.Delay(2500);
-                }
-                else if (Party != null)
+                    SpeciesId = EnemySpeciesId,
+                    
+                    Name = EnemyName,
+                    
+                    Level = EnemyLevel,
+                    
+                    AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL,
+                    IsShiny = false,
+                    
+                    TrAtk = 0,
+                    
+                    TrDef = 0,
+                    
+                    TrSpeed = 0,
+                    
+                    Skills = (int[])EnemySkills.Clone(),
+                    
+                    Genes = new PokemonGene()
+                };
+
+                if (Party != null && Party.Count >= 6) 
                 {
-                    // 3. 자리가 널널한 경우 기존대로 바로 합류
-                    var newMember = new PartyMember
-                    {
-                        SpeciesId = EnemySpeciesId,
-                        Name = EnemyName,
-                        Level = EnemyLevel,
-                        IsShiny = false,
-                        TrAtk = 0,
-                        TrDef = 0,
-                        TrSpeed = 0,
-                        Skills = (int[])EnemySkills.Clone(),
-                        Genes = new PokemonGene()
-                    };
+                    // 🌟 [핵심] 파티가 꽉 찼다면 교체 모드로 파티 창을 엽니다!
+                    _pendingRetiree = newMember; // 잡은 녀석을 임시 대기열에 올립니다.[cite: 4]
+                    IsSwapMode = true;           // 교체 모드 ON[cite: 4]
 
-                    Party.Add(newMember);
-                    BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다.";
-                    await Task.Delay(2000);
+                    SyncMainToLeader();          // UI 업데이트 전 동기화[cite: 4]
+                    UpdatePartyFirstFlags();     //[cite: 4]
+                    IsPartyOpen = true;          // 파티 창 강제 오픈![cite: 4]
+
+                    BattleMessage = $"{EnemyName}을(를) 잡았지만 파티가 꽉 찼다!\n바꿀 포켓몬을 선택해 주세요."; 
+                    await Task.Delay(2500); 
+                }
+                else if (Party != null) 
+                {
+                    // 🌟 자리가 널널하면 기존대로 바로 합류
+                    Party.Add(newMember); 
+                    BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다."; 
+                    await Task.Delay(2000); 
                 }
 
-                IsBattleOpen = false; // 배틀 종료
+                IsBattleOpen = false; // 배틀 UI는 닫습니다.
             }
             else
             {
-                IsEnemyVisible = true;
-                BattleMessage = "아아! 포켓몬이 볼에서 빠져나왔다!\n어떻게 할까?";
-                await Task.Delay(2000);
+                IsEnemyVisible = true; 
+                BattleMessage = "아아! 포켓몬이 볼에서 빠져나왔다!\n어떻게 할까?"; 
+                await Task.Delay(2000); 
 
-                IsCatchOffered = true;
+                IsCatchOffered = true; 
             }
         }
         #endregion

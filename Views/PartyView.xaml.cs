@@ -6,6 +6,8 @@ namespace TamaPoke.Views
 {
     public partial class PartyView : UserControl
     {
+        private PartyMember? _memberToSwap;
+
         public PartyView()
         {
             InitializeComponent();
@@ -14,58 +16,83 @@ namespace TamaPoke.Views
         // 🌟 카드를 클릭했을 때
         private void PartyMemberCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            // 💡 디버깅을 위해 이 줄에 중단점(Break point, F9)을 걸어보세요!
             if (sender is Border border && border.DataContext is PartyMember clickedMember)
             {
                 var state = this.DataContext as PokemonState;
                 if (state == null || state.Party == null) return;
 
-                if (state.IsSwapMode)
+                // 🌟 핵심: 교체 모드이든 아니든, 카드를 누르면 무조건 '선택'만 되도록 통일합니다!
+                // 기존에 있던 IsSwapMode일 때 ExecuteSwap을 해버리던 로직을 완전히 삭제했습니다.
+
+                // 1. 파티의 모든 멤버의 선택 상태를 해제합니다.
+                foreach (var member in state.Party)
                 {
-                    state.ExecuteSwap(clickedMember);
+                    member.IsSelected = false;
                 }
-                else
-                {
-                    foreach (var member in state.Party)
-                    {
-                        member.IsSelected = false;
-                    }
-                    clickedMember.IsSelected = true;
-                }
+
+                // 2. 방금 클릭한 멤버만 '선택됨' 상태로 바꿉니다. (이때 빨간 테두리가 나타납니다!)
+                clickedMember.IsSelected = true;
             }
+        }
+
+        private void ChangeMainButton_Click(object sender, RoutedEventArgs e)
+        {
+            var state = this.DataContext as PokemonState;
+            if (state == null || state.Party == null) return;
+
+            var selectedMember = state.Party.FirstOrDefault(p => p.IsSelected);
+            if (selectedMember == null) return;
+
+            if (state.Party.IndexOf(selectedMember) == 0) return; // 대표 포켓몬 방어
+
+            if (state.IsSwapMode)
+            {
+                // 🌟 수정: 윈도우 MessageBox 대신 인게임 팝업창을 엽니다!
+                _memberToSwap = selectedMember;
+                ConfirmPopupText.Text = $"{selectedMember.Name} 포켓몬과\n교체하시겠습니까?";
+                SwapConfirmOverlay.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                state.SwapMainWithParty(selectedMember);
+            }
+        }
+        private void ConfirmYes_Click(object sender, RoutedEventArgs e)
+        {
+            var state = this.DataContext as PokemonState;
+            if (state != null && _memberToSwap != null)
+            {
+                state.ExecuteSwap(_memberToSwap);
+                state.IsPartyOpen = false; // 완료 후 파티 창 닫기
+            }
+
+            SwapConfirmOverlay.Visibility = Visibility.Collapsed; // 팝업 닫기
+            _memberToSwap = null;
+        }
+
+        // 🌟 추가: 인게임 팝업에서 '아니요'를 눌렀을 때
+        private void ConfirmNo_Click(object sender, RoutedEventArgs e)
+        {
+            SwapConfirmOverlay.Visibility = Visibility.Collapsed; // 팝업만 조용히 닫기
+            _memberToSwap = null;
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            if (this.DataContext is PokemonState state)
-            {
-                if (state.IsSwapMode) state.CancelSwap();
-
-                // 창을 닫을 때 선택 상태를 초기화해 줍니다.
-                foreach (var member in state.Party) member.IsSelected = false;
-
-                state.CloseParty();
-            }
-        }
-
-        private void ChangeMainButton_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            // 1. 현재 데이터 컨텍스트(PokemonState)를 가져옵니다.
             var state = this.DataContext as PokemonState;
-            if (state == null || state.Party == null) return;
 
-            // 2. 파티에서 IsSelected가 true인 멤버를 찾습니다. (단일 선택이므로 1개만 나옵니다)
-            var selectedMember = state.Party.FirstOrDefault(p => p.IsSelected);
-
-            if (selectedMember == null)
+            // 🌟 만약 포켓몬을 잡아서 교체 창이 떴는데, 안 바꾸고 그냥 닫기를 누른다면?
+            if (state != null && state.IsSwapMode)
             {
-                // 선택된 포켓몬이 없다면 그냥 함수를 종료하거나 메시지를 띄웁니다.
-                System.Windows.MessageBox.Show("교체할 파티 멤버를 먼저 선택해 주세요!", "알림");
-                return;
+                state.CancelSwap(); // 대기 중인 새 포켓몬을 포기(방생)합니다!
+                MessageBox.Show("새로 잡은 포켓몬을 자연으로 돌려보냈습니다.", "방생");
             }
 
-            // 3. 현재 IdleView에 있는 '메인 포켓몬'의 스탯을 백업하여 새로운 파티 멤버 카드로 만듭니다.
-            state.SwapMainWithParty(selectedMember);
+            // 창 닫기 로직 (ViewModel 바인딩을 사용 중이시라면 state.IsPartyOpen = false; 만 하셔도 됩니다)
+            if (state != null) state.IsPartyOpen = false;
+
+            // 만약 Window라면 this.Close(); 를 유지해 주세요.
+            // this.Close(); 
         }
     }
 }

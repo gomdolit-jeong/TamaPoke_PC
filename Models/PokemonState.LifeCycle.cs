@@ -274,9 +274,15 @@ namespace TamaPoke.Models
         }
 
         // 🌟 새 게임(알 상태)을 준비하는 함수
+        // 🌟 새 게임(알 상태)을 준비하는 함수
         public void PrepareNewEgg()
         {
             SpeciesId = -1; EggTaps = 0; _ageSeconds = 0; AgeMinutes = 0;
+
+            // 🌟 핵심 수정: 예전 포켓몬의 이름과 레벨 정보가 남아있지 않도록 깨끗하게 지워줍니다!
+            _overrideName = null;
+            _overrideLevel = null;
+
             Fullness = 80; Joy = 80; Energy = 80; Hygiene = 100;
             Poops = 0; Weight = 10; CareMistakes = 0; Bond = 0; NeglectTicks = 0;
             IsSleeping = false; IsShiny = false; Genes = new PokemonGene(); BerryKnown = false;
@@ -286,7 +292,7 @@ namespace TamaPoke.Models
             IsBallGameOpen = false; IsCatchGameOpen = false; IsMemoGameOpen = false; IsCleanGameOpen = false;
             IsBattleOpen = false; IsAttackMenuOpen = false; IsBattleResolved = false; IsCatchOffered = false;
 
-            // 🌟 추가됨: 파티 창과 교체 모드 상태를 강제로 닫아 IdleView로 돌아가게 합니다.
+            // 파티 창과 교체 모드 상태를 강제로 닫아 IdleView로 돌아가게 합니다.
             IsPartyOpen = false;
             IsSwapMode = false;
             _pendingRetiree = null; // 대기 중인 은퇴 포켓몬도 비워줍니다.
@@ -302,9 +308,33 @@ namespace TamaPoke.Models
         }
 
         // 🌟 이별 및 작별 관련 타이머 이벤트
-        public void StartFarewell() { if (IsEgg || Ceremony != 0) return; RetireToParty(); LastEnd = 1; Ceremony = 1; ExecuteCeremonyTimer(); }
-        public void StartRunaway() { if (IsEgg || Ceremony != 0) return; /* 도망은 파티에 포함되지 않으므로 RetireToParty()를 호출하지 않습니다 */ LastEnd = 2; Ceremony = 2; ExecuteCeremonyTimer(); }
-        public void StartRelease() { if (IsEgg || Ceremony != 0) return; RetireToParty(); LastEnd = 3; Ceremony = 3; ExecuteCeremonyTimer(); }
+        public void StartFarewell()
+        {
+            if (IsEgg || Ceremony != 0) return;
+            ResetPosition(); // 🌟 핵심: 인사를 시작하기 전에 중앙으로 이동시킵니다!
+            LastEnd = 1;
+            Ceremony = 1;
+            ExecuteCeremonyTimer();
+        }
+
+        public void StartRunaway()
+        {
+            if (IsEgg || Ceremony != 0) return;
+            ResetPosition(); // 🌟 가출할 때도 중앙에서 시작!
+            /* 도망은 파티에 포함되지 않으므로 RetireToParty()를 호출하지 않습니다 */
+            LastEnd = 2;
+            Ceremony = 2;
+            ExecuteCeremonyTimer();
+        }
+
+        public void StartRelease()
+        {
+            if (IsEgg || Ceremony != 0) return;
+            ResetPosition(); // 🌟 방생할 때도 중앙에서 시작!
+            LastEnd = 3;
+            Ceremony = 3;
+            ExecuteCeremonyTimer();
+        }
 
         private void ExecuteCeremonyTimer()
         {

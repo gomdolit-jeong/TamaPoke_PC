@@ -7,7 +7,7 @@ namespace TamaPoke.Utils.Service
 {
     public static class SoundManager
     {
-        // 🌟 오리지널 C++ audio.cpp의 주파수(Hz)와 시간(ms) 배열[cite: 10]
+        // 🌟 오리지널 C++ audio.cpp의 주파수(Hz)와 시간(ms) 배열
         public static readonly (int f, int ms)[] N_TAP = { (880, 35) };
         public static readonly (int f, int ms)[] N_EAT = { (660, 45), (0, 12), (660, 45) };
         public static readonly (int f, int ms)[] N_PLAY = { (784, 45), (988, 60) };
@@ -66,7 +66,7 @@ namespace TamaPoke.Utils.Service
 
                     if (note.f == 0)
                     {
-                        // 주파수가 0이면 무음(0) 기록[cite: 10]
+                        // 주파수가 0이면 무음(0) 기록
                         for (int i = 0; i < totalSamples; i++)
                         {
                             bw.Write((short)0);
@@ -75,7 +75,7 @@ namespace TamaPoke.Utils.Service
                     }
                     else
                     {
-                        // 사각파(Square Wave) 주기 계산[cite: 10]
+                        // 사각파(Square Wave) 주기 계산
                         int halfPeriod = sampleRate / note.f / 2;
 
                         for (int i = 0; i < totalSamples; i++)
@@ -83,7 +83,7 @@ namespace TamaPoke.Utils.Service
                             // 절반은 양수, 절반은 음수로 진동하여 8비트 레트로 소리를 만듭니다.
                             short s = i / halfPeriod % 2 == 0 ? amplitude : (short)-amplitude;
 
-                            // 🌟 오리지널 C++ 소스의 안티 클릭(Anti-click) 부드러운 페이드 효과 적용[cite: 10]
+                            // 🌟 오리지널 C++ 소스의 안티 클릭(Anti-click) 부드러운 페이드 효과 적용
                             if (i < 64)
                                 s = (short)(s * i / 64);
                             else if (i > totalSamples - 96)

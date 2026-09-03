@@ -477,8 +477,14 @@ namespace TamaPoke.Models
             {
                 if (SetProperty(ref _ageMinutes, value))
                 {
-                    OnPropertyChanged(nameof(Level)); OnPropertyChanged(nameof(LevelDisplay)); OnPropertyChanged(nameof(CanFarewellNow)); OnPropertyChanged(nameof(CanEvolveNow));
-                    OnPropertyChanged(nameof(EvolveProgressText)); OnPropertyChanged(nameof(EvolveProgressPercent));
+                    OnPropertyChanged(nameof(Level));
+                    OnPropertyChanged(nameof(LevelDisplay));
+                    OnPropertyChanged(nameof(CanFarewellNow));
+                    OnPropertyChanged(nameof(CanShowFarewellPrompt)); // 🌟 핵심: 작별 창 즉시 띄우기 알림 추가!
+                    OnPropertyChanged(nameof(CanEvolveNow));
+                    OnPropertyChanged(nameof(CanShowEvolvePrompt));   // 🌟 덤: 진화 창도 즉시 뜨도록 알림 추가!
+                    OnPropertyChanged(nameof(EvolveProgressText));
+                    OnPropertyChanged(nameof(EvolveProgressPercent));
                     CheckMedals();
                 }
             }
@@ -522,7 +528,8 @@ namespace TamaPoke.Models
             }
         }
 
-        [JsonIgnore] public bool CanFarewellNow => !IsEgg && !IsSleeping && Ceremony == 0 && IsFinalEvolution && AgeMinutes >= FAREWELL_AGE_MIN && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
+        // 🌟 수정됨: 최종 진화 형태가 아니어도 수명이 다하면 작별할 수 있도록 IsFinalEvolution 조건을 제거했습니다.
+        [JsonIgnore] public bool CanFarewellNow => !IsEgg && !IsSleeping && Ceremony == 0 && AgeMinutes >= FAREWELL_AGE_MIN && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
         [JsonIgnore] public bool CanRunawayNow => !IsEgg && !IsSleeping && Ceremony == 0 && NeglectTicks >= RUNAWAY_TICKS && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
 
         [JsonIgnore]
@@ -583,6 +590,8 @@ namespace TamaPoke.Models
             if (Ceremony == 4) Ceremony = 0;
             if (UnlockedPokemon == null) UnlockedPokemon = new List<int>();
             if (UnlockedPokemon.Count == 0 && SpeciesId > 0) { UnlockedPokemon.Add(SpeciesId); RegisteredCount = UnlockedPokemon.Count; }
+
+            IsFarewellPostponed = false;
 
             if (DexTable.Count == 0)
             {
@@ -666,6 +675,13 @@ namespace TamaPoke.Models
 
             if (_ageSeconds % 60 == 0)
             {
+                if (AgeMinutes % MINUTES_PER_LEVEL == 0)
+                {
+                    IsEvolutionPostponed = false;
+                    // 🌟 [핵심 2] 레벨이 오를 때마다 작별 보류도 함께 초기화!
+                    IsFarewellPostponed = false;
+                }
+
                 AgeMinutes++;
                 if (AgeMinutes % MINUTES_PER_LEVEL == 0) IsEvolutionPostponed = false;
                 if (LowestStat >= 40) { _goodTicks++; if (_goodTicks >= 720) { _goodTicks = 0; if (TrDef < 100) TrDef++; } } else { _goodTicks = 0; }
@@ -809,6 +825,9 @@ namespace TamaPoke.Models
         {
             OnPropertyChanged(nameof(MoodText));
             OnPropertyChanged(nameof(CanEvolveNow));
+            OnPropertyChanged(nameof(CanShowEvolvePrompt));     // 🌟 추가: 진화 창 즉시 띄우기 알림
+            OnPropertyChanged(nameof(CanFarewellNow));          // 🌟 추가: 작별 조건 즉시 갱신 알림
+            OnPropertyChanged(nameof(CanShowFarewellPrompt));   // 🌟 추가: 작별 창 즉시 띄우기 알림
             OnPropertyChanged(nameof(IsEating));
             OnPropertyChanged(nameof(IsPlaying));
 
@@ -939,6 +958,7 @@ namespace TamaPoke.Models
             _ageSeconds += 3600;
             AgeMinutes += MINUTES_PER_LEVEL;
             IsEvolutionPostponed = false;
+            IsFarewellPostponed = false;
 
             TrAtk = Math.Min(100, TrAtk + 10);
 

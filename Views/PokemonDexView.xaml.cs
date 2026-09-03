@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using TamaPoke.Models;
 
@@ -14,28 +13,33 @@ namespace TamaPoke.Views
 
         private void RegionTab_Checked(object sender, RoutedEventArgs e)
         {
-            if (sender is RadioButton rb && int.TryParse(rb.Tag?.ToString(), out int regionIndex))
-            {
-                if (this.DataContext is PokemonState pet)
-                {
-                    // 1. 도감 리스트 갱신
-                    pet.CurrentRegionIndex = regionIndex;
+            // 1. 클릭된 라디오 버튼을 가져옵니다.
+            var radioButton = sender as RadioButton;
+            if (radioButton == null) return;
 
-                    // 🌟 2. 화면 배치가 완전히 끝난 후(ContextIdle) 스크롤을 최상단으로 올림!
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        DexScrollViewer.UpdateLayout(); // 레이아웃 확정
-                        DexScrollViewer.ScrollToTop();  // 스크롤 이동
-                    }), System.Windows.Threading.DispatcherPriority.ContextIdle);
-                }
+            // 2. 현재 데이터 컨텍스트(PokemonState)를 가져옵니다.
+            var state = this.DataContext as PokemonState;
+            if (state == null) return;
+
+            // 3. 라디오 버튼의 Tag 값(0, 1, 2, 3)을 읽어와서 도감의 지역 인덱스를 변경합니다.
+            if (int.TryParse(radioButton.Tag?.ToString(), out int regionIndex))
+            {
+                state.CurrentRegionIndex = regionIndex;
+            }
+
+            // 🌟 핵심: 탭이 바뀔 때마다 스크롤바를 맨 위로 확실하게 끌어올려 줍니다!
+            if (DexScrollViewer != null)
+            {
+                DexScrollViewer.ScrollToTop();
             }
         }
 
         private void DexButton_Click(object sender, RoutedEventArgs e)
         {
-            if (this.DataContext is PokemonState pet)
+            var state = this.DataContext as PokemonState;
+            if (state != null)
             {
-                pet.IsDexOpen = false;
+                state.IsDexOpen = false;
             }
         }
     }

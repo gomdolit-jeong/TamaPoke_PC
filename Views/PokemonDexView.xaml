@@ -6,20 +6,19 @@
              xmlns:local="clr-namespace:TamaPoke.Views"
              xmlns:conv="clr-namespace:TamaPoke.Converters"
              mc:Ignorable="d" 
-             d:DesignHeight="466" d:DesignWidth="466"
-             Background="#F8F9FA">
+             Background="Transparent">
+    <!-- 🌟 바탕을 투명하게 변경하여 동그라미만 보이게 합니다 -->
 
     <UserControl.Resources>
         <conv:IdToImageConverter x:Key="IdToImage"/>
 
-        <!-- 지방 탭 라디오 버튼 스타일 -->
+        <!-- 지방 탭 라디오 버튼 스타일 (기존 유지) -->
         <Style TargetType="RadioButton" x:Key="RegionTabStyle">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <!-- 🌟 버튼 간격 마진 1 유지 -->
-                        <Border Background="{TemplateBinding Background}" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="1" Cursor="Hand">
-                            <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                        <Border Background="{TemplateBinding Background}" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="1" Cursor="Hand">
+                            <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
@@ -36,17 +35,17 @@
             </Setter>
         </Style>
 
-        <!-- 하단 닫기 버튼 전용 스타일 -->
+        <!-- 하단 닫기 버튼 전용 스타일 (기존 유지) -->
         <Style TargetType="Button" x:Key="CloseButtonStyle">
             <Setter Property="Background" Value="#E53935"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="18" Padding="30,8">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="12" Padding="20,6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
@@ -60,65 +59,63 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="50"/>
-        </Grid.RowDefinitions>
+    <!-- 🌟 다른 창들처럼 동일한 크기의 동그란 테두리 적용 -->
+    <Border Background="#F8F9FA" CornerRadius="144" Width="288" Height="288" BorderBrush="Black" BorderThickness="1.5">
 
-        <!-- 1. 헤더 영역 -->
-        <Border Grid.Row="0" Background="#E53935">
-            <TextBlock Text="포켓몬 도감" Foreground="White" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        </Border>
+        <!-- 원형 밖으로 내용이 삐져나가지 않도록 상하좌우 마진을 줍니다 -->
+        <Grid Margin="10,20,10,15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <!-- 2. 지방(Region) 선택 탭 메뉴 -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
-            <RadioButton Content="관동" GroupName="Region" Style="{StaticResource RegionTabStyle}" IsChecked="True" Tag="0" Checked="RegionTab_Checked"/>
-            <RadioButton Content="성도" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="1" Checked="RegionTab_Checked"/>
-            <RadioButton Content="호연" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="2" Checked="RegionTab_Checked"/>
-            <RadioButton Content="신오" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="3" Checked="RegionTab_Checked"/>
-        </StackPanel>
+            <!-- 1. 헤더 영역: 둥근 화면에 맞게 배경색을 빼고 글자색으로 포인트를 주었습니다 -->
+            <TextBlock Grid.Row="0" Text="포켓몬 도감" Foreground="#E53935" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,5"/>
 
-        <!-- 3. 포켓몬 도감 리스트 갤러리 -->
-        <ScrollViewer x:Name="DexScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="10,0,10,0">
-            <ItemsControl ItemsSource="{Binding FilteredPokedex}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel HorizontalAlignment="Center"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <!-- 🌟 카드 높이를 105에서 90으로 줄여 타이트하게 만들었습니다 -->
-                        <Border Width="85" Height="90" Margin="5" Background="White" CornerRadius="8" BorderBrush="#DDDDDD" BorderThickness="1">
-                            <StackPanel VerticalAlignment="Center">
-                                <!-- 🌟 아래쪽 마진을 -5로 당겨서 숫자 텍스트와 바짝 붙입니다 -->
-                                <Image Source="{Binding Id, Converter={StaticResource IdToImage}}" Margin="0,0,0,-5" Width="55" Height="55" Stretch="Uniform">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsUnlocked}" Value="False">
-                                                    <Setter Property="Opacity" Value="0.2"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
+            <!-- 2. 지방(Region) 선택 탭 메뉴 -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
+                <RadioButton Content="관동" GroupName="Region" Style="{StaticResource RegionTabStyle}" IsChecked="True" Tag="0" Checked="RegionTab_Checked"/>
+                <RadioButton Content="성도" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="1" Checked="RegionTab_Checked"/>
+                <RadioButton Content="호연" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="2" Checked="RegionTab_Checked"/>
+                <RadioButton Content="신오" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="3" Checked="RegionTab_Checked"/>
+            </StackPanel>
 
-                                <TextBlock Text="{Binding Id, StringFormat='No.{0:D3}'}" FontSize="10" Foreground="#888888" HorizontalAlignment="Center" Margin="0,0,0,0"/>
-                                <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="Bold" Foreground="#333333" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+            <!-- 3. 포켓몬 도감 리스트 갤러리 -->
+            <ScrollViewer x:Name="DexScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="15,0,15,0">
+                <ItemsControl ItemsSource="{Binding FilteredPokedex}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel HorizontalAlignment="Center"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="85" Height="90" Margin="3" Background="White" CornerRadius="8" BorderBrush="#DDDDDD" BorderThickness="1">
+                                <StackPanel VerticalAlignment="Center">
+                                    <Image Source="{Binding Id, Converter={StaticResource IdToImage}}" Margin="0,0,0,-5" Width="55" Height="55" Stretch="Uniform">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsUnlocked}" Value="False">
+                                                        <Setter Property="Opacity" Value="0.2"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="{Binding Id, StringFormat='No.{0:D3}'}" FontSize="10" Foreground="#888888" HorizontalAlignment="Center" Margin="0,0,0,0"/>
+                                    <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="Bold" Foreground="#333333" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-        <!-- 4. 하단 닫기 버튼 영역 -->
-        <Border Grid.Row="3" Background="#F8F9FA">
-            <Button Content="닫기" Style="{StaticResource CloseButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Click="DexButton_Click"/>
-        </Border>
-    </Grid>
+            <!-- 4. 하단 닫기 버튼 영역 -->
+            <Button Grid.Row="3" Content="닫기" Style="{StaticResource CloseButtonStyle}" HorizontalAlignment="Center" Margin="0,10,0,0" Click="DexButton_Click"/>
+        </Grid>
+    </Border>
 </UserControl>

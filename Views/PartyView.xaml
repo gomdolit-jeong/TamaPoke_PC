@@ -130,7 +130,7 @@
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border Background="#E0DBC8" BorderBrush="Black" BorderThickness="1" CornerRadius="6">
-                                <TextBlock Text="◀️ 돌아가기" FontFamily="Malgun Gothic" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="◀️" FontFamily="Malgun Gothic" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </ControlTemplate>
                     </Button.Template>
@@ -148,7 +148,7 @@
                                         <ControlTemplate.Triggers>
                                             <DataTrigger Binding="{Binding IsSwapMode}" Value="True">
                                                 <Setter TargetName="ActionBorder" Property="Background" Value="#E53935"/>
-                                                <Setter TargetName="ActionText" Property="Text" Value="순서 교체"/>
+                                                <Setter TargetName="ActionText" Property="Text" Value="교체"/>
                                             </DataTrigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -158,6 +158,30 @@
                     </Button.Style>
                 </Button>
             </StackPanel>
+            <Grid x:Name="SwapConfirmOverlay" Grid.RowSpan="3" Background="#99000000" Visibility="Collapsed" Margin="-10,-15,-10,-10">
+                <Border Background="White" CornerRadius="12" Width="200" Height="110" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333333" BorderThickness="2">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
+                        <TextBlock x:Name="ConfirmPopupText" Text="교체하시겠습니까?" FontWeight="Bold" FontSize="12" FontFamily="Malgun Gothic" HorizontalAlignment="Center" Margin="0,0,0,15" TextWrapping="Wrap" TextAlignment="Center"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="예" Width="50" Height="25" Margin="0,0,10,0" Background="#1E88E5" Foreground="White" FontWeight="Bold" Click="ConfirmYes_Click">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="4"/>
+                                    </Style>
+                                </Button.Resources>
+                            </Button>
+                            <Button Content="아니요" Width="50" Height="25" Background="#E53935" Foreground="White" FontWeight="Bold" Click="ConfirmNo_Click">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="4"/>
+                                    </Style>
+                                </Button.Resources>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>
