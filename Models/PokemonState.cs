@@ -340,6 +340,20 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool IsAlive => Ceremony == 0;
         [JsonIgnore] public bool IsAliveAndNotEgg => Ceremony == 0 && !IsEgg && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
 
+        // 🌟 1. 이벤트 메시지를 잠시 담아둘 변수와 비동기 메서드 추가
+        private string _eventMessage = string.Empty;
+
+        public async Task ShowEventMessageAsync(string message, int displaySeconds = 3)
+        {
+            _eventMessage = message;
+            OnPropertyChanged(nameof(MoodText));
+
+            await Task.Delay(displaySeconds * 1000);
+
+            _eventMessage = string.Empty;
+            OnPropertyChanged(nameof(MoodText));
+        }
+
         [JsonIgnore]
         public string MoodText
         {

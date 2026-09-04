@@ -413,6 +413,44 @@ namespace TamaPoke.Models
             Save();
         }
 
+        // 🌟 배틀 승리 시 스킬 최적화 및 알림 처리
+        // 🌟 배틀 승리 시 호출되어 추천할 2개의 스킬을 무작위로 뽑습니다.
+        public void CheckAndRecommendSkills()
+        {
+            int n = SkillDex.GetLearnCount(SpeciesId);
+            List<SkillInfo> availableSkills = new List<SkillInfo>();
+
+            // 현재 레벨 이하에서 배울 수 있는 모든 스킬 중, 아직 배우지 않은 스킬을 수집합니다.
+            for (int i = 0; i < n; i++)
+            {
+                int at = SkillDex.GetLearnLevel(SpeciesId, i);
+                if (at > Level) continue;
+
+                int mv = SkillDex.GetLearnMove(SpeciesId, i);
+                if (mv == 0 || KnowsSkill(mv)) continue;
+
+                var skill = SkillDex.GetSkill(mv);
+                if (skill != null) availableSkills.Add(skill);
+            }
+
+            // 배울 수 있는 스킬이 있다면 랜덤으로 섞어 최대 2개를 뽑습니다.
+            if (availableSkills.Count > 0)
+            {
+                var rand = new Random();
+                var picked = availableSkills.OrderBy(x => rand.Next()).Take(2).ToList();
+
+                RecommendedSkill1 = picked.Count > 0 ? picked[0] : null;
+                RecommendedSkill2 = picked.Count > 1 ? picked[1] : null;
+
+                IsSkillLearnMenuOpen = true; // 스킬 학습 팝업 열기
+                BattleMessage = "실전 경험을 통해 새로운 스킬을 떠올렸다!\n어떤 스킬을 배울까?";
+            }
+            else
+            {
+                // 배울 스킬이 없다면 바로 포획(또는 다음 진행) 단계로 넘어갑니다.
+                IsCatchOffered = true;
+            }
+        }
         #endregion
     }
 }

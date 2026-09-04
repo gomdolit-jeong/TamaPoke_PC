@@ -65,7 +65,6 @@
                                 <Setter Property="BorderBrush" Value="#888"/>
                                 <Setter Property="Background" Value="#E0E0E0"/>
                                 <Style.Triggers>
-                                    <!-- 데미지를 입고 있을 때(True) 실행 -->
                                     <DataTrigger Binding="{Binding IsEnemyTakingDamage}" Value="True">
                                         <DataTrigger.EnterActions>
                                             <BeginStoryboard Name="EnemyBlinkAnim">
@@ -74,7 +73,6 @@
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </DataTrigger.EnterActions>
-                                        <!-- 데미지 상태가 끝났을 때(False) 종료 -->
                                         <DataTrigger.ExitActions>
                                             <StopStoryboard BeginStoryboardName="EnemyBlinkAnim"/>
                                         </DataTrigger.ExitActions>
@@ -126,7 +124,6 @@
                                 <Setter Property="BorderBrush" Value="#888"/>
                                 <Setter Property="Background" Value="#E0E0E0"/>
                                 <Style.Triggers>
-                                    <!-- 데미지를 입고 있을 때(True) 실행 -->
                                     <DataTrigger Binding="{Binding IsPlayerTakingDamage}" Value="True">
                                         <DataTrigger.EnterActions>
                                             <BeginStoryboard Name="PlayerBlinkAnim">
@@ -135,7 +132,6 @@
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </DataTrigger.EnterActions>
-                                        <!-- 데미지 상태가 끝났을 때(False) 종료 -->
                                         <DataTrigger.ExitActions>
                                             <StopStoryboard BeginStoryboardName="PlayerBlinkAnim"/>
                                         </DataTrigger.ExitActions>
@@ -172,23 +168,55 @@
         </Grid>
 
         <!-- ========================================== -->
+        <!-- 🌟 새로 추가됨: 스킬 학습 창 (추천 스킬 2개) -->
+        <!-- ========================================== -->
+        <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsSkillLearnMenuOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="110">
+            <Border Background="#FAFAFA" CornerRadius="15" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
+                <StackPanel>
+                    <TextBlock Text="새로운 스킬을 떠올렸다!" FontSize="14" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                    <Button Content="{Binding RecommendedSkill1.Name}" Visibility="{Binding HasRecommendedSkill1, Converter={StaticResource BoolToVis}}" 
+                            Width="150" Height="35" Margin="0,0,0,10" Background="#1E88E5" Style="{StaticResource RoundedButtonStyle}" Click="BtnLearnSkill1_Click"/>
+
+                    <Button Content="{Binding RecommendedSkill2.Name}" Visibility="{Binding HasRecommendedSkill2, Converter={StaticResource BoolToVis}}" 
+                            Width="150" Height="35" Margin="0,0,0,10" Background="#43A047" Style="{StaticResource RoundedButtonStyle}" Click="BtnLearnSkill2_Click"/>
+
+                    <Button Content="배우지 않는다" Width="150" Height="30" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="BtnSkipSkill_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ========================================== -->
+        <!-- 🌟 새로 추가됨: 스킬 교체 창 (기존 스킬 잊기) -->
+        <!-- ========================================== -->
+        <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsSkillReplaceMenuOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="110">
+            <Border Background="#FAFAFA" CornerRadius="15" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
+                <StackPanel>
+                    <TextBlock Text="스킬 4개가 꽉 찼습니다.&#x0a;어떤 스킬을 지우시겠습니까?" TextAlignment="Center" FontSize="13" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                    <UniformGrid Columns="2" Rows="2" Margin="0,0,0,10">
+                        <!-- 기존 보유 중인 4개의 스킬 목록 -->
+                        <Button Content="{Binding CurrentSkills[0].Name}" Margin="3" Height="30" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="BtnReplaceSkill0_Click"/>
+                        <Button Content="{Binding CurrentSkills[1].Name}" Margin="3" Height="30" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="BtnReplaceSkill1_Click"/>
+                        <Button Content="{Binding CurrentSkills[2].Name}" Margin="3" Height="30" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="BtnReplaceSkill2_Click"/>
+                        <Button Content="{Binding CurrentSkills[3].Name}" Margin="3" Height="30" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="BtnReplaceSkill3_Click"/>
+                    </UniformGrid>
+                    <Button Content="역시 배우지 않는다" Width="150" Height="30" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="BtnSkipSkill_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ========================================== -->
         <!-- 3. 하단 컨트롤 영역 (메뉴 / 스킬 / 가방 전환) -->
         <!-- ========================================== -->
         <Grid Grid.Row="1" Background="#333333">
             <Grid.RowDefinitions>
-                <!-- 대화창을 위한 고정 공간 -->
                 <RowDefinition Height="*"/>
-                <!-- 버튼들을 위한 하단 공간 -->
                 <RowDefinition Height="Auto" MinHeight="65"/>
             </Grid.RowDefinitions>
 
-            <!-- 🌟 3-A. 대화창 (이제 어떤 메뉴를 열어도 항상 고정되어 보입니다!) -->
             <TextBlock Grid.Row="0" Text="{Binding BattleMessage}" Foreground="White" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Margin="10,5,10,5" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
 
-            <!-- 🌟 3-B. 버튼 메뉴 영역 -->
             <Grid Grid.Row="1">
-
-                <!-- 메인 전투 메뉴 -->
                 <UniformGrid HorizontalAlignment="Center" Columns="2" Margin="0,0,0,10" Rows="2" 
                              Visibility="{Binding IsMainMenuVisible, Converter={StaticResource BoolToVis}}">
                     <Button Content="공격" Width="55" Height="24" Margin="3" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="ShowAttackMenu_Click"/>
@@ -197,7 +225,6 @@
                     <Button Content="도망" Width="55" Height="24" Margin="3" Background="#757575" Style="{StaticResource RoundedButtonStyle}" Click="Run_Click"/>
                 </UniformGrid>
 
-                <!-- 공격 선택 시 나타나는 스킬 메뉴 (메인 메뉴를 확실히 덮도록 Background 추가) -->
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="#333333" 
                             Visibility="{Binding IsAttackMenuOpen, Converter={StaticResource BoolToVis}}">
                     <ItemsControl ItemsSource="{Binding CurrentSkills}">
@@ -233,11 +260,9 @@
                     </Button>
                 </StackPanel>
 
-                <!-- 예전 사진 감성의 미니멀 가방(인벤토리) UI (메인 메뉴를 확실히 덮도록 Background 추가) -->
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="#333333" 
                         Visibility="{Binding IsBattleInventoryOpen, Converter={StaticResource BoolToVis}}">
                     <UniformGrid Columns="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,10">
-                        <!-- 몬스터볼 버튼 -->
                         <Button Width="85" Height="26" Margin="4" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="UseMonsterBall_Click">
                             <Button.Resources>
                                 <Style TargetType="Border">
@@ -249,7 +274,6 @@
                                 <TextBlock Text="{Binding MonsterBalls, StringFormat={}x{0}}" FontSize="11" Foreground="#1E88E5" FontWeight="Bold"/>
                             </StackPanel>
                         </Button>
-                        <!-- 상처약 버튼 -->
                         <Button Width="85" Height="26" Margin="4" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="UsePotion_Click">
                             <Button.Resources>
                                 <Style TargetType="Border">
@@ -262,7 +286,6 @@
                             </StackPanel>
                         </Button>
                     </UniformGrid>
-                    <!-- 뒤로 가기 ◀ 버튼 -->
                     <Button Content="◀" Width="45" Height="22" Background="#E0D8C8" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CloseInventory_Click">
                         <Button.Resources>
                             <Style TargetType="Border">

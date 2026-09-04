@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Media;
@@ -62,7 +61,6 @@ namespace TamaPoke.Models
             }
         }
 
-        // 🌟 개발자님의 자동화 시스템!
         [JsonIgnore] public bool IsMainMenuVisible => !IsCatchOffered && !IsBattleResolved && !IsAttackMenuOpen && !IsInventoryOpen && IsPlayerTurn;
         [JsonIgnore] public bool IsAttackMenuVisible => !IsCatchOffered && !IsBattleResolved && IsAttackMenuOpen && !IsInventoryOpen && IsPlayerTurn;
 
@@ -75,7 +73,6 @@ namespace TamaPoke.Models
         private bool _isAttackMenuOpen = false;
         public bool IsAttackMenuOpen { get => _isAttackMenuOpen; set { if (SetProperty(ref _isAttackMenuOpen, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
 
-        // 🌟 가방이 열렸을 때 IsBattleInventoryOpen 상태를 갱신하도록 신호(OnPropertyChanged)를 추가했습니다!
         private bool _isBattleInventoryOpen = false;
         public bool IsBattleInventoryOpen
         {
@@ -370,6 +367,113 @@ namespace TamaPoke.Models
         }
         #endregion
 
+        #region 🌟 스킬 학습 및 교체 시스템 로직 (Skill Learning Logic)
+        private bool _isSkillLearnMenuOpen = false;
+        public bool IsSkillLearnMenuOpen { get => _isSkillLearnMenuOpen; set => SetProperty(ref _isSkillLearnMenuOpen, value); }
+
+        private bool _isSkillReplaceMenuOpen = false;
+        public bool IsSkillReplaceMenuOpen { get => _isSkillReplaceMenuOpen; set => SetProperty(ref _isSkillReplaceMenuOpen, value); }
+
+        private SkillInfo? _recommendedSkill1;
+        public SkillInfo? RecommendedSkill1 { get => _recommendedSkill1; set { SetProperty(ref _recommendedSkill1, value); OnPropertyChanged(nameof(HasRecommendedSkill1)); } }
+        public bool HasRecommendedSkill1 => RecommendedSkill1 != null;
+
+        private SkillInfo? _recommendedSkill2;
+        public SkillInfo? RecommendedSkill2 { get => _recommendedSkill2; set { SetProperty(ref _recommendedSkill2, value); OnPropertyChanged(nameof(HasRecommendedSkill2)); } }
+        public bool HasRecommendedSkill2 => RecommendedSkill2 != null;
+
+        private SkillInfo? _skillToLearn;
+
+        public void OnBattleWon()
+        {
+            int n = SkillDex.GetLearnCount(SpeciesId);
+            List<SkillInfo> availableSkills = new List<SkillInfo>();
+
+            for (int i = 0; i < n; i++)
+            {
+                int at = SkillDex.GetLearnLevel(SpeciesId, i);
+                if (at > Level) continue;
+
+                int mv = SkillDex.GetLearnMove(SpeciesId, i);
+                if (mv == 0 || KnowsSkill(mv)) continue;
+
+                var skill = SkillDex.GetSkill(mv);
+                if (skill != null) availableSkills.Add(skill);
+            }
+
+            if (availableSkills.Count > 0)
+            {
+                var rand = new Random();
+                var picked = availableSkills.OrderBy(x => rand.Next()).Take(2).ToList();
+
+                RecommendedSkill1 = picked.Count > 0 ? picked[0] : null;
+                RecommendedSkill2 = picked.Count > 1 ? picked[1] : null;
+
+                IsSkillLearnMenuOpen = true;
+                BattleMessage = "실전 경험을 통해 새로운 스킬을 떠올렸다!\n어떤 스킬을 배울까?";
+            }
+            else
+            {
+                IsCatchOffered = true;
+            }
+        }
+
+        public void SelectRecommendedSkill(int optionNumber)
+        {
+            _skillToLearn = (optionNumber == 1) ? RecommendedSkill1 : RecommendedSkill2;
+            if (_skillToLearn == null) return;
+
+            if (SkillCount < 4)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    if (Skills[i] == 0)
+                    {
+                        Skills[i] = _skillToLearn.Id;
+                        break;
+                    }
+                }
+                OnPropertyChanged(nameof(CurrentSkills));
+                FinishSkillLearning($"{_skillToLearn.Name}을(를) 깨우쳤다!");
+            }
+            else
+            {
+                IsSkillLearnMenuOpen = false;
+                IsSkillReplaceMenuOpen = true;
+                BattleMessage = $"기술이 4개라 꽉 찼다!\n{_skillToLearn.Name}을(를) 위해 어떤 기술을 지울까?";
+            }
+        }
+
+        public void ReplaceExistingSkill(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex > 3 || _skillToLearn == null) return;
+
+            var oldSkill = SkillDex.GetSkill(Skills[slotIndex]);
+            string oldSkillName = oldSkill?.Name ?? "기술";
+
+            Skills[slotIndex] = _skillToLearn.Id;
+            OnPropertyChanged(nameof(CurrentSkills));
+
+            FinishSkillLearning($"1, 2, 3... 짠!\n{oldSkillName}을(를) 잊고\n{_skillToLearn.Name}을(를) 배웠다!");
+        }
+
+        public void SkipSkillLearning()
+        {
+            FinishSkillLearning("새로운 스킬을 배우는 것을 포기했다.");
+        }
+
+        private async void FinishSkillLearning(string finalMessage)
+        {
+            IsSkillLearnMenuOpen = false;
+            IsSkillReplaceMenuOpen = false;
+
+            _ = ShowEventMessageAsync(finalMessage);
+            await Task.Delay(2000);
+
+            IsCatchOffered = true;
+        }
+        #endregion
+
         #region 가방(인벤토리) 시스템 (Bag System)
 
         public ObservableCollection<ItemInfo> Inventory { get; set; } = new ObservableCollection<ItemInfo>();
@@ -414,7 +518,6 @@ namespace TamaPoke.Models
         }
         #endregion
 
-
         #region 배틀 로직 (Battle Logic)
         public async void StartWildBattle()
         {
@@ -422,6 +525,7 @@ namespace TamaPoke.Models
 
             IsProfileOpen = false; _restUsesLeft = 2; _isCounterReady = false;
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
+            IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false; // 전투 시작 시 스킬 메뉴 초기화
 
             Random rand = new Random();
             if (rand.Next(100) < 1) { EnemySpeciesId = LegendaryIds[rand.Next(LegendaryIds.Length)]; }
@@ -530,8 +634,25 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}적에게 {damage} 데미지를 입혔다!";
 
-                _tempActionId = ANIM_ATTACK; _tempActionTimer = 15; UpdateAnimation(ANIM_ATTACK);
-                _enemyTempActionTimer = 15; UpdateEnemyAnimation(ANIM_HURT);
+                // 스킬 카테고리에 따른 모션 연출
+                if (playerSkill.Category == SkillCategory.Physical)
+                {
+                    _tempActionId = ANIM_ATTACK;
+                }
+                else if (playerSkill.Category == SkillCategory.Special)
+                {
+                    _tempActionId = ANIM_BREATH;
+                }
+                else
+                {
+                    _tempActionId = ANIM_POSE;
+                }
+
+                _tempActionTimer = 15;
+                UpdateAnimation(_tempActionId);
+
+                _enemyTempActionTimer = 15;
+                UpdateEnemyAnimation(ANIM_HURT);
 
                 await Task.Delay(600); IsEnemyTakingDamage = false; await Task.Delay(900);
             }
@@ -634,8 +755,9 @@ namespace TamaPoke.Models
             }
             else if (EnemyHp <= 0)
             {
-                // 🌟 승리 시 메인 메뉴를 자동으로 가려주는 속성입니다.
                 IsBattleResolved = true;
+                TrAtk = Math.Min(100, TrAtk + 5);
+                Bond = Math.Min(100, Bond + 5);
 
                 Random rand = new Random();
                 string dropMessage = "";
@@ -654,15 +776,11 @@ namespace TamaPoke.Models
                     }
                 }
 
-                BattleMessage = $"배틀에서 승리했다!{dropMessage}\n어떻게 할까?";
+                BattleMessage = $"배틀에서 승리했다!{dropMessage}";
+                await Task.Delay(2000);
 
-                TrAtk = Math.Min(100, TrAtk + 5);
-                Bond = Math.Min(100, Bond + 5);
-
-                await Task.Delay(2500);
-
-                // 🌟 여기서 배틀을 강제 종료하지 않고, 포획 선택창(잡아보기/그냥 가기)을 띄웁니다!
-                IsCatchOffered = true;
+                // 승리 시점에 스킬 학습 및 추천 메뉴를 호출합니다.
+                OnBattleWon();
             }
         }
 
@@ -685,61 +803,50 @@ namespace TamaPoke.Models
 
             if (isCaught)
             {
-                UnlockPokemonInPokedex(EnemySpeciesId); 
+                UnlockPokemonInPokedex(EnemySpeciesId);
 
-                // 🌟 새로 잡은 포켓몬 데이터를 미리 만들어 둡니다.
                 var newMember = new PartyMember
                 {
                     SpeciesId = EnemySpeciesId,
-                    
                     Name = EnemyName,
-                    
                     Level = EnemyLevel,
-                    
                     AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL,
                     IsShiny = false,
-                    
                     TrAtk = 0,
-                    
                     TrDef = 0,
-                    
                     TrSpeed = 0,
-                    
                     Skills = (int[])EnemySkills.Clone(),
-                    
                     Genes = new PokemonGene()
                 };
 
-                if (Party != null && Party.Count >= 6) 
+                if (Party != null && Party.Count >= 6)
                 {
-                    // 🌟 [핵심] 파티가 꽉 찼다면 교체 모드로 파티 창을 엽니다!
-                    _pendingRetiree = newMember; // 잡은 녀석을 임시 대기열에 올립니다.
-                    IsSwapMode = true;           // 교체 모드 ON
+                    _pendingRetiree = newMember;
+                    IsSwapMode = true;
 
-                    SyncMainToLeader();          // UI 업데이트 전 동기화
-                    UpdatePartyFirstFlags();     //
-                    IsPartyOpen = true;          // 파티 창 강제 오픈!
+                    SyncMainToLeader();
+                    UpdatePartyFirstFlags();
+                    IsPartyOpen = true;
 
-                    BattleMessage = $"{EnemyName}을(를) 잡았지만 파티가 꽉 찼다!\n바꿀 포켓몬을 선택해 주세요."; 
-                    await Task.Delay(2500); 
+                    BattleMessage = $"{EnemyName}을(를) 잡았지만 파티가 꽉 찼다!\n바꿀 포켓몬을 선택해 주세요.";
+                    await Task.Delay(2500);
                 }
-                else if (Party != null) 
+                else if (Party != null)
                 {
-                    // 🌟 자리가 널널하면 기존대로 바로 합류
-                    Party.Add(newMember); 
-                    BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다."; 
-                    await Task.Delay(2000); 
+                    Party.Add(newMember);
+                    BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다.";
+                    await Task.Delay(2000);
                 }
 
-                IsBattleOpen = false; // 배틀 UI는 닫습니다.
+                IsBattleOpen = false;
             }
             else
             {
-                IsEnemyVisible = true; 
-                BattleMessage = "아아! 포켓몬이 볼에서 빠져나왔다!\n어떻게 할까?"; 
-                await Task.Delay(2000); 
+                IsEnemyVisible = true;
+                BattleMessage = "아아! 포켓몬이 볼에서 빠져나왔다!\n어떻게 할까?";
+                await Task.Delay(2000);
 
-                IsCatchOffered = true; 
+                IsCatchOffered = true;
             }
         }
         #endregion

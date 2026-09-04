@@ -18,19 +18,16 @@ namespace TamaPoke.Views
 
         private void BattleView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            // 이전 데이터의 연결 해제
             if (e.OldValue is PokemonState oldState)
             {
                 oldState.RequestCatchAnimation -= TriggerCatchAnimation;
             }
-            // 새로운 데이터(PokemonState)의 신호탄에 반응하도록 연결
             if (e.NewValue is PokemonState newState)
             {
                 newState.RequestCatchAnimation += TriggerCatchAnimation;
             }
         }
 
-        // 인벤토리 등 외부에서 신호탄이 날아오면 포획 애니메이션을 실행하는 함수
         private void TriggerCatchAnimation()
         {
             Catch_Click(this, new RoutedEventArgs());
@@ -44,7 +41,7 @@ namespace TamaPoke.Views
         private void ShowAttackMenu_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null) pet.IsAttackMenuOpen = true; // 이거 하나만 쓰면 끝! (IsMainMenuVisible 자동 false)
+            if (pet != null) pet.IsAttackMenuOpen = true;
         }
 
         private void CancelAttack_Click(object sender, RoutedEventArgs e)
@@ -55,12 +52,10 @@ namespace TamaPoke.Views
 
         private async void SkillButton_Click(object sender, RoutedEventArgs e)
         {
-            // 클릭된 버튼과 그 버튼에 바인딩된 스킬(SkillInfo) 정보를 가져옵니다.
             if (sender is Button btn && btn.DataContext is SkillInfo selectedSkill)
             {
                 if (this.DataContext is PokemonState pet)
                 {
-                    // 스킬 메뉴를 닫고 선택한 스킬로 턴 진행
                     pet.IsAttackMenuOpen = false;
                     await pet.ExecuteSkillTurnAsync(selectedSkill);
                 }
@@ -85,13 +80,13 @@ namespace TamaPoke.Views
         private void OpenInventory_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null) pet.IsBattleInventoryOpen = true; // 수정됨
+            if (pet != null) pet.IsBattleInventoryOpen = true;
         }
 
         private void CloseInventory_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null) pet.IsBattleInventoryOpen = false; // 수정됨
+            if (pet != null) pet.IsBattleInventoryOpen = false;
         }
 
         private void UseMonsterBall_Click(object sender, RoutedEventArgs e)
@@ -105,7 +100,7 @@ namespace TamaPoke.Views
                 return;
             }
 
-            pet.IsBattleInventoryOpen = false; // 수정됨
+            pet.IsBattleInventoryOpen = false;
             pet.MonsterBalls--;
 
             Catch_Click(sender, e);
@@ -122,7 +117,7 @@ namespace TamaPoke.Views
                 return;
             }
 
-            pet.IsBattleInventoryOpen = false; // 수정됨
+            pet.IsBattleInventoryOpen = false;
             pet.Potions--;
 
             var potionItem = new ItemInfo { Type = ItemType.Potion, Name = "상처약" };
@@ -144,7 +139,7 @@ namespace TamaPoke.Views
             }
 
             pet.IsPlayerTurn = false;
-            pet.IsCatchOffered = false; // 승리 선택창 숨김
+            pet.IsCatchOffered = false;
 
             pet.BattleMessage = "가라! 몬스터볼!";
 
@@ -162,7 +157,6 @@ namespace TamaPoke.Views
             transTransform.Y = 0;
             rotTransform.Angle = 0;
 
-            // 몬스터볼 애니메이션 궤적 설정
             double finalX = 140;
             var animX = new DoubleAnimation(0, finalX, TimeSpan.FromMilliseconds(500));
 
@@ -176,7 +170,6 @@ namespace TamaPoke.Views
             transTransform.BeginAnimation(TranslateTransform.YProperty, animY);
             rotTransform.BeginAnimation(RotateTransform.AngleProperty, animRot);
 
-            // 0.5초 대기 후 볼에 들어간 것처럼 적을 숨김
             await Task.Delay(500);
             pet.IsEnemyVisible = false;
 
@@ -207,6 +200,51 @@ namespace TamaPoke.Views
         {
             var pet = GetPet();
             if (pet != null) pet.LeaveWildBattle();
+        }
+
+        // ==========================================
+        // 🌟 스킬 학습 및 교체 UI 버튼 이벤트들
+        // ==========================================
+        private void BtnLearnSkill1_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet != null) pet.SelectRecommendedSkill(1);
+        }
+
+        private void BtnLearnSkill2_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet != null) pet.SelectRecommendedSkill(2);
+        }
+
+        private void BtnSkipSkill_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet != null) pet.SkipSkillLearning();
+        }
+
+        private void BtnReplaceSkill0_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet != null) pet.ReplaceExistingSkill(0);
+        }
+
+        private void BtnReplaceSkill1_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet != null) pet.ReplaceExistingSkill(1);
+        }
+
+        private void BtnReplaceSkill2_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet != null) pet.ReplaceExistingSkill(2);
+        }
+
+        private void BtnReplaceSkill3_Click(object sender, RoutedEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet != null) pet.ReplaceExistingSkill(3);
         }
     }
 }
