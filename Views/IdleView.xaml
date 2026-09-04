@@ -518,5 +518,50 @@
                 </Style>
             </Button.Style>
         </Button>
+        <!-- 🌟 위치가 완벽하게 교정된 투명도 조절 슬라이더 -->
+        <Slider Minimum="0.15" Maximum="1.0" 
+        Value="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=Opacity}" 
+        Orientation="Vertical" 
+        HorizontalAlignment="Center" VerticalAlignment="Top" 
+        Margin="264, 50, 0, 0" 
+        Height="100" Width="22" 
+        IsMoveToPointEnabled="True"
+        ToolTip="몰래 하기 (투명도 조절)">
+
+            <!-- 🌟 수정 포인트 1: 전체 슬라이더의 회전 각도를 조절합니다. -->
+            <Slider.RenderTransform>
+                <RotateTransform Angle="-24.5" CenterX="11" CenterY="50"/>
+            </Slider.RenderTransform>
+
+            <Slider.Template>
+                <ControlTemplate TargetType="Slider">
+                    <Grid>
+                        <!-- 🌟 수정 포인트 2: 선을 구부리지 않고 '완벽한 직선(L)'으로 그립니다. -->
+                        <!-- 시작점(11,7)과 끝점(11,93)의 X좌표를 11로 동일하게 맞춥니다. -->
+                        <Path Stroke="#88FFFFFF" StrokeThickness="2" 
+                      Data="M 11,7 Q 20,50 11,93" 
+                      HorizontalAlignment="Left" VerticalAlignment="Top"/>
+
+                        <!-- 물리적 트랙 (이 트랙은 완벽한 수직 일직선으로 작동합니다) -->
+                        <Track x:Name="PART_Track">
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Ellipse Width="14" Height="14" Fill="Blue" Stroke="White" StrokeThickness="2" Cursor="Hand"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Ellipse.Effect>
+                                                    <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.4"/>
+                                                </Ellipse.Effect>
+                                            </Ellipse>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Slider.Template>
+        </Slider>
     </Grid>
 </UserControl>
