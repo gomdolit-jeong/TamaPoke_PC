@@ -13,12 +13,15 @@
         <conv:IdToImageConverter x:Key="IdToImage"/>
 
         <!-- 지방 탭 라디오 버튼 스타일 (기존 유지) -->
+        <!-- 🌟 수정됨: 지방 탭 라디오 버튼 스타일 (내부 구조를 자유롭게 구성할 수 있도록 변경) -->
         <Style TargetType="RadioButton" x:Key="RegionTabStyle">
+            <Setter Property="Foreground" Value="#555555"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="1" Cursor="Hand">
-                            <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
+                        <!-- TextElement.Foreground를 추가하여 내부 글자색이 자동으로 하얀색/회색으로 변하게 합니다 -->
+                        <Border Background="{TemplateBinding Background}" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="6" Padding="6,4" Margin="1,0" Cursor="Hand" TextElement.Foreground="{TemplateBinding Foreground}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
@@ -74,12 +77,36 @@
             <!-- 1. 헤더 영역: 둥근 화면에 맞게 배경색을 빼고 글자색으로 포인트를 주었습니다 -->
             <TextBlock Grid.Row="0" Text="포켓몬 도감" Foreground="#E53935" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,5"/>
 
-            <!-- 2. 지방(Region) 선택 탭 메뉴 -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                <RadioButton Content="관동" GroupName="Region" Style="{StaticResource RegionTabStyle}" IsChecked="True" Tag="0" Checked="RegionTab_Checked"/>
-                <RadioButton Content="성도" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="1" Checked="RegionTab_Checked"/>
-                <RadioButton Content="호연" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="2" Checked="RegionTab_Checked"/>
-                <RadioButton Content="신오" GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="3" Checked="RegionTab_Checked"/>
+            <!-- 2. 지방(Region) 선택 탭 메뉴 (🌟 카운트 텍스트 바인딩 적용) -->
+            <!-- 🌟 수정됨: 지방(Region) 선택 탭 메뉴 (지역명은 크게, 숫자는 작게 2줄 배치) -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" IsChecked="True" Tag="0" Checked="RegionTab_Checked">
+                    <StackPanel>
+                        <TextBlock Text="관동" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding KantoCountText}" FontWeight="Normal" FontSize="9" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="1" Checked="RegionTab_Checked">
+                    <StackPanel>
+                        <TextBlock Text="성도" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding JohtoCountText}" FontWeight="Normal" FontSize="9" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="2" Checked="RegionTab_Checked">
+                    <StackPanel>
+                        <TextBlock Text="호연" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding HoennCountText}" FontWeight="Normal" FontSize="9" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="3" Checked="RegionTab_Checked">
+                    <StackPanel>
+                        <TextBlock Text="신오" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding SinnohCountText}" FontWeight="Normal" FontSize="9" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </RadioButton>
             </StackPanel>
 
             <!-- 3. 포켓몬 도감 리스트 갤러리 -->

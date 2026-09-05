@@ -87,6 +87,11 @@ namespace TamaPoke.Models
                 // 도감 데이터를 새로고침하여 화면에 즉시 반영되도록 합니다.
                 RefreshPokedex();
 
+                OnPropertyChanged(nameof(KantoCountText));
+                OnPropertyChanged(nameof(JohtoCountText));
+                OnPropertyChanged(nameof(HoennCountText));
+                OnPropertyChanged(nameof(SinnohCountText));
+
                 // 변경된 도감 상태를 세이브 파일에 저장합니다.
                 Save();
             }

@@ -393,6 +393,14 @@ namespace TamaPoke.Models
         [JsonIgnore]
         public ObservableCollection<PokedexEntry> FilteredPokedex { get; set; } = new ObservableCollection<PokedexEntry>();
 
+        // ==========================================
+        // 🌟 각 지방별 도감 달성도 텍스트 (숫자만 반환하도록 수정)
+        // ==========================================
+        [JsonIgnore] public string KantoCountText => $"({FullPokedex.Count(p => p.Id >= 1 && p.Id <= 151 && p.IsUnlocked)}/151)";
+        [JsonIgnore] public string JohtoCountText => $"({FullPokedex.Count(p => p.Id >= 152 && p.Id <= 251 && p.IsUnlocked)}/100)";
+        [JsonIgnore] public string HoennCountText => $"({FullPokedex.Count(p => p.Id >= 252 && p.Id <= 386 && p.IsUnlocked)}/135)";
+        [JsonIgnore] public string SinnohCountText => $"({FullPokedex.Count(p => p.Id >= 387 && p.Id <= 493 && p.IsUnlocked)}/107)";
+
         private int _currentRegionIndex = 0;
         public int CurrentRegionIndex
         {
