@@ -976,6 +976,60 @@ namespace TamaPoke.Models
         }
         #endregion
 
+        /// ////////////////////////////////////////////////////////////////////
+        /// JSON 암호화 저장 및 불러오기 기능 추가 (Save & Load with JSON Encryption)
+//         #region 저장 및 불러오기 Json 암호화(Save & Load)
+//         private static readonly string SaveFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "save.json");
+//         public static bool CheckSaveFileExists() => File.Exists(SaveFilePath);
+// 
+//         public void Save()
+//         {
+//             try
+//             {
+//                 var options = new JsonSerializerOptions { WriteIndented = true };
+//                 string jsonString = JsonSerializer.Serialize(this, options);
+// 
+//                 // 🌟 JSON 문자열을 암호화하여 파일에 덮어씁니다.
+//                 string encryptedData = TamaPoke.Utils.SaveEncryptionHelper.Encrypt(jsonString);
+//                 File.WriteAllText(SaveFilePath, encryptedData);
+//             }
+//             catch (Exception ex) { Console.WriteLine($"저장 실패: {ex.Message}"); }
+//         }
+// 
+//         public static PokemonState Load()
+//         {
+//             if (File.Exists(SaveFilePath))
+//             {
+//                 try
+//                 {
+//                     string encryptedData = File.ReadAllText(SaveFilePath);
+// 
+//                     // 🌟 암호화된 데이터를 읽어와서 다시 JSON 문자열로 복호화합니다.
+//                     string jsonString = TamaPoke.Utils.SaveEncryptionHelper.Decrypt(encryptedData);
+// 
+//                     var pet = JsonSerializer.Deserialize<PokemonState>(jsonString);
+//                     if (pet != null)
+//                     {
+//                         pet.InitializeAfterLoad();
+//                         return pet;
+//                     }
+//                 }
+//                 catch
+//                 {
+//                     // 🌟 복호화에 실패하거나 기존의 암호화되지 않은 파일일 경우 예외가 발생하므로, 무시하고 새 게임을 시작합니다.
+//                 }
+//             }
+// 
+//             PokemonState newPet = new PokemonState();
+//             newPet.MonsterBalls = 5;
+//             newPet.Potions = 3;
+// 
+//             newPet.InitializeAfterLoad();
+//             return newPet;
+//         }
+//         #endregion
+        
+
         #region 디버그용
         [JsonIgnore]
         public bool IsDebugMode
