@@ -40,5 +40,35 @@ namespace TamaPoke.Views
                 pet.StartWildBattle();
             }
         }
+
+        private void GymBadge_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag != null)
+            {
+                if (int.TryParse(btn.Tag.ToString(), out int gymIndex))
+                {
+                    if (this.DataContext is TamaPoke.Models.PokemonState state)
+                    {
+                        state.PromptGymChallenge(gymIndex);
+                    }
+                }
+            }
+        }
+
+        private void ConfirmGym_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext is TamaPoke.Models.PokemonState state)
+            {
+                state.ConfirmGymChallenge();
+            }
+        }
+
+        private void CancelGym_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext is TamaPoke.Models.PokemonState state)
+            {
+                state.CancelGymChallenge();
+            }
+        }
     }
 }

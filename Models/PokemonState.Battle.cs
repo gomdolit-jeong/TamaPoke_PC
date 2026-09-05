@@ -747,10 +747,11 @@ namespace TamaPoke.Models
             if (PlayerHp <= 0)
             {
                 IsBattleResolved = true;
-                BattleMessage = "눈앞이 깜깜해졌다...\n배틀에서 패배했습니다.";
+                BattleMessage = IsGymBattle ? "관장에게 패배했습니다...\n수행이 더 필요합니다." : "눈앞이 깜깜해졌다...\n배틀에서 패배했습니다.";
                 Joy = Math.Max(0, Joy - 10);
                 Energy = Math.Max(0, Energy - 20);
                 await Task.Delay(3000);
+                IsGymBattle = false; // 플래그 초기화
                 CloseBattle();
             }
             else if (EnemyHp <= 0)
@@ -759,28 +760,35 @@ namespace TamaPoke.Models
                 TrAtk = Math.Min(100, TrAtk + 5);
                 Bond = Math.Min(100, Bond + 5);
 
-                Random rand = new Random();
-                string dropMessage = "";
-
-                if (rand.Next(100) < 60)
+                if (IsGymBattle)
                 {
-                    if (rand.Next(100) < 70)
-                    {
-                        AddItemToInventory(ItemType.monsterball, 1);
-                        dropMessage = "\n몬스터볼 1개를 얻었다!";
-                    }
-                    else
-                    {
-                        AddItemToInventory(ItemType.Potion, 1);
-                        dropMessage = "\n상처약 1개를 얻었다!";
-                    }
+                    // 🌟 체육관 승리 로직
+                    var leader = GymLeaders[GymBadges];
+                    GymBadges++; // 배지 획득!
+                    Save(); // 진행도 저장
+
+                    BattleMessage = $"대단한 승부였다!\n{leader.LeaderName}에게서\n[{leader.BadgeName}]을(를) 얻었다!";
+                    await Task.Delay(3000);
+
+                    IsGymBattle = false;
+                    OnBattleWon(); // 스킬 학습 기회 제공
                 }
+                else
+                {
+                    // (기존 야생 배틀 승리 로직 그대로 유지)
+                    Random rand = new Random();
+                    string dropMessage = "";
 
-                BattleMessage = $"배틀에서 승리했다!{dropMessage}";
-                await Task.Delay(2000);
+                    if (rand.Next(100) < 60)
+                    {
+                        if (rand.Next(100) < 70) { AddItemToInventory(ItemType.monsterball, 1); dropMessage = "\n몬스터볼 1개를 얻었다!"; }
+                        else { AddItemToInventory(ItemType.Potion, 1); dropMessage = "\n상처약 1개를 얻었다!"; }
+                    }
 
-                // 승리 시점에 스킬 학습 및 추천 메뉴를 호출합니다.
-                OnBattleWon();
+                    BattleMessage = $"배틀에서 승리했다!{dropMessage}";
+                    await Task.Delay(2000);
+                    OnBattleWon();
+                }
             }
         }
 
@@ -848,6 +856,162 @@ namespace TamaPoke.Models
 
                 IsCatchOffered = true;
             }
+        }
+        #endregion
+
+        #region 체육관 시스템 (Gym System)
+
+        // 🌟 1. 전용 스킬(SpecificSkills) 배열을 추가하여 멍청한 랜덤 스킬을 쓰지 않게 만듭니다.
+        public class GymLeaderInfo
+        {
+            public string LeaderName { get; set; } = string.Empty;
+            public string BadgeName { get; set; } = string.Empty;
+            public int PokemonSpeciesId { get; set; }
+            public int Level { get; set; }
+            public int[] SpecificSkills { get; set; } = new int[4];
+        }
+
+        // 🌟 2. 관장들에게 자비 없는 고위력기 스킬 번호(MoveId)를 고정해 줍니다.
+        public static readonly GymLeaderInfo[] GymLeaders = new GymLeaderInfo[]
+        {
+            // ==========================================
+            // 🔴 1세대 관동지방 (Lv 14 ~ 50)
+            // ==========================================
+            new GymLeaderInfo { LeaderName = "웅이", BadgeName = "회색배지", PokemonSpeciesId = 95, Level = 14, SpecificSkills = new int[] { 60, 44, 1, 0 } },  // 롱스톤
+            new GymLeaderInfo { LeaderName = "이슬", BadgeName = "블루배지", PokemonSpeciesId = 121, Level = 21, SpecificSkills = new int[] { 19, 32, 86, 0 } }, // 아쿠스타
+            new GymLeaderInfo { LeaderName = "마티스", BadgeName = "오렌지배지", PokemonSpeciesId = 26, Level = 24, SpecificSkills = new int[] { 24, 23, 5, 0 } }, // 라이츄
+            new GymLeaderInfo { LeaderName = "민화", BadgeName = "무지개배지", PokemonSpeciesId = 45, Level = 29, SpecificSkills = new int[] { 29, 41, 28, 0 } }, // 라플레시아
+            new GymLeaderInfo { LeaderName = "독수", BadgeName = "핑크배지", PokemonSpeciesId = 110, Level = 43, SpecificSkills = new int[] { 41, 64, 8, 0 } }, // 또도가스
+            new GymLeaderInfo { LeaderName = "초련", BadgeName = "골드배지", PokemonSpeciesId = 65, Level = 43, SpecificSkills = new int[] { 51, 64, 86, 0 } },  // 후딘
+            new GymLeaderInfo { LeaderName = "강연", BadgeName = "진홍배지", PokemonSpeciesId = 59, Level = 47, SpecificSkills = new int[] { 14, 8, 68, 0 } },  // 윈디
+            new GymLeaderInfo { LeaderName = "비주기", BadgeName = "그린배지", PokemonSpeciesId = 112, Level = 50, SpecificSkills = new int[] { 44, 60, 55, 9 } }, // 코뿌리
+
+            // ==========================================
+            // 🟡 2세대 성도지방 (Lv 55 ~ 80)
+            // ==========================================
+            new GymLeaderInfo { LeaderName = "비상", BadgeName = "윙배지", PokemonSpeciesId = 18, Level = 55, SpecificSkills = new int[] { 47, 45, 5, 0 } }, // 피죤투
+            new GymLeaderInfo { LeaderName = "호일", BadgeName = "인세트배지", PokemonSpeciesId = 123, Level = 58, SpecificSkills = new int[] { 57, 45, 75, 0 } }, // 스라크
+            new GymLeaderInfo { LeaderName = "꼭두", BadgeName = "레귤러배지", PokemonSpeciesId = 241, Level = 62, SpecificSkills = new int[] { 7, 86, 68, 0 } }, // 밀탱크
+            new GymLeaderInfo { LeaderName = "유빈", BadgeName = "팬텀배지", PokemonSpeciesId = 94, Level = 65, SpecificSkills = new int[] { 64, 41, 89, 0 } }, // 팬텀
+            new GymLeaderInfo { LeaderName = "사도", BadgeName = "쇼크배지", PokemonSpeciesId = 62, Level = 68, SpecificSkills = new int[] { 37, 18, 44, 0 } }, // 강챙이
+            new GymLeaderInfo { LeaderName = "규리", BadgeName = "스틸배지", PokemonSpeciesId = 208, Level = 72, SpecificSkills = new int[] { 70, 44, 69, 0 } }, // 강철톤
+            new GymLeaderInfo { LeaderName = "류옹", BadgeName = "아이스배지", PokemonSpeciesId = 221, Level = 75, SpecificSkills = new int[] { 33, 44, 7, 0 } }, // 메꾸리
+            new GymLeaderInfo { LeaderName = "이향", BadgeName = "라이징배지", PokemonSpeciesId = 230, Level = 80, SpecificSkills = new int[] { 67, 19, 32, 80 } }, // 킹드라
+
+            // ==========================================
+            // 🟢 3세대 호연지방 (Lv 82 ~ 96)
+            // ==========================================
+            new GymLeaderInfo { LeaderName = "원규", BadgeName = "스톤배지", PokemonSpeciesId = 306, Level = 82, SpecificSkills = new int[] { 60, 44, 8, 9 } },  // 보스로라
+            new GymLeaderInfo { LeaderName = "철구", BadgeName = "너클배지", PokemonSpeciesId = 297, Level = 84, SpecificSkills = new int[] { 44, 8, 5, 0 } }, // 하리뭉
+            new GymLeaderInfo { LeaderName = "암전", BadgeName = "다이나모배지", PokemonSpeciesId = 310, Level = 86, SpecificSkills = new int[] { 24, 23, 5, 0 } }, // 썬더볼트
+            new GymLeaderInfo { LeaderName = "민지", BadgeName = "히트배지", PokemonSpeciesId = 324, Level = 88, SpecificSkills = new int[] { 14, 44, 8, 0 } }, // 코터스
+            new GymLeaderInfo { LeaderName = "종길", BadgeName = "밸런스배지", PokemonSpeciesId = 289, Level = 90, SpecificSkills = new int[] { 44, 64, 8, 9 } }, // 게을킹
+            new GymLeaderInfo { LeaderName = "은송", BadgeName = "깃털배지", PokemonSpeciesId = 334, Level = 92, SpecificSkills = new int[] { 47, 45, 44, 0 } }, // 파비코리
+            new GymLeaderInfo { LeaderName = "풍&란", BadgeName = "마인드배지", PokemonSpeciesId = 338, Level = 94, SpecificSkills = new int[] { 51, 60, 64, 86 } }, // 솔록
+            new GymLeaderInfo { LeaderName = "아단", BadgeName = "레인배지", PokemonSpeciesId = 350, Level = 96, SpecificSkills = new int[] { 19, 32, 86, 9 } }, // 밀로틱
+
+            // ==========================================
+            // 🔵 4세대 신오지방 (Lv 98 ~ 120) - 최종장
+            // ==========================================
+            new GymLeaderInfo { LeaderName = "강석", BadgeName = "콜배지", PokemonSpeciesId = 409, Level = 98, SpecificSkills = new int[] { 60, 44, 8, 9 } }, // 램펄드
+            new GymLeaderInfo { LeaderName = "유채", BadgeName = "포레스트배지", PokemonSpeciesId = 407, Level = 100, SpecificSkills = new int[] { 29, 41, 86, 0 } }, // 로즈레이드
+            new GymLeaderInfo { LeaderName = "멜리사", BadgeName = "레릭배지", PokemonSpeciesId = 429, Level = 102, SpecificSkills = new int[] { 64, 51, 23, 0 } }, // 무우마직
+            new GymLeaderInfo { LeaderName = "자망", BadgeName = "코블배지", PokemonSpeciesId = 448, Level = 105, SpecificSkills = new int[] { 44, 64, 5, 9 } }, // 루카리오
+            new GymLeaderInfo { LeaderName = "맥실러", BadgeName = "펜배지", PokemonSpeciesId = 419, Level = 108, SpecificSkills = new int[] { 19, 32, 68, 5 } }, // 플로젤
+            new GymLeaderInfo { LeaderName = "동관", BadgeName = "마인배지", PokemonSpeciesId = 411, Level = 110, SpecificSkills = new int[] { 60, 44, 8, 86 } }, // 바리톱스
+            new GymLeaderInfo { LeaderName = "무청", BadgeName = "글레이셔배지", PokemonSpeciesId = 460, Level = 115, SpecificSkills = new int[] { 32, 44, 29, 0 } }, // 눈설왕
+            new GymLeaderInfo { LeaderName = "전진", BadgeName = "비컨배지", PokemonSpeciesId = 466, Level = 120, SpecificSkills = new int[] { 24, 23, 44, 9 } } // 에레키블
+        };
+
+        private int _gymBadges = 0;
+        public int GymBadges { get => _gymBadges; set => SetProperty(ref _gymBadges, value); }
+       
+        private bool _isGymBattle = false;
+        public bool IsGymBattle { get => _isGymBattle; set => SetProperty(ref _isGymBattle, value); }
+
+        // ==========================================
+        // 🌟 인게임 체육관 도전 확인창 상태 관리
+        // ==========================================
+        private bool _isGymConfirmOpen;
+        public bool IsGymConfirmOpen
+        {
+            get => _isGymConfirmOpen;
+            set => SetProperty(ref _isGymConfirmOpen, value);
+        }
+
+        // 🌟 타입 뒤에 물음표(?)를 붙여 널(Null)을 허용하도록 수정합니다.
+        private GymLeaderInfo? _selectedGymLeader;
+        public GymLeaderInfo? SelectedGymLeader
+        {
+            get => _selectedGymLeader;
+            set => SetProperty(ref _selectedGymLeader, value);
+        }
+
+        private int _selectedGymIndex;
+
+        // 뱃지 버튼을 눌렀을 때 시스템 팝업 대신 인게임 확인창을 띄우는 메서드
+        public void PromptGymChallenge(int gymIndex)
+        {
+            if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
+            if (gymIndex < 0 || gymIndex >= GymLeaders.Length) return;
+
+            _selectedGymIndex = gymIndex;
+            SelectedGymLeader = GymLeaders[gymIndex];
+            IsGymConfirmOpen = true; // 🌟 확인창 열기 ON!
+        }
+
+        // 확인창에서 '도전하기'를 눌렀을 때 실제 배틀을 시작하는 메서드
+        public void ConfirmGymChallenge()
+        {
+            IsGymConfirmOpen = false;
+            StartSpecificGymBattle(_selectedGymIndex);
+        }
+
+        // 확인창에서 '취소'를 눌렀을 때
+        public void CancelGymChallenge()
+        {
+            IsGymConfirmOpen = false;
+        }
+        // 🌟 특정 뱃지(체육관)를 직접 선택해서 도전하는 메서드
+        public async void StartSpecificGymBattle(int gymIndex)
+        {
+            if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
+
+            if (gymIndex < 0 || gymIndex >= GymLeaders.Length) return;
+
+            // 이미 깬 체육관이거나 순서대로 도전하게 하고 싶다면 조건을 걸 수 있습니다.
+            // 여기서는 원하시는 대로 선택한 체육관에 바로 도전하도록 설정합니다.
+            GymBadges = gymIndex; // 해당 위치로 일시 조정 또는 세팅
+            var leader = GymLeaders[gymIndex];
+
+            IsProfileOpen = false; _restUsesLeft = 2; _isCounterReady = false;
+            IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
+            IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
+
+            IsGymBattle = true;
+
+            EnemySpeciesId = leader.PokemonSpeciesId;
+            EnemyLevel = leader.Level;
+
+            PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;
+
+            var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
+            int enemyBaseHp = enemyInfo != null ? enemyInfo.BaseHp : 50;
+
+            EnemyMaxHp = ((enemyBaseHp * 2 + 100) * EnemyLevel / 100) + EnemyLevel + 50;
+            EnemyHp = EnemyMaxHp;
+
+            EnemySkills = (int[])leader.SpecificSkills.Clone();
+            UpdateEnemyAnimation(0);
+
+            IsBattleOpen = true;
+            IsPlayerTurn = false;
+            BattleMessage = $"체육관 관장 {leader.LeaderName}이(가)\n승부를 걸어왔다!";
+
+            await Task.Delay(2000);
+
+            BattleMessage = "행동을 선택하세요.";
+            IsPlayerTurn = true;
         }
         #endregion
     }

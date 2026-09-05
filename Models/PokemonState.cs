@@ -488,7 +488,7 @@ namespace TamaPoke.Models
 
         private int _profilePage = 0;
         public int ProfilePage { get => _profilePage; set { SetProperty(ref _profilePage, value); OnPropertyChanged(nameof(ProfilePageDisplay)); } }
-        [JsonIgnore] public string ProfilePageDisplay => $"페이지 {ProfilePage + 1} / 5";
+        [JsonIgnore] public string ProfilePageDisplay => $"페이지 {ProfilePage + 1} / 6";
 
         private string _currentFoodIcon = "🍎";
         public string CurrentFoodIcon { get => _currentFoodIcon; set => SetProperty(ref _currentFoodIcon, value); }
@@ -823,8 +823,8 @@ namespace TamaPoke.Models
         public void PostponeEvolve() => IsEvolutionPostponed = true;
         public void PostponeFarewell() => IsFarewellPostponed = true;
 
-        public void NextProfilePage() { ProfilePage = (ProfilePage + 1) % 5; }
-        public void PrevProfilePage() { ProfilePage = (ProfilePage + 4) % 5; }
+        public void NextProfilePage() { ProfilePage = (ProfilePage + 1) % 6; }
+        public void PrevProfilePage() { ProfilePage = (ProfilePage + 5) % 6; }
         #endregion
 
         #region 내부 헬퍼 (Helpers)

@@ -3,11 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:TamaPoke.Utils.Service"
              xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+             xmlns:conv="clr-namespace:TamaPoke.Converters"
              Height="288" Width="288" 
              HorizontalAlignment="Center" VerticalAlignment="Center">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:BadgeUnlockedConverter x:Key="BadgeUnlocked"/>
 
         <Style TargetType="Border" x:Key="MedalBadgeStyle">
             <Setter Property="CornerRadius" Value="8"/>
@@ -23,6 +25,58 @@
             <EllipseGeometry Center="144,144" RadiusX="144" RadiusY="144" />
         </Grid.Clip>
 
+        <!-- ========================================== -->
+        <!-- 🌟 인게임 체육관 도전 확인 오버레이 창 (포획 창 스타일) -->
+        <!-- ========================================== -->
+        <Grid Background="#99000000" Panel.ZIndex="100">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsGymConfirmOpen}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+
+            <Border Width="200" Height="110" Background="White" CornerRadius="12" 
+        HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="10" ShadowDepth="3" Opacity="0.3"/>
+                </Border.Effect>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding SelectedGymLeader.LeaderName, StringFormat='{}{0} 체육관에\n도전하시겠습니까?'}" 
+                               FontSize="13" FontWeight="Bold" Foreground="#333333" 
+                               TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <!-- 도전하기 버튼 -->
+                        <Button Content="도전하기" Width="80" Height="28" Margin="4,0" 
+                                Background="#E53935" Foreground="White" FontWeight="Bold" FontSize="11"
+                                Click="ConfirmGym_Click" Cursor="Hand">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="6"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <!-- 취소 버튼 -->
+                        <Button Content="취소" Width="60" Height="28" Margin="4,0" 
+                                Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11"
+                                Click="CancelGym_Click" Cursor="Hand">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="6"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
         <Button Content="X 닫기" FontSize="11" FontWeight="Bold" Background="#E53935" Foreground="White" Width="60" Height="22" Margin="0,15,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Click="Close_Click" Cursor="Hand">
             <Button.Resources>
                 <Style TargetType="Border">
@@ -36,13 +90,85 @@
 
         <Grid Margin="35,40,35,35">
 
-            <!-- 페이지 1: 기본 프로필 (ProfilePage == 0) -->
+            <!-- ========================================== -->
+            <!-- 🌟 페이지 1: 큼직한 뱃지 도전 버튼 메인 화면 -->
+            <!-- ========================================== -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding ProfilePage}" Value="0">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="GYM CHALLENGE" FontSize="15" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,0,0,8" Foreground="#E53935"/>
+
+                    <!-- 🌟 뱃지를 4열 2행(총 8개)의 큼직한 버튼으로 배치하여 터치/클릭이 편하게 수정 -->
+                    <UniformGrid Columns="4" Rows="2" Width="190" Height="90" Margin="0,0,0,10">
+                        <UniformGrid.Resources>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#F5F5F5"/>
+                                <Setter Property="BorderBrush" Value="#DDDDDD"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Margin" Value="3"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </UniformGrid.Resources>
+
+                        <!-- 관동지방 1~8번 뱃지 버튼 (Tag는 배열 인덱스 0~7) -->
+                        <Button Tag="0" Click="GymBadge_Click">
+                            <TextBlock Text="🪨" FontSize="20"/>
+                        </Button>
+                        <Button Tag="1" Click="GymBadge_Click">
+                            <TextBlock Text="💧" FontSize="20"/>
+                        </Button>
+                        <Button Tag="2" Click="GymBadge_Click">
+                            <TextBlock Text="⚡" FontSize="20"/>
+                        </Button>
+                        <Button Tag="3" Click="GymBadge_Click">
+                            <TextBlock Text="🌈" FontSize="20"/>
+                        </Button>
+                        <Button Tag="4" Click="GymBadge_Click">
+                            <TextBlock Text="💖" FontSize="20"/>
+                        </Button>
+                        <Button Tag="5" Click="GymBadge_Click">
+                            <TextBlock Text="🟡" FontSize="20"/>
+                        </Button>
+                        <Button Tag="6" Click="GymBadge_Click">
+                            <TextBlock Text="🔥" FontSize="20"/>
+                        </Button>
+                        <Button Tag="7" Click="GymBadge_Click">
+                            <TextBlock Text="🌱" FontSize="20"/>
+                        </Button>
+                    </UniformGrid>
+
+                    <TextBlock Text="{Binding Streak, StringFormat='연속 출석일 {0}'}" FontSize="13" FontWeight="Bold" FontFamily="Consolas" Foreground="#333" HorizontalAlignment="Center" Margin="0,1"/>
+                    <TextBlock Text="{Binding RegisteredCount, StringFormat='도감 {0} / 493'}" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Foreground="#333" HorizontalAlignment="Center" Margin="0,1"/>
+                    <TextBlock Text="{Binding Party.Count, StringFormat='파티멤버 {0} / 6'}" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Foreground="#333" HorizontalAlignment="Center" Margin="0,1"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- 🌟 페이지 2: 기본 프로필 -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="1">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -69,18 +195,17 @@
                         <emoji:TextBlock Text="😋" FontSize="11" VerticalAlignment="Center"/>
                         <TextBlock Text=" 좋아하는 열매" FontSize="11" Foreground="#777" VerticalAlignment="Center"/>
                     </StackPanel>
-
                     <emoji:TextBlock Text="{Binding FavoriteBerryName}" FontSize="13" FontWeight="Bold" Foreground="#2E7D32" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
 
-            <!-- 페이지 2: 전투 능력치 (ProfilePage == 1) -->
+            <!-- 🌟 페이지 3: 전투 능력치 -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding ProfilePage}" Value="1">
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="2">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -119,13 +244,13 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 🌟 새로 추가된 페이지 3: 보유 스킬 (ProfilePage == 2) -->
+            <!-- 🌟 페이지 4: 보유 스킬 -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding ProfilePage}" Value="2">
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="3">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -138,7 +263,6 @@
                         <TextBlock Text=" 보유 스킬" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- 배틀 뷰와 유사하게 보유 스킬을 2x2 그리드로 나열합니다 -->
                     <ItemsControl ItemsSource="{Binding CurrentSkills}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -147,19 +271,12 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <!-- 🌟 높이(Height)를 35에서 45로 살짝 늘려 두 줄이 넉넉히 들어가게 했습니다. -->
                                 <Border Width="85" Height="45" Margin="2" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4">
-
-                                    <!-- 🌟 Orientation을 Vertical(세로)로 변경했습니다! -->
                                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-
-                                        <!-- 🌟 오른쪽 여백 대신 아래쪽 여백(Margin="0,0,0,4")을 주어 배지와 간격을 띄웁니다. -->
                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,4" HorizontalAlignment="Center"/>
-
                                         <Border CornerRadius="3" Background="#78909C" Padding="4,1" HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                         </Border>
-
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -168,14 +285,13 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 페이지 4: 획득한 메달 (ProfilePage == 3 으로 밀려남) -->
+            <!-- 🌟 페이지 5: 메달 현황 -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <!-- 🌟 Value를 3으로 변경했습니다 -->
-                            <DataTrigger Binding="{Binding ProfilePage}" Value="3">
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="4">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -298,14 +414,13 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 페이지 5: 성장 진행도 (ProfilePage == 4 로 밀려남) -->
+            <!-- 🌟 페이지 6: 성장 진행도 -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <!-- 🌟 Value를 4로 변경했습니다 -->
-                            <DataTrigger Binding="{Binding ProfilePage}" Value="4">
+                            <DataTrigger Binding="{Binding ProfilePage}" Value="5">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -329,9 +444,10 @@
                     <TextBlock Text="{Binding CareMistakes, StringFormat={}{0} 회}" FontSize="13" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
+
         </Grid>
 
-        <!-- 하단 페이지 인디케이터 (자동으로 5페이지 기준 텍스트가 표시됩니다) -->
+        <!-- 하단 페이지 인디케이터 -->
         <TextBlock Text="{Binding ProfilePageDisplay}" FontSize="11" Foreground="#999" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15"/>
     </Grid>
 </UserControl>
