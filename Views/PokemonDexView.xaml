@@ -112,7 +112,7 @@
 
             <!-- 🌟 2-5. 새로 추가됨: 잡은 포켓몬만 보기 체크박스 -->
             <CheckBox Grid.Row="2" Content="잡은 포켓몬" IsChecked="{Binding IsShowOnlyUnlocked}" 
-                      HorizontalAlignment="Right" Margin="0,0,15,5" 
+                      HorizontalAlignment="Right" Margin="0,0,0,0" 
                       Foreground="#666666" FontSize="10" FontWeight="Bold" Cursor="Hand"/>
 
             <!-- 3. 포켓몬 도감 리스트 갤러리 (Row를 2에서 3으로 변경) -->
