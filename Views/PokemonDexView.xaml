@@ -70,16 +70,17 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <!-- 🌟 체크박스가 들어갈 세 번째 줄 추가 -->
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- 1. 헤더 영역: 둥근 화면에 맞게 배경색을 빼고 글자색으로 포인트를 주었습니다 -->
+            <!-- 1. 헤더 영역 -->
             <TextBlock Grid.Row="0" Text="포켓몬 도감" Foreground="#E53935" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,5"/>
 
-            <!-- 2. 지방(Region) 선택 탭 메뉴 (🌟 카운트 텍스트 바인딩 적용) -->
-            <!-- 🌟 수정됨: 지방(Region) 선택 탭 메뉴 (지역명은 크게, 숫자는 작게 2줄 배치) -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+            <!-- 2. 지방(Region) 선택 탭 메뉴 -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
                 <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" IsChecked="True" Tag="0" Checked="RegionTab_Checked">
                     <StackPanel>
                         <TextBlock Text="관동" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
@@ -109,8 +110,13 @@
                 </RadioButton>
             </StackPanel>
 
-            <!-- 3. 포켓몬 도감 리스트 갤러리 -->
-            <ScrollViewer x:Name="DexScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="15,0,15,0">
+            <!-- 🌟 2-5. 새로 추가됨: 잡은 포켓몬만 보기 체크박스 -->
+            <CheckBox Grid.Row="2" Content="잡은 포켓몬" IsChecked="{Binding IsShowOnlyUnlocked}" 
+                      HorizontalAlignment="Right" Margin="0,0,15,5" 
+                      Foreground="#666666" FontSize="10" FontWeight="Bold" Cursor="Hand"/>
+
+            <!-- 3. 포켓몬 도감 리스트 갤러리 (Row를 2에서 3으로 변경) -->
+            <ScrollViewer x:Name="DexScrollViewer" Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="15,0,15,0">
                 <ItemsControl ItemsSource="{Binding FilteredPokedex}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -142,7 +148,7 @@
             </ScrollViewer>
 
             <!-- 4. 하단 닫기 버튼 영역 -->
-            <Button Grid.Row="3" Content="닫기" Style="{StaticResource CloseButtonStyle}" HorizontalAlignment="Center" Margin="0,10,0,0" Click="DexButton_Click"/>
+            <Button Grid.Row="4" Content="닫기" Style="{StaticResource CloseButtonStyle}" HorizontalAlignment="Center" Margin="0,10,0,0" Click="DexButton_Click"/>
         </Grid>
     </Border>
 </UserControl>

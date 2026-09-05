@@ -414,6 +414,20 @@ namespace TamaPoke.Models
             }
         }
 
+        private bool _isShowOnlyUnlocked = false;
+        public bool IsShowOnlyUnlocked
+        {
+            get => _isShowOnlyUnlocked;
+            set
+            {
+                if (SetProperty(ref _isShowOnlyUnlocked, value))
+                {
+                    // 체크박스를 누를 때마다 리스트를 다시 계산하도록 호출합니다.
+                    UpdateFilteredPokedex();
+                }
+            }
+        }
+
         public void UpdateFilteredPokedex()
         {
             FilteredPokedex.Clear();
@@ -430,6 +444,9 @@ namespace TamaPoke.Models
 
             foreach (var entry in FullPokedex.Where(p => p.Id >= startId && p.Id <= endId))
             {
+                if (IsShowOnlyUnlocked && !entry.IsUnlocked)
+                    continue;
+
                 FilteredPokedex.Add(entry);
             }
         }
