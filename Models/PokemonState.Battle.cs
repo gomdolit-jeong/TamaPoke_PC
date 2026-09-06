@@ -862,65 +862,60 @@ namespace TamaPoke.Models
         #region 체육관 시스템 (Gym System)
 
         // 🌟 1. 전용 스킬(SpecificSkills) 배열을 추가하여 멍청한 랜덤 스킬을 쓰지 않게 만듭니다.
+        // 🌟 GymName 속성을 새로 추가합니다.
         public class GymLeaderInfo
         {
-            public string LeaderName { get; set; } = string.Empty;
-            public string BadgeName { get; set; } = string.Empty;
+            public string GymName { get; set; } // 체육관 이름 (예: "회색 체육관")
+            public string LeaderName { get; set; }
+            public string BadgeName { get; set; }
             public int PokemonSpeciesId { get; set; }
             public int Level { get; set; }
-            public int[] SpecificSkills { get; set; } = new int[4];
+            public int[] SpecificSkills { get; set; }
         }
 
         // 🌟 2. 관장들에게 자비 없는 고위력기 스킬 번호(MoveId)를 고정해 줍니다.
+        // 🌟 공식 체육관 명칭(GymName)이 모두 추가된 32연전 데이터
         public static readonly GymLeaderInfo[] GymLeaders = new GymLeaderInfo[]
         {
-            // ==========================================
-            // 🔴 1세대 관동지방 (Lv 14 ~ 50)
-            // ==========================================
-            new GymLeaderInfo { LeaderName = "웅이", BadgeName = "회색배지", PokemonSpeciesId = 95, Level = 14, SpecificSkills = new int[] { 60, 44, 1, 0 } },  // 롱스톤
-            new GymLeaderInfo { LeaderName = "이슬", BadgeName = "블루배지", PokemonSpeciesId = 121, Level = 21, SpecificSkills = new int[] { 19, 32, 86, 0 } }, // 아쿠스타
-            new GymLeaderInfo { LeaderName = "마티스", BadgeName = "오렌지배지", PokemonSpeciesId = 26, Level = 24, SpecificSkills = new int[] { 24, 23, 5, 0 } }, // 라이츄
-            new GymLeaderInfo { LeaderName = "민화", BadgeName = "무지개배지", PokemonSpeciesId = 45, Level = 29, SpecificSkills = new int[] { 29, 41, 28, 0 } }, // 라플레시아
-            new GymLeaderInfo { LeaderName = "독수", BadgeName = "핑크배지", PokemonSpeciesId = 110, Level = 43, SpecificSkills = new int[] { 41, 64, 8, 0 } }, // 또도가스
-            new GymLeaderInfo { LeaderName = "초련", BadgeName = "골드배지", PokemonSpeciesId = 65, Level = 43, SpecificSkills = new int[] { 51, 64, 86, 0 } },  // 후딘
-            new GymLeaderInfo { LeaderName = "강연", BadgeName = "진홍배지", PokemonSpeciesId = 59, Level = 47, SpecificSkills = new int[] { 14, 8, 68, 0 } },  // 윈디
-            new GymLeaderInfo { LeaderName = "비주기", BadgeName = "그린배지", PokemonSpeciesId = 112, Level = 50, SpecificSkills = new int[] { 44, 60, 55, 9 } }, // 코뿌리
+            // === 1세대 관동지방 ===
+            new GymLeaderInfo { GymName = "회색 체육관", LeaderName = "웅이", BadgeName = "회색배지", PokemonSpeciesId = 95, Level = 14, SpecificSkills = new int[] { 60, 44, 1, 0 } },
+            new GymLeaderInfo { GymName = "블루 체육관", LeaderName = "이슬", BadgeName = "블루배지", PokemonSpeciesId = 121, Level = 21, SpecificSkills = new int[] { 19, 32, 86, 0 } },
+            new GymLeaderInfo { GymName = "갈색 체육관", LeaderName = "마티스", BadgeName = "오렌지배지", PokemonSpeciesId = 26, Level = 24, SpecificSkills = new int[] { 24, 23, 5, 0 } },
+            new GymLeaderInfo { GymName = "무지개 체육관", LeaderName = "민화", BadgeName = "무지개배지", PokemonSpeciesId = 45, Level = 29, SpecificSkills = new int[] { 29, 41, 28, 0 } },
+            new GymLeaderInfo { GymName = "연분홍 체육관", LeaderName = "독수", BadgeName = "핑크배지", PokemonSpeciesId = 110, Level = 43, SpecificSkills = new int[] { 41, 64, 8, 0 } },
+            new GymLeaderInfo { GymName = "노랑 체육관", LeaderName = "초련", BadgeName = "골드배지", PokemonSpeciesId = 65, Level = 43, SpecificSkills = new int[] { 51, 64, 86, 0 } },
+            new GymLeaderInfo { GymName = "홍련 체육관", LeaderName = "강연", BadgeName = "진홍배지", PokemonSpeciesId = 59, Level = 47, SpecificSkills = new int[] { 14, 8, 68, 0 } },
+            new GymLeaderInfo { GymName = "상록 체육관", LeaderName = "비주기", BadgeName = "그린배지", PokemonSpeciesId = 112, Level = 50, SpecificSkills = new int[] { 44, 60, 55, 9 } },
 
-            // ==========================================
-            // 🟡 2세대 성도지방 (Lv 55 ~ 80)
-            // ==========================================
-            new GymLeaderInfo { LeaderName = "비상", BadgeName = "윙배지", PokemonSpeciesId = 18, Level = 55, SpecificSkills = new int[] { 47, 45, 5, 0 } }, // 피죤투
-            new GymLeaderInfo { LeaderName = "호일", BadgeName = "인세트배지", PokemonSpeciesId = 123, Level = 58, SpecificSkills = new int[] { 57, 45, 75, 0 } }, // 스라크
-            new GymLeaderInfo { LeaderName = "꼭두", BadgeName = "레귤러배지", PokemonSpeciesId = 241, Level = 62, SpecificSkills = new int[] { 7, 86, 68, 0 } }, // 밀탱크
-            new GymLeaderInfo { LeaderName = "유빈", BadgeName = "팬텀배지", PokemonSpeciesId = 94, Level = 65, SpecificSkills = new int[] { 64, 41, 89, 0 } }, // 팬텀
-            new GymLeaderInfo { LeaderName = "사도", BadgeName = "쇼크배지", PokemonSpeciesId = 62, Level = 68, SpecificSkills = new int[] { 37, 18, 44, 0 } }, // 강챙이
-            new GymLeaderInfo { LeaderName = "규리", BadgeName = "스틸배지", PokemonSpeciesId = 208, Level = 72, SpecificSkills = new int[] { 70, 44, 69, 0 } }, // 강철톤
-            new GymLeaderInfo { LeaderName = "류옹", BadgeName = "아이스배지", PokemonSpeciesId = 221, Level = 75, SpecificSkills = new int[] { 33, 44, 7, 0 } }, // 메꾸리
-            new GymLeaderInfo { LeaderName = "이향", BadgeName = "라이징배지", PokemonSpeciesId = 230, Level = 80, SpecificSkills = new int[] { 67, 19, 32, 80 } }, // 킹드라
+            // === 2세대 성도지방 ===
+            new GymLeaderInfo { GymName = "도라지 체육관", LeaderName = "비상", BadgeName = "윙배지", PokemonSpeciesId = 18, Level = 55, SpecificSkills = new int[] { 47, 45, 5, 0 } },
+            new GymLeaderInfo { GymName = "고동 체육관", LeaderName = "호일", BadgeName = "인세트배지", PokemonSpeciesId = 123, Level = 58, SpecificSkills = new int[] { 57, 45, 75, 0 } },
+            new GymLeaderInfo { GymName = "금빛 체육관", LeaderName = "꼭두", BadgeName = "레귤러배지", PokemonSpeciesId = 241, Level = 62, SpecificSkills = new int[] { 7, 86, 68, 0 } },
+            new GymLeaderInfo { GymName = "인주 체육관", LeaderName = "유빈", BadgeName = "팬텀배지", PokemonSpeciesId = 94, Level = 65, SpecificSkills = new int[] { 64, 41, 89, 0 } },
+            new GymLeaderInfo { GymName = "진청 체육관", LeaderName = "사도", BadgeName = "쇼크배지", PokemonSpeciesId = 62, Level = 68, SpecificSkills = new int[] { 37, 18, 44, 0 } },
+            new GymLeaderInfo { GymName = "담청 체육관", LeaderName = "규리", BadgeName = "스틸배지", PokemonSpeciesId = 208, Level = 72, SpecificSkills = new int[] { 70, 44, 69, 0 } },
+            new GymLeaderInfo { GymName = "황토 체육관", LeaderName = "류옹", BadgeName = "아이스배지", PokemonSpeciesId = 221, Level = 75, SpecificSkills = new int[] { 33, 44, 7, 0 } },
+            new GymLeaderInfo { GymName = "검은먹 체육관", LeaderName = "이향", BadgeName = "라이징배지", PokemonSpeciesId = 230, Level = 80, SpecificSkills = new int[] { 67, 19, 32, 80 } },
 
-            // ==========================================
-            // 🟢 3세대 호연지방 (Lv 82 ~ 96)
-            // ==========================================
-            new GymLeaderInfo { LeaderName = "원규", BadgeName = "스톤배지", PokemonSpeciesId = 306, Level = 82, SpecificSkills = new int[] { 60, 44, 8, 9 } },  // 보스로라
-            new GymLeaderInfo { LeaderName = "철구", BadgeName = "너클배지", PokemonSpeciesId = 297, Level = 84, SpecificSkills = new int[] { 44, 8, 5, 0 } }, // 하리뭉
-            new GymLeaderInfo { LeaderName = "암전", BadgeName = "다이나모배지", PokemonSpeciesId = 310, Level = 86, SpecificSkills = new int[] { 24, 23, 5, 0 } }, // 썬더볼트
-            new GymLeaderInfo { LeaderName = "민지", BadgeName = "히트배지", PokemonSpeciesId = 324, Level = 88, SpecificSkills = new int[] { 14, 44, 8, 0 } }, // 코터스
-            new GymLeaderInfo { LeaderName = "종길", BadgeName = "밸런스배지", PokemonSpeciesId = 289, Level = 90, SpecificSkills = new int[] { 44, 64, 8, 9 } }, // 게을킹
-            new GymLeaderInfo { LeaderName = "은송", BadgeName = "깃털배지", PokemonSpeciesId = 334, Level = 92, SpecificSkills = new int[] { 47, 45, 44, 0 } }, // 파비코리
-            new GymLeaderInfo { LeaderName = "풍&란", BadgeName = "마인드배지", PokemonSpeciesId = 338, Level = 94, SpecificSkills = new int[] { 51, 60, 64, 86 } }, // 솔록
-            new GymLeaderInfo { LeaderName = "아단", BadgeName = "레인배지", PokemonSpeciesId = 350, Level = 96, SpecificSkills = new int[] { 19, 32, 86, 9 } }, // 밀로틱
+            // === 3세대 호연지방 ===
+            new GymLeaderInfo { GymName = "금탄 체육관", LeaderName = "원규", BadgeName = "스톤배지", PokemonSpeciesId = 306, Level = 82, SpecificSkills = new int[] { 60, 44, 8, 9 } },
+            new GymLeaderInfo { GymName = "무로 체육관", LeaderName = "철구", BadgeName = "너클배지", PokemonSpeciesId = 297, Level = 84, SpecificSkills = new int[] { 44, 8, 5, 0 } },
+            new GymLeaderInfo { GymName = "보라 체육관", LeaderName = "암전", BadgeName = "다이나모배지", PokemonSpeciesId = 310, Level = 86, SpecificSkills = new int[] { 24, 23, 5, 0 } },
+            new GymLeaderInfo { GymName = "용암 체육관", LeaderName = "민지", BadgeName = "히트배지", PokemonSpeciesId = 324, Level = 88, SpecificSkills = new int[] { 14, 44, 8, 0 } },
+            new GymLeaderInfo { GymName = "등화 체육관", LeaderName = "종길", BadgeName = "밸런스배지", PokemonSpeciesId = 289, Level = 90, SpecificSkills = new int[] { 44, 64, 8, 9 } },
+            new GymLeaderInfo { GymName = "검방울 체육관", LeaderName = "은송", BadgeName = "깃털배지", PokemonSpeciesId = 334, Level = 92, SpecificSkills = new int[] { 47, 45, 44, 0 } },
+            new GymLeaderInfo { GymName = "이끼 체육관", LeaderName = "풍&란", BadgeName = "마인드배지", PokemonSpeciesId = 338, Level = 94, SpecificSkills = new int[] { 51, 60, 64, 86 } },
+            new GymLeaderInfo { GymName = "루네 체육관", LeaderName = "아단", BadgeName = "레인배지", PokemonSpeciesId = 350, Level = 96, SpecificSkills = new int[] { 19, 32, 86, 9 } },
 
-            // ==========================================
-            // 🔵 4세대 신오지방 (Lv 98 ~ 120) - 최종장
-            // ==========================================
-            new GymLeaderInfo { LeaderName = "강석", BadgeName = "콜배지", PokemonSpeciesId = 409, Level = 98, SpecificSkills = new int[] { 60, 44, 8, 9 } }, // 램펄드
-            new GymLeaderInfo { LeaderName = "유채", BadgeName = "포레스트배지", PokemonSpeciesId = 407, Level = 100, SpecificSkills = new int[] { 29, 41, 86, 0 } }, // 로즈레이드
-            new GymLeaderInfo { LeaderName = "멜리사", BadgeName = "레릭배지", PokemonSpeciesId = 429, Level = 102, SpecificSkills = new int[] { 64, 51, 23, 0 } }, // 무우마직
-            new GymLeaderInfo { LeaderName = "자망", BadgeName = "코블배지", PokemonSpeciesId = 448, Level = 105, SpecificSkills = new int[] { 44, 64, 5, 9 } }, // 루카리오
-            new GymLeaderInfo { LeaderName = "맥실러", BadgeName = "펜배지", PokemonSpeciesId = 419, Level = 108, SpecificSkills = new int[] { 19, 32, 68, 5 } }, // 플로젤
-            new GymLeaderInfo { LeaderName = "동관", BadgeName = "마인배지", PokemonSpeciesId = 411, Level = 110, SpecificSkills = new int[] { 60, 44, 8, 86 } }, // 바리톱스
-            new GymLeaderInfo { LeaderName = "무청", BadgeName = "글레이셔배지", PokemonSpeciesId = 460, Level = 115, SpecificSkills = new int[] { 32, 44, 29, 0 } }, // 눈설왕
-            new GymLeaderInfo { LeaderName = "전진", BadgeName = "비컨배지", PokemonSpeciesId = 466, Level = 120, SpecificSkills = new int[] { 24, 23, 44, 9 } } // 에레키블
+            // === 4세대 신오지방 ===
+            new GymLeaderInfo { GymName = "무쇠 체육관", LeaderName = "강석", BadgeName = "콜배지", PokemonSpeciesId = 409, Level = 98, SpecificSkills = new int[] { 60, 44, 8, 9 } },
+            new GymLeaderInfo { GymName = "영원 체육관", LeaderName = "유채", BadgeName = "포레스트배지", PokemonSpeciesId = 407, Level = 100, SpecificSkills = new int[] { 29, 41, 86, 0 } },
+            new GymLeaderInfo { GymName = "연고 체육관", LeaderName = "멜리사", BadgeName = "레릭배지", PokemonSpeciesId = 429, Level = 102, SpecificSkills = new int[] { 64, 51, 23, 0 } },
+            new GymLeaderInfo { GymName = "장막 체육관", LeaderName = "자망", BadgeName = "코블배지", PokemonSpeciesId = 448, Level = 105, SpecificSkills = new int[] { 44, 64, 5, 9 } },
+            new GymLeaderInfo { GymName = "들초 체육관", LeaderName = "맥실러", BadgeName = "펜배지", PokemonSpeciesId = 419, Level = 108, SpecificSkills = new int[] { 19, 32, 68, 5 } },
+            new GymLeaderInfo { GymName = "운하 체육관", LeaderName = "동관", BadgeName = "마인배지", PokemonSpeciesId = 411, Level = 110, SpecificSkills = new int[] { 60, 44, 8, 86 } },
+            new GymLeaderInfo { GymName = "선단 체육관", LeaderName = "무청", BadgeName = "글레이셔배지", PokemonSpeciesId = 460, Level = 115, SpecificSkills = new int[] { 32, 44, 29, 0 } },
+            new GymLeaderInfo { GymName = "물가 체육관", LeaderName = "전진", BadgeName = "비컨배지", PokemonSpeciesId = 466, Level = 120, SpecificSkills = new int[] { 24, 23, 44, 9 } }
         };
 
         private int _gymBadges = 0;

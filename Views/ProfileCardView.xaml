@@ -11,12 +11,31 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BadgeUnlockedConverter x:Key="BadgeUnlocked"/>
 
+        <!-- 메달 뱃지 공통 스타일 -->
         <Style TargetType="Border" x:Key="MedalBadgeStyle">
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Margin" Value="4"/>
             <Setter Property="Background" Value="#DDDDDD"/>
             <Setter Property="TextBlock.Foreground" Value="#999999"/>
             <Setter Property="Height" Value="24"/>
+        </Style>
+
+        <!-- 체육관 뱃지 버튼 공통 스타일 -->
+        <Style TargetType="Button" x:Key="GymBtnStyle">
+            <Setter Property="Background" Value="#F5F5F5"/>
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -25,9 +44,7 @@
             <EllipseGeometry Center="144,144" RadiusX="144" RadiusY="144" />
         </Grid.Clip>
 
-        <!-- ========================================== -->
-        <!-- 🌟 인게임 체육관 도전 확인 오버레이 창 (포획 창 스타일) -->
-        <!-- ========================================== -->
+        <!-- 🌟 체육관 도전 확인 오버레이 창 -->
         <Grid Background="#99000000" Panel.ZIndex="100">
             <Grid.Style>
                 <Style TargetType="Grid">
@@ -40,32 +57,23 @@
                 </Style>
             </Grid.Style>
 
-            <Border Width="200" Height="110" Background="White" CornerRadius="12" 
-        HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Width="200" Height="110" Background="White" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="10" ShadowDepth="3" Opacity="0.3"/>
                 </Border.Effect>
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding SelectedGymLeader.LeaderName, StringFormat='{}{0} 체육관에\n도전하시겠습니까?'}" 
+                    <TextBlock Text="{Binding SelectedGymLeader.GymName, StringFormat='{}{0}에&#x0A;도전하시겠습니까?'}" 
                                FontSize="13" FontWeight="Bold" Foreground="#333333" 
                                TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <!-- 도전하기 버튼 -->
-                        <Button Content="도전하기" Width="80" Height="28" Margin="4,0" 
-                                Background="#E53935" Foreground="White" FontWeight="Bold" FontSize="11"
-                                Click="ConfirmGym_Click" Cursor="Hand">
+                        <Button Content="도전하기" Width="80" Height="28" Margin="4,0" Background="#E53935" Foreground="White" FontWeight="Bold" FontSize="11" Click="ConfirmGym_Click" Cursor="Hand">
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="6"/>
                                 </Style>
                             </Button.Resources>
                         </Button>
-
-                        <!-- 취소 버튼 -->
-                        <Button Content="취소" Width="60" Height="28" Margin="4,0" 
-                                Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11"
-                                Click="CancelGym_Click" Cursor="Hand">
+                        <Button Content="취소" Width="60" Height="28" Margin="4,0" Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11" Click="CancelGym_Click" Cursor="Hand">
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="6"/>
@@ -77,6 +85,7 @@
             </Border>
         </Grid>
 
+        <!-- 공통 상단/좌우 버튼 -->
         <Button Content="X 닫기" FontSize="11" FontWeight="Bold" Background="#E53935" Foreground="White" Width="60" Height="22" Margin="0,15,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Click="Close_Click" Cursor="Hand">
             <Button.Resources>
                 <Style TargetType="Border">
@@ -84,14 +93,14 @@
                 </Style>
             </Button.Resources>
         </Button>
-
         <Button Content="◀" FontSize="20" FontWeight="Bold" Background="Transparent" BorderThickness="0" Foreground="#888" Width="30" Height="60" Margin="5,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Cursor="Hand" Click="PrevPage_Click"/>
         <Button Content="▶" FontSize="20" FontWeight="Bold" Background="Transparent" BorderThickness="0" Foreground="#888" Width="30" Height="60" Margin="0,0,5,0" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand" Click="NextPage_Click"/>
 
+        <!-- 메인 컨텐츠 영역 -->
         <Grid Margin="35,40,35,35">
 
             <!-- ========================================== -->
-            <!-- 🌟 페이지 1: 큼직한 뱃지 도전 버튼 메인 화면 -->
+            <!-- 🌟 페이지 1 (Value="0"): 체육관 뱃지 스크롤 화면 -->
             <!-- ========================================== -->
             <Grid>
                 <Grid.Style>
@@ -106,63 +115,493 @@
                 </Grid.Style>
 
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="GYM CHALLENGE" FontSize="15" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,0,0,8" Foreground="#E53935"/>
+                    <TextBlock Text="GYM CHALLENGE" FontSize="15" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,0,0,5" Foreground="#E53935"/>
 
-                    <!-- 🌟 뱃지를 4열 2행(총 8개)의 큼직한 버튼으로 배치하여 터치/클릭이 편하게 수정 -->
-                    <UniformGrid Columns="4" Rows="2" Width="190" Height="90" Margin="0,0,0,10">
-                        <UniformGrid.Resources>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="#F5F5F5"/>
-                                <Setter Property="BorderBrush" Value="#DDDDDD"/>
-                                <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="Margin" Value="3"/>
-                                <Setter Property="Cursor" Value="Hand"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </UniformGrid.Resources>
+                    <!-- 🌟 스크롤 가능한 뱃지 목록 영역 -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Width="200" Height="140" Margin="0,0,0,8" Padding="0,0,5,0">
+                        <StackPanel>
+                            <!-- 🔴 1세대 관동지방 -->
+                            <TextBlock Text="1세대 관동지방" FontSize="11" FontWeight="Bold" Foreground="#666" Margin="4,4,0,2"/>
+                            <Separator Background="#DDD" Margin="0,0,0,4"/>
+                            <UniformGrid Columns="4" Rows="2" Height="90" Margin="0,0,0,10">
+                                <Button Tag="0" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_1.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=1}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="1" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_2.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=2}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="2" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_3.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=3}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="3" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_4.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=4}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="4" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_5.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=5}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="5" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_6.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=6}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="6" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_7.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=7}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="7" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_8.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=8}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                            </UniformGrid>
 
-                        <!-- 관동지방 1~8번 뱃지 버튼 (Tag는 배열 인덱스 0~7) -->
-                        <Button Tag="0" Click="GymBadge_Click">
-                            <TextBlock Text="🪨" FontSize="20"/>
-                        </Button>
-                        <Button Tag="1" Click="GymBadge_Click">
-                            <TextBlock Text="💧" FontSize="20"/>
-                        </Button>
-                        <Button Tag="2" Click="GymBadge_Click">
-                            <TextBlock Text="⚡" FontSize="20"/>
-                        </Button>
-                        <Button Tag="3" Click="GymBadge_Click">
-                            <TextBlock Text="🌈" FontSize="20"/>
-                        </Button>
-                        <Button Tag="4" Click="GymBadge_Click">
-                            <TextBlock Text="💖" FontSize="20"/>
-                        </Button>
-                        <Button Tag="5" Click="GymBadge_Click">
-                            <TextBlock Text="🟡" FontSize="20"/>
-                        </Button>
-                        <Button Tag="6" Click="GymBadge_Click">
-                            <TextBlock Text="🔥" FontSize="20"/>
-                        </Button>
-                        <Button Tag="7" Click="GymBadge_Click">
-                            <TextBlock Text="🌱" FontSize="20"/>
-                        </Button>
-                    </UniformGrid>
+                            <!-- 🟡 2세대 성도지방 -->
+                            <TextBlock Text="2세대 성도지방" FontSize="11" FontWeight="Bold" Foreground="#666" Margin="4,4,0,2"/>
+                            <Separator Background="#DDD" Margin="0,0,0,4"/>
+                            <UniformGrid Columns="4" Rows="2" Height="90" Margin="0,0,0,10">
+                                <Button Tag="8" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_9.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=9}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="9" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_10.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=10}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="10" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_11.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=11}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="11" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_12.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=12}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="12" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_13.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=13}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="13" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_14.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=14}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="14" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_15.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=15}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="15" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_16.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=16}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                            </UniformGrid>
 
-                    <TextBlock Text="{Binding Streak, StringFormat='연속 출석일 {0}'}" FontSize="13" FontWeight="Bold" FontFamily="Consolas" Foreground="#333" HorizontalAlignment="Center" Margin="0,1"/>
-                    <TextBlock Text="{Binding RegisteredCount, StringFormat='도감 {0} / 493'}" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Foreground="#333" HorizontalAlignment="Center" Margin="0,1"/>
-                    <TextBlock Text="{Binding Party.Count, StringFormat='파티멤버 {0} / 6'}" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Foreground="#333" HorizontalAlignment="Center" Margin="0,1"/>
+                            <!-- 🟢 3세대 호연지방 -->
+                            <TextBlock Text="3세대 호연지방" FontSize="11" FontWeight="Bold" Foreground="#666" Margin="4,4,0,2"/>
+                            <Separator Background="#DDD" Margin="0,0,0,4"/>
+                            <UniformGrid Columns="4" Rows="2" Height="90" Margin="0,0,0,10">
+                                <Button Tag="16" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_17.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=17}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="17" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_18.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=18}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="18" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_19.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=19}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="19" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_20.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=20}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="20" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_21.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=21}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="21" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_22.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=22}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="22" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_23.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=23}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="23" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_24.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=24}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                            </UniformGrid>
+
+                            <!-- 🔵 4세대 신오지방 -->
+                            <TextBlock Text="4세대 신오지방" FontSize="11" FontWeight="Bold" Foreground="#666" Margin="4,4,0,2"/>
+                            <Separator Background="#DDD" Margin="0,0,0,4"/>
+                            <UniformGrid Columns="4" Rows="2" Height="90" Margin="0,0,0,10">
+                                <Button Tag="24" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_25.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=25}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="25" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_26.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=26}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="26" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_27.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=27}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="27" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_28.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=28}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="28" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_29.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=29}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="29" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_30.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=30}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="30" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_31.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=31}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                                <Button Tag="31" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}">
+                                    <Image Source="/Assets/Resource/Badges/Badge_32.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Opacity" Value="0.2"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GymBadges, Converter={StaticResource BadgeUnlocked}, ConverterParameter=32}" Value="True">
+                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button>
+                            </UniformGrid>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- 🌟 획득한 뱃지 수 표시 -->
+                    <TextBlock Text="{Binding GymBadges, StringFormat='획득한 뱃지: {0} / 32'}" FontSize="13" FontWeight="Bold" FontFamily="Consolas" Foreground="#333" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
 
-            <!-- 🌟 페이지 2: 기본 프로필 -->
+            <!-- ========================================== -->
+            <!-- 🌟 페이지 2 (Value="1"): 기본 프로필 -->
+            <!-- ========================================== -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -199,7 +638,9 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 🌟 페이지 3: 전투 능력치 -->
+            <!-- ========================================== -->
+            <!-- 🌟 페이지 3 (Value="2"): 전투 능력치 -->
+            <!-- ========================================== -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -244,7 +685,9 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 🌟 페이지 4: 보유 스킬 -->
+            <!-- ========================================== -->
+            <!-- 🌟 페이지 4 (Value="3"): 보유 스킬 -->
+            <!-- ========================================== -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -285,7 +728,9 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 🌟 페이지 5: 메달 현황 -->
+            <!-- ========================================== -->
+            <!-- 🌟 페이지 5 (Value="4"): 메달 현황 -->
+            <!-- ========================================== -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -414,7 +859,9 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 🌟 페이지 6: 성장 진행도 -->
+            <!-- ========================================== -->
+            <!-- 🌟 페이지 6 (Value="5"): 성장 진행도 -->
+            <!-- ========================================== -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
