@@ -124,7 +124,7 @@
                 </Grid.Style>
 
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="GYM CHALLENGE" FontSize="15" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,0,0,5" Foreground="#E53935"/>
+                    <TextBlock Text="체육관" FontSize="15" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,0,0,5" Foreground="#E53935"/>
 
                     <!-- 🌟 스크롤 가능한 뱃지 목록 영역 -->
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Width="200" Height="140" Margin="0,0,0,8" Padding="0,0,5,0">

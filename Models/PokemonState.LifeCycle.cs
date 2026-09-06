@@ -241,6 +241,7 @@ namespace TamaPoke.Models
 
         // 🌟 실제 포켓몬 아이디(SpeciesId)를 다음 진화 단계로 바꾸는 헬퍼 함수
         // 🌟 모든 다중 진화 포켓몬이 공평한 무작위 확률로 진화하도록 개선된 함수
+        // 🌟 모든 다중 진화 포켓몬이 공평한 무작위 확률로 진화하도록 개선된 함수
         private void ExecuteActualEvolve()
         {
             if (!DexTable.ContainsKey(SpeciesId)) return;
@@ -261,12 +262,14 @@ namespace TamaPoke.Models
 
             SpeciesId = nextSpeciesId;
 
-            // 🌟 [핵심 해결책] 덮어씌워져 있던 옛날 이름을 지워서, 새 종족값에 맞는 이름(비퀸)을 도감에서 다시 불러오도록 합니다!
+            // 🌟 덮어씌워져 있던 옛날 이름을 지워서, 새 종족값에 맞는 이름(비퀸)을 도감에서 다시 불러오도록 합니다!
             _overrideName = null;
             OnPropertyChanged(nameof(Name));
 
             IsEvolutionPostponed = false;
-            _ageSeconds = 0; AgeMinutes = 0; ResetPosition();
+
+            // 🌟 버그 수정: 레벨이 초기화되지 않도록 _ageSeconds = 0; AgeMinutes = 0; 코드를 삭제했습니다!
+            ResetPosition();
 
             // 진화한 형태가 최초 발견이라면 도감에 등록합니다.
             if (SpeciesId > 0 && !UnlockedPokemon.Contains(SpeciesId))
@@ -275,10 +278,14 @@ namespace TamaPoke.Models
                 UnlockedPokemon.Sort();
                 RegisteredCount = UnlockedPokemon.Count;
             }
-            RefreshPokedex(); Save();
+            RefreshPokedex();
+
+            // 🌟 디테일 추가: 진화 후 최대 체력(MaxHp)이 늘어났을 테니, 현재 체력도 꽉 채워줍니다.
+            PlayerHp = CombatMaxHp;
+
+            Save();
         }
 
-        // 🌟 새 게임(알 상태)을 준비하는 함수
         // 🌟 새 게임(알 상태)을 준비하는 함수
         public void PrepareNewEgg()
         {
@@ -401,15 +408,18 @@ namespace TamaPoke.Models
 
             UnlockedPokemon.Clear(); FullPokedex.Clear(); RegisteredCount = 0; Streak = 0; LastEnd = 1; LastPlayedDate = DateTime.Now.Date;
             GameHighScore = 0; CatchHighScore = 0; MemoHighScore = 0; CleanHighScore = 0;
+            GymBadges = 0;
+            IsGymBattle = false;
+
+            TrAtk = 0;
+            TrDef = 0;
+            TrSpeed = 0;
 
             if (Party != null)
             {
                 Party.Clear();
             }
 
-            // ==========================================
-            // 🌟 [추가됨] 새 게임 시작 시 기본 아이템 지급
-            // ==========================================
             MonsterBalls = 5; // 포켓볼 5개 지급
             Potions = 3;   // 치료약 1개 지급
 
@@ -417,45 +427,7 @@ namespace TamaPoke.Models
             RefreshPokedex();
             Save();
         }
-
-        // 🌟 배틀 승리 시 스킬 최적화 및 알림 처리
-        // 🌟 배틀 승리 시 호출되어 추천할 2개의 스킬을 무작위로 뽑습니다.
-        public void CheckAndRecommendSkills()
-        {
-            int n = SkillDex.GetLearnCount(SpeciesId);
-            List<SkillInfo> availableSkills = new List<SkillInfo>();
-
-            // 현재 레벨 이하에서 배울 수 있는 모든 스킬 중, 아직 배우지 않은 스킬을 수집합니다.
-            for (int i = 0; i < n; i++)
-            {
-                int at = SkillDex.GetLearnLevel(SpeciesId, i);
-                if (at > Level) continue;
-
-                int mv = SkillDex.GetLearnMove(SpeciesId, i);
-                if (mv == 0 || KnowsSkill(mv)) continue;
-
-                var skill = SkillDex.GetSkill(mv);
-                if (skill != null) availableSkills.Add(skill);
-            }
-
-            // 배울 수 있는 스킬이 있다면 랜덤으로 섞어 최대 2개를 뽑습니다.
-            if (availableSkills.Count > 0)
-            {
-                var rand = new Random();
-                var picked = availableSkills.OrderBy(x => rand.Next()).Take(2).ToList();
-
-                RecommendedSkill1 = picked.Count > 0 ? picked[0] : null;
-                RecommendedSkill2 = picked.Count > 1 ? picked[1] : null;
-
-                IsSkillLearnMenuOpen = true; // 스킬 학습 팝업 열기
-                BattleMessage = "실전 경험을 통해 새로운 스킬을 떠올렸다!\n어떤 스킬을 배울까?";
-            }
-            else
-            {
-                // 배울 스킬이 없다면 바로 포획(또는 다음 진행) 단계로 넘어갑니다.
-                IsCatchOffered = true;
-            }
-        }
+        
         #endregion
     }
 }

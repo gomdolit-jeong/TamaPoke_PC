@@ -524,18 +524,18 @@ namespace TamaPoke.Models
 
         public void AddItemToInventory(ItemType type, int amount)
         {
-            var existingItem = Inventory.FirstOrDefault(i => i.Type == type);
-            if (existingItem != null)
+            if (type == ItemType.monsterball)
             {
-                existingItem.Quantity += amount;
+                // 속성에 직접 더해주면 SetProperty가 작동하여 화면의 숫자가 즉시 올라갑니다!
+                MonsterBalls += amount;
             }
-            else
+            else if (type == ItemType.Potion)
             {
-                if (type == ItemType.monsterball)
-                    Inventory.Add(new ItemInfo { Name = "몬스터볼", Description = "야생 포켓몬을 잡을 때 쓴다.", Type = ItemType.monsterball, EffectValue = 1, Quantity = amount });
-                else if (type == ItemType.Potion)
-                    Inventory.Add(new ItemInfo { Name = "상처약", Description = "포켓몬의 체력을 20 회복한다.", Type = ItemType.Potion, EffectValue = 20, Quantity = amount });
+                Potions += amount;
             }
+
+            // 아이템을 획득했으니 데이터가 날아가지 않도록 즉시 저장합니다.
+            Save();
         }
         #endregion
 
@@ -580,7 +580,14 @@ namespace TamaPoke.Models
             IsGymBattle = false;
             BattleMessage = "";
         }
-        public void LeaveWildBattle() { BattleMessage = $"{EnemyName}을(를) 뒤로하고 길을 떠납니다..."; IsCatchOffered = false; CloseBattle(); }
+        public async void LeaveWildBattle()
+        {
+            IsCatchOffered = false;
+            BattleMessage = $"{EnemyName}을(를) 뒤로하고 길을 떠납니다...";
+            await Task.Delay(1500);
+
+            await ProcessWildBattleRewardsAsync(); // 전리품 챙기기!
+        }
 
         public async Task ExecuteTurnAsync(BattleAction playerAction)
         {
@@ -811,18 +818,9 @@ namespace TamaPoke.Models
                 }
                 else
                 {
-                    Random rand = new Random();
-                    string dropMessage = "";
-
-                    if (rand.Next(100) < 60)
-                    {
-                        if (rand.Next(100) < 70) { AddItemToInventory(ItemType.monsterball, 1); dropMessage = "\n몬스터볼 1개를 얻었다!"; }
-                        else { AddItemToInventory(ItemType.Potion, 1); dropMessage = "\n상처약 1개를 얻었다!"; }
-                    }
-
-                    BattleMessage = $"배틀에서 승리했다!{dropMessage}";
+                    BattleMessage = "배틀에서 승리했다!";
                     await Task.Delay(2000);
-                    OnBattleWon();
+                    OnBattleWon(); 
                 }
             }
         }
@@ -881,7 +879,7 @@ namespace TamaPoke.Models
                     await Task.Delay(2000);
                 }
 
-                IsBattleOpen = false;
+                await ProcessWildBattleRewardsAsync();
             }
             else
             {
@@ -891,6 +889,27 @@ namespace TamaPoke.Models
 
                 IsCatchOffered = true;
             }
+        }
+
+        // 🌟 1. 야생 배틀 종료 후 아이템을 획득하고 배틀을 닫는 공통 메서드
+        private async Task ProcessWildBattleRewardsAsync()
+        {
+            Random rand = new Random();
+            string dropMessage = "";
+
+            if (rand.Next(100) < 60)
+            {
+                if (rand.Next(100) < 70) { AddItemToInventory(ItemType.monsterball, 1); dropMessage = "몬스터볼 1개를 얻었다!"; }
+                else { AddItemToInventory(ItemType.Potion, 1); dropMessage = "상처약 1개를 얻었다!"; }
+            }
+
+            if (!string.IsNullOrEmpty(dropMessage))
+            {
+                BattleMessage = dropMessage;
+                await Task.Delay(2000); // 사용자가 메시지를 읽을 시간을 줍니다.
+            }
+
+            CloseBattle(); // 모든 연출이 끝났으므로 배틀을 완전히 종료합니다.
         }
         #endregion
 
@@ -980,6 +999,13 @@ namespace TamaPoke.Models
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
             if (gymIndex < 0 || gymIndex >= GymLeaders.Length) return;
 
+            // 🌟 버그 수정: 내가 가진 뱃지 개수보다 높은 번호의 체육관은 도전할 수 없도록 막습니다.
+            // (예: 뱃지가 0개면 gymIndex 0(첫번째)만 도전 가능, 1 이상은 차단)
+            if (gymIndex > GymBadges)
+            {
+                return; // 아무 일도 일어나지 않고 무시됩니다.
+            }
+
             _selectedGymIndex = gymIndex;
             SelectedGymLeader = GymLeaders[gymIndex];
             IsGymConfirmOpen = true;
@@ -999,13 +1025,13 @@ namespace TamaPoke.Models
         }
 
         // 🌟 특정 뱃지(체육관)를 직접 선택해서 도전하는 메서드
+        // 특정 뱃지(체육관)를 직접 선택해서 도전하는 메서드
         public async void StartSpecificGymBattle(int gymIndex)
         {
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
-
             if (gymIndex < 0 || gymIndex >= GymLeaders.Length) return;
 
-            GymBadges = gymIndex; // 해당 위치로 일시 조정 또는 세팅
+            // 🌟 버그 수정: 이 부분에 있던 GymBadges = gymIndex; 코드를 삭제했습니다!
             var leader = GymLeaders[gymIndex];
 
             IsProfileOpen = false; _restUsesLeft = 2; _isCounterReady = false;
@@ -1017,12 +1043,14 @@ namespace TamaPoke.Models
             EnemySpeciesId = leader.PokemonSpeciesId;
             EnemyLevel = leader.Level;
 
+            // ... (아래 체력 계산 및 애니메이션 초기화 로직은 기존과 동일하게 유지) ...
+
             PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;
 
             var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
             int enemyBaseHp = enemyInfo != null ? enemyInfo.BaseHp : 50;
 
-            EnemyMaxHp = ((enemyBaseHp * 2 + 100) * EnemyLevel / 100) + EnemyLevel + 50;
+            EnemyMaxHp = (((enemyBaseHp * 2 + 100) * EnemyLevel / 100) + EnemyLevel + 50) * 2;
             EnemyHp = EnemyMaxHp;
 
             EnemySkills = (int[])(leader.SpecificSkills?.Clone() ?? new int[4]);

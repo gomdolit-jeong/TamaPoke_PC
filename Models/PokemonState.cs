@@ -150,14 +150,14 @@ namespace TamaPoke.Models
         public int MonsterBalls
         {
             get => _monsterBalls;
-            set { _monsterBalls = value; OnPropertyChanged(nameof(MonsterBalls)); }
+            set => SetProperty(ref _monsterBalls, value);
         }
 
         private int _potions;
         public int Potions
         {
             get => _potions;
-            set { _potions = value; OnPropertyChanged(nameof(Potions)); }
+            set => SetProperty(ref _potions, value);
         }
 
         public void ResetIdleMenus()
@@ -976,6 +976,13 @@ namespace TamaPoke.Models
         }
         #endregion
 
+        private int Clamp100(int value) => Math.Max(0, Math.Min(value, 100));
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null) { if (EqualityComparer<T>.Default.Equals(field, newValue)) return false; field = newValue; OnPropertyChanged(propertyName); return true; }
+        
+        
         /// ////////////////////////////////////////////////////////////////////
         /// JSON 암호화 저장 및 불러오기 기능 추가 (Save & Load with JSON Encryption)
 //         #region 저장 및 불러오기 Json 암호화(Save & Load)
@@ -1072,10 +1079,5 @@ namespace TamaPoke.Models
         }
         #endregion
 
-        private int Clamp100(int value) => Math.Max(0, Math.Min(value, 100));
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null) { if (EqualityComparer<T>.Default.Equals(field, newValue)) return false; field = newValue; OnPropertyChanged(propertyName); return true; }
     }
 }
