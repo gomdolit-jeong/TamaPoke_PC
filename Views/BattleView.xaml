@@ -296,5 +296,38 @@
                 </StackPanel>
             </Grid>
         </Grid>
+        <!-- 🌟 패배 시 눈앞이 깜깜해지는 페이드아웃 오버레이 -->
+        <!-- IsHitTestVisible="False"를 주어서 평소에는 마우스 클릭을 방해하지 않게 합니다. -->
+        <Grid Background="Black" Panel.ZIndex="999" IsHitTestVisible="False">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <!-- 기본적으로 투명하고 보이지 않는 상태 -->
+                    <Setter Property="Opacity" Value="0"/>
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <!-- IsDefeatedFadeOut이 True가 되면 발동! -->
+                        <DataTrigger Binding="{Binding IsDefeatedFadeOut}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- 2초(0:0:2) 동안 투명도를 0에서 1(완전한 검은색)로 서서히 올립니다. -->
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- 배틀이 끝나고 스위치가 꺼지면 1초(0:0:1) 만에 다시 투명해집니다. -->
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+        </Grid>
     </Grid>
 </UserControl>

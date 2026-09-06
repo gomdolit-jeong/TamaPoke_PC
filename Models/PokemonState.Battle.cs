@@ -46,7 +46,10 @@ namespace TamaPoke.Models
         #region 배틀 시스템 UI 상태 (Battle System UI)
         private bool _isBattleOpen = false;
         public bool IsBattleOpen { get => _isBattleOpen; set { if (SetProperty(ref _isBattleOpen, value)) { OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
-
+        // 🌟 패배 시 화면이 어두워지는 효과를 제어하는 상태 값
+        private bool _isDefeatedFadeOut = false;
+        public bool IsDefeatedFadeOut { get => _isDefeatedFadeOut; set => SetProperty(ref _isDefeatedFadeOut, value); }
+        
         private bool _isPlayerTurn = true;
         public bool IsPlayerTurn
         {
@@ -774,8 +777,16 @@ namespace TamaPoke.Models
                 BattleMessage = IsGymBattle ? "관장에게 패배했습니다...\n수행이 더 필요합니다." : "눈앞이 깜깜해졌다...\n배틀에서 패배했습니다.";
                 Joy = Math.Max(0, Joy - 10);
                 Energy = Math.Max(0, Energy - 20);
+
+                // 🌟 화면이 서서히 어두워지는 애니메이션 스위치 ON!
+                IsDefeatedFadeOut = true;
+
+                // 화면이 완전히 까매지도록 3초간 넉넉히 대기합니다.
                 await Task.Delay(3000);
-                IsGymBattle = false; // 플래그 초기화
+
+                // 상태 초기화 및 배틀 닫기
+                IsDefeatedFadeOut = false;
+                IsGymBattle = false;
                 CloseBattle();
             }
             else if (EnemyHp <= 0)
