@@ -414,7 +414,16 @@ namespace TamaPoke.Models
             }
             else
             {
-                IsCatchOffered = true;
+                // 🌟 체육관 배틀일 경우 포획창을 스킵하고 배틀 닫기
+                if (IsGymBattle)
+                {
+                    IsGymBattle = false;
+                    CloseBattle();
+                }
+                else
+                {
+                    IsCatchOffered = true;
+                }
             }
         }
 
@@ -470,7 +479,16 @@ namespace TamaPoke.Models
             _ = ShowEventMessageAsync(finalMessage);
             await Task.Delay(2000);
 
-            IsCatchOffered = true;
+            // 🌟 체육관 배틀일 경우 스킬을 배운 뒤 포획창을 스킵하고 즉시 배틀 종료
+            if (IsGymBattle)
+            {
+                IsGymBattle = false;
+                CloseBattle();
+            }
+            else
+            {
+                IsCatchOffered = true;
+            }
         }
         #endregion
 
@@ -526,6 +544,7 @@ namespace TamaPoke.Models
             IsProfileOpen = false; _restUsesLeft = 2; _isCounterReady = false;
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
             IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false; // 전투 시작 시 스킬 메뉴 초기화
+            IsGymBattle = false;
 
             Random rand = new Random();
             if (rand.Next(100) < 1) { EnemySpeciesId = LegendaryIds[rand.Next(LegendaryIds.Length)]; }
@@ -552,7 +571,12 @@ namespace TamaPoke.Models
             IsPlayerTurn = true;
         }
 
-        public void CloseBattle() { IsBattleOpen = false; BattleMessage = ""; }
+        public void CloseBattle()
+        {
+            IsBattleOpen = false;
+            IsGymBattle = false;
+            BattleMessage = "";
+        }
         public void LeaveWildBattle() { BattleMessage = $"{EnemyName}을(를) 뒤로하고 길을 떠납니다..."; IsCatchOffered = false; CloseBattle(); }
 
         public async Task ExecuteTurnAsync(BattleAction playerAction)
@@ -770,12 +794,12 @@ namespace TamaPoke.Models
                     BattleMessage = $"대단한 승부였다!\n{leader.LeaderName}에게서\n[{leader.BadgeName}]을(를) 얻었다!";
                     await Task.Delay(3000);
 
-                    IsGymBattle = false;
+                    // 🌟 기존에 여기서 IsGymBattle = false; 를 처리해서 포획창이 떴습니다. 
+                    // теперь OnBattleWon() 내부에서 IsGymBattle을 확인하도록 이 줄을 지웠습니다!
                     OnBattleWon(); // 스킬 학습 기회 제공
                 }
                 else
                 {
-                    // (기존 야생 배틀 승리 로직 그대로 유지)
                     Random rand = new Random();
                     string dropMessage = "";
 
@@ -861,20 +885,16 @@ namespace TamaPoke.Models
 
         #region 체육관 시스템 (Gym System)
 
-        // 🌟 1. 전용 스킬(SpecificSkills) 배열을 추가하여 멍청한 랜덤 스킬을 쓰지 않게 만듭니다.
-        // 🌟 GymName 속성을 새로 추가합니다.
         public class GymLeaderInfo
         {
-            public string? GymName { get; set; }      
-            public string? LeaderName { get; set; }   
-            public string? BadgeName { get; set; }    
+            public string? GymName { get; set; }
+            public string? LeaderName { get; set; }
+            public string? BadgeName { get; set; }
             public int PokemonSpeciesId { get; set; }
             public int Level { get; set; }
-            public int[]? SpecificSkills { get; set; } 
+            public int[]? SpecificSkills { get; set; }
         }
 
-        // 🌟 2. 관장들에게 자비 없는 고위력기 스킬 번호(MoveId)를 고정해 줍니다.
-        // 🌟 공식 체육관 명칭(GymName)이 모두 추가된 32연전 데이터
         public static readonly GymLeaderInfo[] GymLeaders = new GymLeaderInfo[]
         {
             // === 1세대 관동지방 ===
@@ -920,7 +940,7 @@ namespace TamaPoke.Models
 
         private int _gymBadges = 0;
         public int GymBadges { get => _gymBadges; set => SetProperty(ref _gymBadges, value); }
-       
+
         private bool _isGymBattle = false;
         public bool IsGymBattle { get => _isGymBattle; set => SetProperty(ref _isGymBattle, value); }
 
@@ -934,7 +954,6 @@ namespace TamaPoke.Models
             set => SetProperty(ref _isGymConfirmOpen, value);
         }
 
-        // 🌟 타입 뒤에 물음표(?)를 붙여 널(Null)을 허용하도록 수정합니다.
         private GymLeaderInfo? _selectedGymLeader;
         public GymLeaderInfo? SelectedGymLeader
         {
@@ -952,7 +971,7 @@ namespace TamaPoke.Models
 
             _selectedGymIndex = gymIndex;
             SelectedGymLeader = GymLeaders[gymIndex];
-            IsGymConfirmOpen = true; // 🌟 확인창 열기 ON!
+            IsGymConfirmOpen = true;
         }
 
         // 확인창에서 '도전하기'를 눌렀을 때 실제 배틀을 시작하는 메서드
@@ -967,6 +986,7 @@ namespace TamaPoke.Models
         {
             IsGymConfirmOpen = false;
         }
+
         // 🌟 특정 뱃지(체육관)를 직접 선택해서 도전하는 메서드
         public async void StartSpecificGymBattle(int gymIndex)
         {
@@ -974,8 +994,6 @@ namespace TamaPoke.Models
 
             if (gymIndex < 0 || gymIndex >= GymLeaders.Length) return;
 
-            // 이미 깬 체육관이거나 순서대로 도전하게 하고 싶다면 조건을 걸 수 있습니다.
-            // 여기서는 원하시는 대로 선택한 체육관에 바로 도전하도록 설정합니다.
             GymBadges = gymIndex; // 해당 위치로 일시 조정 또는 세팅
             var leader = GymLeaders[gymIndex];
 
