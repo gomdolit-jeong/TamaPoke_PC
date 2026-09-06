@@ -11,6 +11,9 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BadgeUnlockedConverter x:Key="BadgeUnlocked"/>
 
+        <!-- 🌟 새롭게 추가한 타입->색상 변환기를 등록합니다 -->
+        <conv:TypeToColorConverter x:Key="TypeToColor"/>
+
         <!-- 메달 뱃지 공통 스타일 -->
         <Style TargetType="Border" x:Key="MedalBadgeStyle">
             <Setter Property="CornerRadius" Value="8"/>
@@ -62,9 +65,15 @@
                     <DropShadowEffect BlurRadius="10" ShadowDepth="3" Opacity="0.3"/>
                 </Border.Effect>
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding SelectedGymLeader.GymName, StringFormat='{}{0}에&#x0A;도전하시겠습니까?'}" 
-                               FontSize="13" FontWeight="Bold" Foreground="#333333" 
-                               TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+                    <!-- 🌟 헷갈리는 StringFormat 대신 Run과 LineBreak 태그를 사용하여 안전하게 줄바꿈합니다 -->
+                    <TextBlock FontSize="13" FontWeight="Bold" Foreground="#333333" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,12">
+                        <Run Text="{Binding SelectedGymLeader.GymName}"/>
+                        <Run Text="에"/>
+                        <LineBreak/>
+                        <Run Text="도전하시겠습니까?"/>
+                    </TextBlock>
+
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Content="도전하기" Width="80" Height="28" Margin="4,0" Background="#E53935" Foreground="White" FontWeight="Bold" FontSize="11" Click="ConfirmGym_Click" Cursor="Hand">
                             <Button.Resources>
@@ -115,7 +124,7 @@
                 </Grid.Style>
 
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="체육관" FontSize="15" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,0,0,5" Foreground="#E53935"/>
+                    <TextBlock Text="GYM CHALLENGE" FontSize="15" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,0,0,5" Foreground="#E53935"/>
 
                     <!-- 🌟 스크롤 가능한 뱃지 목록 영역 -->
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Width="200" Height="140" Margin="0,0,0,8" Padding="0,0,5,0">
@@ -717,9 +726,12 @@
                                 <Border Width="85" Height="45" Margin="2" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4">
                                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,4" HorizontalAlignment="Center"/>
-                                        <Border CornerRadius="3" Background="#78909C" Padding="4,1" HorizontalAlignment="Center">
+
+                                        <!-- 🌟 TypeToColorConverter를 사용하여 타입별로 배경색을 다르게 칠합니다 -->
+                                        <Border CornerRadius="3" Background="{Binding Type, Converter={StaticResource TypeToColor}}" Padding="4,1" HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                         </Border>
+
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
