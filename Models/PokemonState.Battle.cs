@@ -865,12 +865,12 @@ namespace TamaPoke.Models
         // 🌟 GymName 속성을 새로 추가합니다.
         public class GymLeaderInfo
         {
-            public string GymName { get; set; } // 체육관 이름 (예: "회색 체육관")
-            public string LeaderName { get; set; }
-            public string BadgeName { get; set; }
+            public string? GymName { get; set; }      
+            public string? LeaderName { get; set; }   
+            public string? BadgeName { get; set; }    
             public int PokemonSpeciesId { get; set; }
             public int Level { get; set; }
-            public int[] SpecificSkills { get; set; }
+            public int[]? SpecificSkills { get; set; } 
         }
 
         // 🌟 2. 관장들에게 자비 없는 고위력기 스킬 번호(MoveId)를 고정해 줍니다.
@@ -996,7 +996,7 @@ namespace TamaPoke.Models
             EnemyMaxHp = ((enemyBaseHp * 2 + 100) * EnemyLevel / 100) + EnemyLevel + 50;
             EnemyHp = EnemyMaxHp;
 
-            EnemySkills = (int[])leader.SpecificSkills.Clone();
+            EnemySkills = (int[])(leader.SpecificSkills?.Clone() ?? new int[4]);
             UpdateEnemyAnimation(0);
 
             IsBattleOpen = true;
