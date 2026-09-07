@@ -6,7 +6,7 @@ using TamaPoke.Models;
 
 namespace TamaPoke.Views
 {
-    public partial class CatchGameView : UserControl
+    public partial class CatchGameView : System.Windows.Controls.UserControl
     {
         private static CatchGameView? _cachedInstance;
 
@@ -27,13 +27,13 @@ namespace TamaPoke.Views
 
         private PokemonState? GetPet() => DataContext as PokemonState;
 
-        private void GameArea_MouseMove(object sender, MouseEventArgs e)
+        private void GameArea_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var pet = GetPet();
             if (pet != null && pet.IsCatchGameOpen)
             {
                 // 포켓몬이 마우스를 따라 부드럽게 이동합니다.
-                Point pos = e.GetPosition((UIElement)sender);
+                System.Windows.Point pos = e.GetPosition((UIElement)sender);
                 double targetX = pos.X - 160;
                 pet.TargetPosX = Math.Max(-100, Math.Min(100, targetX));
             }

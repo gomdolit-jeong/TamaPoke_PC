@@ -5,7 +5,7 @@ using System.Windows.Input;
 
 namespace TamaPoke.Views
 {
-    public partial class InventoryView : UserControl
+    public partial class InventoryView : System.Windows.Controls.UserControl
     {
         public InventoryView()
         {

@@ -4,7 +4,7 @@ using TamaPoke.Models;
 
 namespace TamaPoke.Views
 {
-    public partial class PartyView : UserControl
+    public partial class PartyView : System.Windows.Controls.UserControl
     {
         private PartyMember? _memberToSwap;
 
@@ -85,7 +85,7 @@ namespace TamaPoke.Views
             if (state != null && state.IsSwapMode)
             {
                 state.CancelSwap(); // 대기 중인 새 포켓몬을 포기(방생)합니다!
-                MessageBox.Show("새로 잡은 포켓몬을 자연으로 돌려보냈습니다.", "방생");
+                System.Windows.MessageBox.Show("새로 잡은 포켓몬을 자연으로 돌려보냈습니다.", "방생");
             }
 
             // 창 닫기 로직 (ViewModel 바인딩을 사용 중이시라면 state.IsPartyOpen = false; 만 하셔도 됩니다)

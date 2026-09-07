@@ -73,7 +73,7 @@ namespace TamaPoke.Models
         private const int MAX_POOPS = 3;
         private const int POOP_CHANCE = 5;
         private const int MINUTES_PER_LEVEL = 60;
-        private const int FAREWELL_AGE_MIN = 3 * 24 * 60;
+        private const int FAREWELL_AGE_MIN = 7 * 24 * 60;
         private const int RUNAWAY_TICKS = 60;
 
         private const int MED_LV10 = 1 << 0;
@@ -138,6 +138,10 @@ namespace TamaPoke.Models
         }
         #endregion
 
+        public event Action<string, string>? TrayNotificationRequested;
+        private bool _notifiedHunger = false;
+        private bool _notifiedSadness = false;
+
         #region 인벤토리 (아이템)
         private bool _isInventoryOpen;
         public bool IsInventoryOpen
@@ -200,7 +204,6 @@ namespace TamaPoke.Models
 
         [JsonIgnore] public bool IsEgg => SpeciesId < 0;
 
-        // 🌟 수정됨: 외부 파티 교체 로직에서 덮어씌울 수 있도록 set 개방
         private string? _overrideName;
         [JsonIgnore]
         public string Name
@@ -209,7 +212,6 @@ namespace TamaPoke.Models
             set { _overrideName = value; OnPropertyChanged(nameof(Name)); }
         }
 
-        // 🌟 수정됨: 외부 파티 교체 로직에서 덮어씌울 수 있도록 set 개방
         private int? _overrideLevel;
         [JsonIgnore]
         public int Level
@@ -259,9 +261,9 @@ namespace TamaPoke.Models
         }
 
         [JsonIgnore] public int Biome => IsEgg ? 0 : GetBiomeFromType();
-        [JsonIgnore] public Brush SkyColor => (Brush)new BrushConverter().ConvertFrom(TimeOfDay == 0 ? "#E29181" : TimeOfDay == 1 ? "#B5DBE8" : TimeOfDay == 2 ? "#DC8457" : "#151C35")!;
-        [JsonIgnore] public Brush GrassColor => (Brush)new BrushConverter().ConvertFrom(IsNight ? "#161C30" : Biome == 0 ? "#7EC07F" : Biome == 1 ? "#DCCA94" : Biome == 2 ? "#4F8A55" : Biome == 3 ? "#8A5544" : Biome == 4 ? "#A8906A" : "#E6EEF5")!;
-        [JsonIgnore] public Brush GroundColor => (Brush)new BrushConverter().ConvertFrom(IsNight ? "#222638" : "#F2EFE1")!;
+        [JsonIgnore] public System.Windows.Media.Brush SkyColor => (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(TimeOfDay == 0 ? "#E29181" : TimeOfDay == 1 ? "#B5DBE8" : TimeOfDay == 2 ? "#DC8457" : "#151C35")!;
+        [JsonIgnore] public System.Windows.Media.Brush GrassColor => (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(IsNight ? "#161C30" : Biome == 0 ? "#7EC07F" : Biome == 1 ? "#DCCA94" : Biome == 2 ? "#4F8A55" : Biome == 3 ? "#8A5544" : Biome == 4 ? "#A8906A" : "#E6EEF5")!;
+        [JsonIgnore] public System.Windows.Media.Brush GroundColor => (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(IsNight ? "#222638" : "#F2EFE1")!;
 
         private ImageSource? _backgroundImage;
         [JsonIgnore]
@@ -340,7 +342,6 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool IsAlive => Ceremony == 0;
         [JsonIgnore] public bool IsAliveAndNotEgg => Ceremony == 0 && !IsEgg && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
 
-        // 🌟 1. 이벤트 메시지를 잠시 담아둘 변수와 비동기 메서드 추가
         private string _eventMessage = string.Empty;
 
         public async Task ShowEventMessageAsync(string message, int displaySeconds = 3)
@@ -393,9 +394,6 @@ namespace TamaPoke.Models
         [JsonIgnore]
         public ObservableCollection<PokedexEntry> FilteredPokedex { get; set; } = new ObservableCollection<PokedexEntry>();
 
-        // ==========================================
-        // 🌟 각 지방별 도감 달성도 텍스트 (숫자만 반환하도록 수정)
-        // ==========================================
         [JsonIgnore] public string KantoCountText => $"({FullPokedex.Count(p => p.Id >= 1 && p.Id <= 151 && p.IsUnlocked)}/151)";
         [JsonIgnore] public string JohtoCountText => $"({FullPokedex.Count(p => p.Id >= 152 && p.Id <= 251 && p.IsUnlocked)}/100)";
         [JsonIgnore] public string HoennCountText => $"({FullPokedex.Count(p => p.Id >= 252 && p.Id <= 386 && p.IsUnlocked)}/135)";
@@ -422,7 +420,6 @@ namespace TamaPoke.Models
             {
                 if (SetProperty(ref _isShowOnlyUnlocked, value))
                 {
-                    // 체크박스를 누를 때마다 리스트를 다시 계산하도록 호출합니다.
                     UpdateFilteredPokedex();
                 }
             }
@@ -519,9 +516,9 @@ namespace TamaPoke.Models
                     OnPropertyChanged(nameof(Level));
                     OnPropertyChanged(nameof(LevelDisplay));
                     OnPropertyChanged(nameof(CanFarewellNow));
-                    OnPropertyChanged(nameof(CanShowFarewellPrompt)); // 🌟 핵심: 작별 창 즉시 띄우기 알림 추가!
+                    OnPropertyChanged(nameof(CanShowFarewellPrompt));
                     OnPropertyChanged(nameof(CanEvolveNow));
-                    OnPropertyChanged(nameof(CanShowEvolvePrompt));   // 🌟 덤: 진화 창도 즉시 뜨도록 알림 추가!
+                    OnPropertyChanged(nameof(CanShowEvolvePrompt));
                     OnPropertyChanged(nameof(EvolveProgressText));
                     OnPropertyChanged(nameof(EvolveProgressPercent));
                     CheckMedals();
@@ -567,7 +564,6 @@ namespace TamaPoke.Models
             }
         }
 
-        // 🌟 수정됨: 최종 진화 형태가 아니어도 수명이 다하면 작별할 수 있도록 IsFinalEvolution 조건을 제거했습니다.
         [JsonIgnore] public bool CanFarewellNow => !IsEgg && !IsSleeping && Ceremony == 0 && AgeMinutes >= FAREWELL_AGE_MIN && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
         [JsonIgnore] public bool CanRunawayNow => !IsEgg && !IsSleeping && Ceremony == 0 && NeglectTicks >= RUNAWAY_TICKS && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
 
@@ -717,7 +713,6 @@ namespace TamaPoke.Models
                 if (AgeMinutes % MINUTES_PER_LEVEL == 0)
                 {
                     IsEvolutionPostponed = false;
-                    // 🌟 [핵심 2] 레벨이 오를 때마다 작별 보류도 함께 초기화!
                     IsFarewellPostponed = false;
                 }
 
@@ -736,9 +731,40 @@ namespace TamaPoke.Models
                 if (AgeMinutes % 20 == 0) { Fullness = Math.Max(0, Fullness - 2); Energy = Math.Max(0, Energy - 1); }
 
                 Random rand = new Random();
-                if (Fullness > 40 && Poops < MAX_POOPS && rand.Next(100) < POOP_CHANCE) { Poops++; Hygiene = Clamp100(Hygiene - (10 * Poops)); }
+
+                // 🌟 수정됨: 응가를 할 때 트레이 알림 신호를 보냅니다.
+                if (Fullness > 40 && Poops < MAX_POOPS && rand.Next(100) < POOP_CHANCE)
+                {
+                    Poops++;
+                    Hygiene = Clamp100(Hygiene - (10 * Poops));
+                    TrayNotificationRequested?.Invoke("화장실 알림", $"{Name}이(가) 응가를 했어요! 청소해 주세요.");
+                }
+
                 if (AgeMinutes % 10 == 0) { int dJoy = 0; if (Fullness < 30) dJoy -= 2; if (Hygiene < 30) dJoy -= 3; Joy = Clamp100(Joy + dJoy); }
                 if (Fullness == 0 && Joy == 0 && Energy == 0 && Hygiene == 0) { if (NeglectTicks < RUNAWAY_TICKS) NeglectTicks++; } else { NeglectTicks = 0; }
+
+                // 🌟 새로 추가: 배고픔 알림 (30 미만일 때 한 번만 띄움)
+                if (Fullness < 30 && !_notifiedHunger)
+                {
+                    TrayNotificationRequested?.Invoke("배고픔 알림", $"{Name}이(가) 배가 고파요! 밥을 주세요.");
+                    _notifiedHunger = true;
+                }
+                else if (Fullness >= 30)
+                {
+                    _notifiedHunger = false; // 밥을 먹여서 회복되면 알림 스위치 초기화
+                }
+
+                // 🌟 새로 추가: 우울함 알림 (30 미만일 때 한 번만 띄움)
+                if (Joy < 30 && !_notifiedSadness)
+                {
+                    TrayNotificationRequested?.Invoke("우울함 알림", $"{Name}이(가) 우울해해요. 함께 놀아주세요!");
+                    _notifiedSadness = true;
+                }
+                else if (Joy >= 30)
+                {
+                    _notifiedSadness = false;
+                }
+
                 CheckMedals(); CheckStateAndAnimate();
             }
         }
@@ -859,14 +885,13 @@ namespace TamaPoke.Models
             return ANIM_IDLE;
         }
 
-        // 🌟 수정됨: 외부(파티 UI 등)에서 애니메이션을 갱신할 수 있도록 public 선언
         public void CheckStateAndAnimate()
         {
             OnPropertyChanged(nameof(MoodText));
             OnPropertyChanged(nameof(CanEvolveNow));
-            OnPropertyChanged(nameof(CanShowEvolvePrompt));     // 🌟 추가: 진화 창 즉시 띄우기 알림
-            OnPropertyChanged(nameof(CanFarewellNow));          // 🌟 추가: 작별 조건 즉시 갱신 알림
-            OnPropertyChanged(nameof(CanShowFarewellPrompt));   // 🌟 추가: 작별 창 즉시 띄우기 알림
+            OnPropertyChanged(nameof(CanShowEvolvePrompt));
+            OnPropertyChanged(nameof(CanFarewellNow));
+            OnPropertyChanged(nameof(CanShowFarewellPrompt));
             OnPropertyChanged(nameof(IsEating));
             OnPropertyChanged(nameof(IsPlaying));
 
@@ -939,6 +964,7 @@ namespace TamaPoke.Models
 
         public int CareBonus() { int s = Streak > 30 ? 30 : Streak; return (s / 3) + (Bond / 25); }
 
+        private int Clamp100(int value) => Math.Max(0, Math.Min(value, 100));
         #endregion
 
         #region 저장 및 불러오기 (Save & Load)
@@ -974,70 +1000,53 @@ namespace TamaPoke.Models
             newPet.InitializeAfterLoad();
             return newPet;
         }
+
+        /* 
+        // ====================================================================
+        // JSON 암호화 저장 및 불러오기 기능 추가 (Save & Load with JSON Encryption)
+        // ====================================================================
+        private static readonly string EncryptedSaveFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "save.dat");
+        public static bool CheckEncryptedSaveFileExists() => File.Exists(EncryptedSaveFilePath);
+        
+        public void EncryptedSave()
+        {
+            try
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                string jsonString = JsonSerializer.Serialize(this, options);
+                string encryptedData = TamaPoke.Utils.SaveEncryptionHelper.Encrypt(jsonString);
+                File.WriteAllText(EncryptedSaveFilePath, encryptedData);
+            }
+            catch (Exception ex) { Console.WriteLine($"저장 실패: {ex.Message}"); }
+        }
+        
+        public static PokemonState EncryptedLoad()
+        {
+            if (File.Exists(EncryptedSaveFilePath))
+            {
+                try
+                {
+                    string encryptedData = File.ReadAllText(EncryptedSaveFilePath);
+                    string jsonString = TamaPoke.Utils.SaveEncryptionHelper.Decrypt(encryptedData);
+                    var pet = JsonSerializer.Deserialize<PokemonState>(jsonString);
+                    if (pet != null)
+                    {
+                        pet.InitializeAfterLoad();
+                        return pet;
+                    }
+                }
+                catch { }
+            }
+            PokemonState newPet = new PokemonState();
+            newPet.MonsterBalls = 5;
+            newPet.Potions = 3;
+            newPet.InitializeAfterLoad();
+            return newPet;
+        }
+        */
         #endregion
 
-        private int Clamp100(int value) => Math.Max(0, Math.Min(value, 100));
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null) { if (EqualityComparer<T>.Default.Equals(field, newValue)) return false; field = newValue; OnPropertyChanged(propertyName); return true; }
-        
-        
-        /// ////////////////////////////////////////////////////////////////////
-        /// JSON 암호화 저장 및 불러오기 기능 추가 (Save & Load with JSON Encryption)
-//         #region 저장 및 불러오기 Json 암호화(Save & Load)
-//         private static readonly string SaveFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "save.json");
-//         public static bool CheckSaveFileExists() => File.Exists(SaveFilePath);
-// 
-//         public void Save()
-//         {
-//             try
-//             {
-//                 var options = new JsonSerializerOptions { WriteIndented = true };
-//                 string jsonString = JsonSerializer.Serialize(this, options);
-// 
-//                 // 🌟 JSON 문자열을 암호화하여 파일에 덮어씁니다.
-//                 string encryptedData = TamaPoke.Utils.SaveEncryptionHelper.Encrypt(jsonString);
-//                 File.WriteAllText(SaveFilePath, encryptedData);
-//             }
-//             catch (Exception ex) { Console.WriteLine($"저장 실패: {ex.Message}"); }
-//         }
-// 
-//         public static PokemonState Load()
-//         {
-//             if (File.Exists(SaveFilePath))
-//             {
-//                 try
-//                 {
-//                     string encryptedData = File.ReadAllText(SaveFilePath);
-// 
-//                     // 🌟 암호화된 데이터를 읽어와서 다시 JSON 문자열로 복호화합니다.
-//                     string jsonString = TamaPoke.Utils.SaveEncryptionHelper.Decrypt(encryptedData);
-// 
-//                     var pet = JsonSerializer.Deserialize<PokemonState>(jsonString);
-//                     if (pet != null)
-//                     {
-//                         pet.InitializeAfterLoad();
-//                         return pet;
-//                     }
-//                 }
-//                 catch
-//                 {
-//                     // 🌟 복호화에 실패하거나 기존의 암호화되지 않은 파일일 경우 예외가 발생하므로, 무시하고 새 게임을 시작합니다.
-//                 }
-//             }
-// 
-//             PokemonState newPet = new PokemonState();
-//             newPet.MonsterBalls = 5;
-//             newPet.Potions = 3;
-// 
-//             newPet.InitializeAfterLoad();
-//             return newPet;
-//         }
-//         #endregion
-        
-
-        #region 디버그용
+        #region 디버그용 (Debug Tools)
         [JsonIgnore]
         public bool IsDebugMode
         {
@@ -1069,7 +1078,6 @@ namespace TamaPoke.Models
             OnPropertyChanged(nameof(EvolveProgressText));
             OnPropertyChanged(nameof(EvolveProgressPercent));
 
-            // 🌟 추가된 부분: 시간이 지나서 레벨과 스탯이 변했으니, 파티 리스트의 0번(대표) 자리도 최신 상태로 갱신해 줍니다!
             if (Party != null && Party.Count > 0)
             {
                 SyncMainToLeader();
@@ -1079,5 +1087,19 @@ namespace TamaPoke.Models
         }
         #endregion
 
+        #region INotifyPropertyChanged 구현 (UI Update Notifications)
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, newValue)) return false;
+            field = newValue;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+        #endregion
     }
 }

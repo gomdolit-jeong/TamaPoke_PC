@@ -7,7 +7,7 @@ using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Views
 {
-    public partial class CleanGameView : UserControl
+    public partial class CleanGameView : System.Windows.Controls.UserControl
     {
         private static CleanGameView? _cachedInstance;
 
@@ -29,12 +29,12 @@ namespace TamaPoke.Views
         private PokemonState? GetPet() => DataContext as PokemonState;
 
         // 마우스를 따라 포켓몬 이동
-        private void GameArea_MouseMove(object sender, MouseEventArgs e)
+        private void GameArea_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var pet = GetPet();
             if (pet != null && pet.IsCleanGameOpen)
             {
-                Point pos = e.GetPosition((UIElement)sender);
+                System.Windows.Point pos = e.GetPosition((UIElement)sender);
 
                 // 마우스의 X, Y 좌표를 모두 구해서 모델에 전달합니다.
                 double targetX = pos.X - 160;
@@ -52,7 +52,7 @@ namespace TamaPoke.Views
             if (pet != null && pet.IsCleanGameOpen)
             {
                 // 클릭된 버튼의 Tag 속성에서 세균의 Id를 가져옵니다.
-                if (sender is Button btn && btn.Tag is int dirtId)
+                if (sender is System.Windows.Controls.Button btn && btn.Tag is int dirtId)
                 {
                     pet.TapDirt(dirtId);
                     e.Handled = true;

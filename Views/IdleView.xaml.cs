@@ -7,7 +7,7 @@ using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Views
 {
-    public partial class IdleView : UserControl
+    public partial class IdleView : System.Windows.Controls.UserControl
     {
         public IdleView()
         {
@@ -23,18 +23,17 @@ namespace TamaPoke.Views
             };
         }
 
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (e.Key == Key.R && Keyboard.Modifiers == ModifierKeys.Control)
+            if (e.Key == System.Windows.Input.Key.R && System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control)
             {
                 if (DataContext is PokemonState pet)
                 {
-                    MessageBoxResult result = MessageBox.Show(
+                    System.Windows.MessageBoxResult result = System.Windows.MessageBox.Show(
                         "모든 데이터(도감, 출석 기록 등)를 완전히 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
                         "전체 데이터 공장 초기화",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Error);
-
+                        System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Error);
                     if (result == MessageBoxResult.Yes)
                     {
                         if (!pet.IsMuted) SoundManager.Play(SoundManager.N_DENY);
@@ -46,12 +45,12 @@ namespace TamaPoke.Views
 
         private PokemonState? GetPet() => DataContext as PokemonState;
 
-        private void GameArea_MouseMove(object sender, MouseEventArgs e)
+        private void GameArea_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var pet = GetPet();
             if (pet != null && pet.IsBallGameOpen)
             {
-                Point pos = e.GetPosition((UIElement)sender);
+                System.Windows.Point pos = e.GetPosition((UIElement)sender);
                 double targetX = pos.X - 160;
                 pet.TargetPosX = Math.Max(-100, Math.Min(100, targetX));
             }
@@ -74,7 +73,7 @@ namespace TamaPoke.Views
         private void FeedItem_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null && sender is Button btn && int.TryParse(btn.Tag?.ToString(), out int foodType))
+            if (pet != null && sender is System.Windows.Controls.Button btn && int.TryParse(btn.Tag?.ToString(), out int foodType))
             {
                 if (!pet.IsMuted) SoundManager.Play(SoundManager.N_EAT);
                 pet.Feed(foodType);
@@ -319,7 +318,7 @@ namespace TamaPoke.Views
         {
             if (DataContext is PokemonState pet && pet.IsAlive && !pet.IsEgg && !pet.IsSleeping)
             {
-                MessageBoxResult result = MessageBox.Show(
+                MessageBoxResult result = System.Windows.MessageBox.Show(
                     "정말로 포켓몬을 자연으로 놔주시겠습니까?\n이 결정은 되돌릴 수 없습니다.",
                     "자연으로 놔주기",
                     MessageBoxButton.YesNo,

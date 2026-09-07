@@ -7,6 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\Resource\monsterball.ico</ApplicationIcon>
+    <UseWindowsForms>True</UseWindowsForms>
+    <DisableWinFormsImplicitUsings>true</DisableWinFormsImplicitUsings>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

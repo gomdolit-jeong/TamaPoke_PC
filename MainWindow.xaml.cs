@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Threading;
 using TamaPoke.Models;
 using TamaPoke.Views;
-using System;
-using System.IO;
-using System.Windows.Media.Imaging;
 
 namespace TamaPoke
 {
@@ -17,34 +12,102 @@ namespace TamaPoke
         public PokemonState? MyPet { get; set; }
         private DispatcherTimer? _gameTimer;
 
+        // 🌟 1. null 허용 경고 해결을 위해 '?' 추가
+        private System.Windows.Forms.NotifyIcon? _notifyIcon;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            SetupSystemTray();
 
             this.Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
         }
 
-        // 🌟 창이 화면에 나타난 직후 실행되는 함수 (데이터 로드 & 타이머 시작)
+        private void SetupSystemTray()
+        {
+            _notifyIcon = new System.Windows.Forms.NotifyIcon();
+
+            // 프로그램의 기본 실행 파일(.exe) 아이콘을 그대로 가져와서 트레이 아이콘으로 씁니다!
+            _notifyIcon.Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            _notifyIcon.Text = "다마포케 (TamaPoke)";
+            _notifyIcon.Visible = true;
+
+            // 트레이 아이콘 더블 클릭 시 이벤트
+            _notifyIcon.DoubleClick += (s, e) =>
+            {
+                this.Show();
+                this.WindowState = WindowState.Normal;
+                this.Activate();
+            };
+
+            var contextMenu = new System.Windows.Forms.ContextMenuStrip();
+
+            var openMenuItem = new System.Windows.Forms.ToolStripMenuItem("화면에 띄우기");
+            openMenuItem.Click += (s, e) =>
+            {
+                this.Show();
+                this.WindowState = WindowState.Normal;
+                this.Activate();
+            };
+
+            var exitMenuItem = new System.Windows.Forms.ToolStripMenuItem("완전히 종료하기");
+            exitMenuItem.Click += (s, e) =>
+            {
+                // 🌟 1. 트레이 아이콘에서 종료할 때도 똑같이 확인창을 띄워줍니다!
+                var result = System.Windows.MessageBox.Show(
+                    "정말로 다마포케를 종료하시겠습니까?",
+                    "다마포케 종료",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    _notifyIcon?.Dispose();
+
+                    // 🌟 2. 강제 종료(Shutdown) 대신 Close()를 호출합니다.
+                    // 이렇게 하면 MainWindow_Closing 이벤트가 정상적으로 실행되어 MyPet.Save()가 작동합니다!
+                    this.Close();
+                }
+            };
+
+            contextMenu.Items.Add(openMenuItem);
+            contextMenu.Items.Add(exitMenuItem);
+
+            _notifyIcon.ContextMenuStrip = contextMenu;
+        }
+
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // 🌟 수정됨: Load() 함수가 알아서 파일이 있으면 불러오고, 없으면 새 알을 만들어줍니다.
-            // 지역 변수를 새로 만들지 않고, 뷰모델인 MyPet에 바로 연결합니다.
             MyPet = PokemonState.Load();
 
-            // 게임 1초 타이머 설정 및 시작
+            if (MyPet != null)
+            {
+                MyPet.TrayNotificationRequested += ShowTrayNotification;
+            }
+
+            _gameTimer = new DispatcherTimer();
+
             _gameTimer = new DispatcherTimer();
             _gameTimer.Interval = TimeSpan.FromSeconds(1);
             _gameTimer.Tick += GameTimer_Tick;
             _gameTimer.Start();
 
-            // IdleView 화면을 생성하고, 로드된 MyPet 데이터를 연결(Binding)하여 화면을 전환합니다.
             IdleView startingView = new IdleView();
             startingView.DataContext = MyPet;
             NavigateTo(startingView);
         }
 
-        // 프로그램이 종료되기 직전에 실행되는 함수입니다.
+        private void ShowTrayNotification(string title, string message)
+        {
+            if (_notifyIcon != null && _notifyIcon.Visible)
+            {
+                // 3000은 3초 동안 띄운다는 뜻입니다.
+                _notifyIcon.ShowBalloonTip(3000, title, message, System.Windows.Forms.ToolTipIcon.Info);
+            }
+        }
+
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             if (MyPet != null)
@@ -69,7 +132,8 @@ namespace TamaPoke
             }
         }
 
-        public void NavigateTo(UserControl view)
+        // 🌟 3. UserControl 모호성 해결 (WPF의 UserControl임을 명확히 지정)
+        public void NavigateTo(System.Windows.Controls.UserControl view)
         {
             MainContentFrame.Content = view;
         }
@@ -81,30 +145,44 @@ namespace TamaPoke
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            // 🌟 1. 사용자에게 종료 여부를 묻는 팝업창을 띄웁니다.
+            var result = System.Windows.MessageBox.Show(
+                "정말로 다마포케를 종료하시겠습니까?",
+                "다마포케 종료",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
+
+            // 🌟 2. 사용자가 '예(Yes)'를 선택했을 때만 프로그램을 완전히 종료합니다.
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                // 트레이 아이콘이 남아있지 않도록 메모리에서 비워줍니다.
+                _notifyIcon?.Dispose();
+
+                // 창을 닫습니다. (MainWindow_Closing이 호출되며 자동 저장됩니다!)
+                this.Close();
+            }
+            // '아니요(No)'를 누르면 아무 일도 일어나지 않고 게임으로 돌아갑니다.
         }
 
         private void PinButton_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Topmost 상태 토글
             Topmost = !Topmost;
 
-            // 2. 버튼의 시각적 피드백 업데이트 (켜졌을 때: 진한 파란색, 꺼졌을 때: 어두운 회색)
-            var button = sender as Button;
+            // 🌟 4. Button 및 Border 모호성 해결
+            var button = sender as System.Windows.Controls.Button;
             if (button != null)
             {
-                var border = button.Template.FindName("PinBorder", button) as Border;
+                var border = button.Template.FindName("PinBorder", button) as System.Windows.Controls.Border;
                 if (border != null)
                 {
                     if (Topmost)
                     {
-                        // 고정됨 (ON) - 눈에 띄는 파란색 계열
-                        border.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF2196F3"));
+                        // 🌟 5. Color 및 Brush 모호성 해결
+                        border.Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FF2196F3"));
                     }
                     else
                     {
-                        // 고정 해제됨 (OFF) - 차분한 회색 계열
-                        border.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#80000000"));
+                        border.Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#80000000"));
                     }
                 }
             }

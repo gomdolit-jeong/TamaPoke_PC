@@ -39,7 +39,7 @@ namespace TamaPoke.Converters
             }
 
             // 헥스 문자열을 WPF가 이해할 수 있는 색상 붓(SolidColorBrush)으로 변환하여 돌려줍니다.
-            return new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexColor));
+            return new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hexColor));
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

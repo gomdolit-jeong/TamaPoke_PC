@@ -5,7 +5,7 @@ using TamaPoke.Models;
 
 namespace TamaPoke.Views
 {
-    public partial class MemoGameView : UserControl
+    public partial class MemoGameView : System.Windows.Controls.UserControl
     {
         private static MemoGameView? _cachedInstance;
 

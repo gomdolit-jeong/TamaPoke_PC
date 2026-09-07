@@ -8,7 +8,7 @@ using TamaPoke.Models;
 
 namespace TamaPoke.Views
 {
-    public partial class BattleView : UserControl
+    public partial class BattleView : System.Windows.Controls.UserControl
     {
         public BattleView()
         {
@@ -52,7 +52,7 @@ namespace TamaPoke.Views
 
         private async void SkillButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.DataContext is SkillInfo selectedSkill)
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is SkillInfo selectedSkill)
             {
                 if (this.DataContext is PokemonState pet)
                 {

@@ -4,7 +4,7 @@ using TamaPoke.Models;
 
 namespace TamaPoke.Views
 {
-    public partial class PokemonDexView : UserControl
+    public partial class PokemonDexView : System.Windows.Controls.UserControl
     {
         public PokemonDexView()
         {
@@ -14,7 +14,7 @@ namespace TamaPoke.Views
         private void RegionTab_Checked(object sender, RoutedEventArgs e)
         {
             // 1. 클릭된 라디오 버튼을 가져옵니다.
-            var radioButton = sender as RadioButton;
+            var radioButton = sender as System.Windows.Controls.RadioButton;
             if (radioButton == null) return;
 
             // 2. 현재 데이터 컨텍스트(PokemonState)를 가져옵니다.

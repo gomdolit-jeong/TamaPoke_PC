@@ -111,16 +111,16 @@ namespace TamaPoke.Models
         private int _enemyMaxHp = 100;
         public int EnemyMaxHp { get => _enemyMaxHp; set { if (SetProperty(ref _enemyMaxHp, value)) OnPropertyChanged(nameof(EnemyHpColor)); } }
 
-        [JsonIgnore] public Brush PlayerHpColor => GetHpColor(PlayerHp, PlayerMaxHp);
-        [JsonIgnore] public Brush EnemyHpColor => GetHpColor(EnemyHp, EnemyMaxHp);
+        [JsonIgnore] public System.Windows.Media.Brush PlayerHpColor => GetHpColor(PlayerHp, PlayerMaxHp);
+        [JsonIgnore] public System.Windows.Media.Brush EnemyHpColor => GetHpColor(EnemyHp, EnemyMaxHp);
 
-        private Brush GetHpColor(int hp, int maxHp)
+        private System.Windows.Media.Brush GetHpColor(int hp, int maxHp)
         {
-            if (maxHp <= 0) return Brushes.Green;
+            if (maxHp <= 0) return System.Windows.Media.Brushes.Green;
             double ratio = (double)hp / maxHp;
-            if (ratio > 0.5) return (Brush)new BrushConverter().ConvertFrom("#4CAF50")!;
-            if (ratio > 0.2) return (Brush)new BrushConverter().ConvertFrom("#FBC02D")!;
-            return (Brush)new BrushConverter().ConvertFrom("#E53935")!;
+            if (ratio > 0.5) return (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#4CAF50")!;
+            if (ratio > 0.2) return (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FBC02D")!;
+            return (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#E53935")!;
         }
 
         private bool _isPlayerTakingDamage = false;
@@ -567,6 +567,9 @@ namespace TamaPoke.Models
             IsBattleOpen = true;
             IsPlayerTurn = false;
             BattleMessage = $"앗! 야생 {EnemyName}이(가) 나타났다!";
+
+            // 🌟 추가됨: 배틀이 시작되면 시스템 트레이로 신호를 보냅니다!
+            TrayNotificationRequested?.Invoke("야생 포켓몬 출현!", BattleMessage);
 
             await Task.Delay(1500);
 

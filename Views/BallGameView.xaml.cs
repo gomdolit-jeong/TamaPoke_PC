@@ -7,7 +7,7 @@ using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Views
 {
-    public partial class BallGameView : UserControl
+    public partial class BallGameView : System.Windows.Controls.UserControl
     {
         // 🌟 뷰를 매번 새로 만들지 않고 캐싱하여 재사용하기 위한 정적 인스턴스
         private static BallGameView? _cachedInstance;
@@ -30,12 +30,12 @@ namespace TamaPoke.Views
         private PokemonState? GetPet() => DataContext as PokemonState;
 
         // 마우스 이동 시 포켓몬 이동 처리
-        private void GameArea_MouseMove(object sender, MouseEventArgs e)
+        private void GameArea_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var pet = GetPet();
             if (pet != null && pet.IsBallGameOpen)
             {
-                Point pos = e.GetPosition((UIElement)sender);
+                System.Windows.Point pos = e.GetPosition((UIElement)sender);
                 double targetX = pos.X - 160;
                 pet.TargetPosX = Math.Max(-100, Math.Min(100, targetX));
             }
