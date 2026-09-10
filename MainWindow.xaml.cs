@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -17,9 +18,26 @@ namespace TamaPoke
 
         public MainWindow()
         {
-            InitializeComponent();
+            try
+            {
+                // 1. 화면(XAML)을 그려냅니다. (이곳에서 에러가 나면 UI 요소나 리소스 이미지 문제입니다)
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                // 진짜 에러 원인을 팝업으로 띄워줍니다!
+                System.Windows.MessageBox.Show($"XAML 로드 에러: {ex.InnerException?.Message ?? ex.Message}", "에러 추적기");
+            }
 
-            SetupSystemTray();
+            try
+            {
+                // 2. 시스템 트레이를 설정합니다. (이곳에서 에러가 나면 아이콘 추출이나 권한 문제입니다)
+                SetupSystemTray();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"트레이 설정 에러: {ex.Message}", "에러 추적기");
+            }
 
             this.Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
@@ -29,12 +47,17 @@ namespace TamaPoke
         {
             _notifyIcon = new System.Windows.Forms.NotifyIcon();
 
-            // 프로그램의 기본 실행 파일(.exe) 아이콘을 그대로 가져와서 트레이 아이콘으로 씁니다!
-            _notifyIcon.Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "monsterball.ico");
+
+            if (System.IO.File.Exists(iconPath))
+            {
+                _notifyIcon.Icon = new System.Drawing.Icon(iconPath);
+            }
+
             _notifyIcon.Text = "다마포케 (TamaPoke)";
             _notifyIcon.Visible = true;
 
-            // 트레이 아이콘 더블 클릭 시 이벤트
+            // 트레이 아이콘 더블 클릭 시 창 띄우기
             _notifyIcon.DoubleClick += (s, e) =>
             {
                 this.Show();
@@ -44,7 +67,7 @@ namespace TamaPoke
 
             var contextMenu = new System.Windows.Forms.ContextMenuStrip();
 
-            var openMenuItem = new System.Windows.Forms.ToolStripMenuItem("화면에 띄우기");
+            var openMenuItem = new System.Windows.Forms.ToolStripMenuItem("다마포케 화면에 띄우기");
             openMenuItem.Click += (s, e) =>
             {
                 this.Show();
@@ -52,10 +75,28 @@ namespace TamaPoke
                 this.Activate();
             };
 
+            // 🌟 1. 새로 추가할 '설정' 메뉴 아이템
+            var settingsMenuItem = new System.Windows.Forms.ToolStripMenuItem("설정");
+            settingsMenuItem.Click += (s, e) =>
+            {
+                // UI 스레드 안전하게 설정 팝업창 띄우기
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var settingsWindow = new SettingsWindow();
+
+                    // 메인 창이 열려있다면 오너로 지정하여 중앙에 예쁘게 띄우기
+                    if (System.Windows.Application.Current.MainWindow != null && System.Windows.Application.Current.MainWindow.IsVisible)
+                    {
+                        settingsWindow.Owner = System.Windows.Application.Current.MainWindow;
+                    }
+
+                    settingsWindow.ShowDialog();
+                });
+            };
+
             var exitMenuItem = new System.Windows.Forms.ToolStripMenuItem("완전히 종료하기");
             exitMenuItem.Click += (s, e) =>
             {
-                // 🌟 1. 트레이 아이콘에서 종료할 때도 똑같이 확인창을 띄워줍니다!
                 var result = System.Windows.MessageBox.Show(
                     "정말로 다마포케를 종료하시겠습니까?",
                     "다마포케 종료",
@@ -65,14 +106,13 @@ namespace TamaPoke
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
                     _notifyIcon?.Dispose();
-
-                    // 🌟 2. 강제 종료(Shutdown) 대신 Close()를 호출합니다.
-                    // 이렇게 하면 MainWindow_Closing 이벤트가 정상적으로 실행되어 MyPet.Save()가 작동합니다!
                     this.Close();
                 }
             };
 
+            // 🌟 2. 컨텍스트 메뉴에 순서대로 아이템 추가하기
             contextMenu.Items.Add(openMenuItem);
+            contextMenu.Items.Add(settingsMenuItem); // 설정 메뉴 장착!
             contextMenu.Items.Add(exitMenuItem);
 
             _notifyIcon.ContextMenuStrip = contextMenu;
@@ -186,6 +226,21 @@ namespace TamaPoke
                     }
                 }
             }
+        }
+
+        // 🌟 개발자용 임시 에셋 변환 클릭 이벤트 (작업이 끝나면 지워주세요!)
+        private void DevConvertButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 주의: 따옴표 안의 폴더 경로는 실제 PC에 있는 경로로 꼭 바꿔주세요!
+            string sourceFolder = @"D:\sprite";
+            string targetFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites_ex");
+            string trackerJsonPath = @"D:\sprite\tracker.json";
+            System.Windows.MessageBox.Show("변환을 시작합니다. 콘솔 창이나 출력 창을 확인해 주세요!", "개발자 도구");
+
+            // 변환 실행!
+            TamaPoke.Utils.SpriteConverter.BatchConvertAll(sourceFolder, targetFolder, trackerJsonPath);
+
+            System.Windows.MessageBox.Show("변환이 완료되었습니다! 폴더를 확인해 보세요.", "개발자 도구");
         }
     }
 }

@@ -1,24 +1,22 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using System.Windows.Threading;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Collections.ObjectModel;
-
+using System.Windows.Threading;
 using TamaPoke.Utils;
 using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Models
 {
-    public enum BattleAction { QuickAttack, HeavyAttack, Dodge, Rest, Run }
-
     public class DirtItem
     {
         public int Id { get; set; }
@@ -49,31 +47,169 @@ namespace TamaPoke.Models
                     _isUnlocked = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsUnlocked)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DisplayName)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpriteImage)));
                 }
             }
         }
         public string DisplayName => IsUnlocked ? SpeciesName : "???";
+
+        [JsonIgnore]
+        public ImageSource? SpriteImage
+        {
+            get
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string spriteFolder = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites");
+
+                if (Directory.Exists(spriteFolder))
+                {
+                    string pattern = $"p{Id:D4}*.bin";
+                    var matchedFiles = Directory.GetFiles(spriteFolder, pattern);
+
+                    if (matchedFiles.Length > 0)
+                    {
+                        return BinSpriteReader.LoadPokedexThumbnail(matchedFiles[0]);
+                    }
+                }
+                return null;
+            }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
     }
 
     public partial class PokemonState : INotifyPropertyChanged
     {
+        [JsonIgnore]
+        public ObservableCollection<BadgeRegionGroup> BadgeGroups { get; set; } = new ObservableCollection<BadgeRegionGroup>();
+
+        public void InitializeBadgesList()
+        {
+            BadgeGroups.Clear();
+
+            var regions = new (string En, string Ko)[]
+            {
+                ("Kanto", "1세대 관동지방"),
+                ("Johto", "2세대 성도지방"),
+                ("Hoenn", "3세대 호연지방"),
+                ("Sinnoh", "4세대 신오지방"),
+                ("Unova", "5세대 하나지방"),
+                ("Kalos", "6세대 칼로스지방"),
+                ("Galar", "8세대 가라르지방"),
+                ("Paldea", "9세대 팔데아지방")
+            };
+
+            int globalIndex = 1;
+
+            foreach (var region in regions)
+            {
+                var group = new BadgeRegionGroup { HeaderText = region.Ko };
+
+                for (int i = 1; i <= 8; i++)
+                {
+                    group.Badges.Add(new GymBadgeInfo
+                    {
+                        RegionName = region.En,
+                        BadgeNumber = i,
+                        GlobalIndex = globalIndex
+                    });
+                    globalIndex++;
+                }
+                BadgeGroups.Add(group);
+            }
+        }
+
+        private GameSettings _settings = new GameSettings();
+        public GameSettings Settings
+        {
+            get => _settings;
+            set => SetProperty(ref _settings, value);
+        }
+
         #region 상수 및 열거형 (Constants)
-        private const int ANIM_IDLE = 0;
-        private const int ANIM_WALK = 1;
-        private const int ANIM_SLEEP = 3;
-        private const int ANIM_EAT = 4;
-        private const int ANIM_HURT = 5;
-        private const int ANIM_ATTACK = 6;
-        private const int ANIM_POSE = 7;
-        private const int ANIM_HOP = 8;
-        private const int ANIM_NOD = 9;
-        private const int ANIM_BREATH = 10;
+        public const int ANIM_WALK = 0;
+        public const int ANIM_ATTACK = 1;
+        public const int ANIM_STRIKE = 2;
+        public const int ANIM_SHOOT = 3;
+        public const int ANIM_SHAKE = 4;
+        public const int ANIM_SLEEP = 5;
+        public const int ANIM_HURT = 6;
+        public const int ANIM_IDLE = 7;
+        public const int ANIM_SWING = 8;
+        public const int ANIM_DOUBLE = 9;
+        public const int ANIM_HOP = 10;
+        public const int ANIM_CHARGE = 11;
+        public const int ANIM_ROTATE = 12;
+        public const int ANIM_EVENTSLEEP = 13;
+        public const int ANIM_WAKE = 14;
+        public const int ANIM_EAT = 15;
+        public const int ANIM_TUMBLE = 16;
+        public const int ANIM_POSE = 17;
+        public const int ANIM_PULL = 18;
+        public const int ANIM_PAIN = 19;
+        public const int ANIM_FLOAT = 20;
+        public const int ANIM_DEEPBREATH = 21;
+        public const int ANIM_NOD = 22;
+        public const int ANIM_SIT = 23;
+        public const int ANIM_LOOKUP = 24;
+        public const int ANIM_SINK = 25;
+        public const int ANIM_TRIP = 26;
+        public const int ANIM_LAYING = 27;
+        public const int ANIM_LEAPFORTH = 28;
+        public const int ANIM_HEAD = 29;
+        public const int ANIM_CRINGE = 30;
+        public const int ANIM_LOSTBALANCE = 31;
+        public const int ANIM_TUMBLEBACK = 32;
+        public const int ANIM_FAINT = 33;
+        public const int ANIM_HITGROUND = 34;
+
+        public static int GetTotalFramesForMotion(int animIndex)
+        {
+            switch (animIndex)
+            {
+                case ANIM_WALK: return 48;
+                case ANIM_ATTACK: return 88;
+                case ANIM_STRIKE: return 88;
+                case ANIM_SHOOT: return 48;
+                case ANIM_SHAKE: return 48;
+                case ANIM_SLEEP: return 16;
+                case ANIM_HURT: return 16;
+                case ANIM_IDLE: return 24;
+                case ANIM_SWING: return 72;
+                case ANIM_DOUBLE: return 128;
+                case ANIM_HOP: return 80;
+                case ANIM_CHARGE: return 80;
+                case ANIM_ROTATE: return 72;
+                case ANIM_EVENTSLEEP: return 16;
+                case ANIM_WAKE: return 48;
+                case ANIM_EAT: return 32;
+                case ANIM_TUMBLE: return 64;
+                case ANIM_POSE: return 40;
+                case ANIM_PULL: return 56;
+                case ANIM_PAIN: return 96;
+                case ANIM_FLOAT: return 32;
+                case ANIM_DEEPBREATH: return 72;
+                case ANIM_NOD: return 24;
+                case ANIM_SIT: return 24;
+                case ANIM_LOOKUP: return 16;
+                case ANIM_SINK: return 96;
+                case ANIM_TRIP: return 40;
+                case ANIM_LAYING: return 8;
+                case ANIM_LEAPFORTH: return 48;
+                case ANIM_HEAD: return 8;
+                case ANIM_CRINGE: return 16;
+                case ANIM_LOSTBALANCE: return 16;
+                case ANIM_TUMBLEBACK: return 80;
+                case ANIM_FAINT: return 32;
+                case ANIM_HITGROUND: return 64;
+                default: return 24;
+            }
+        }
 
         private const int MAX_POOPS = 3;
         private const int POOP_CHANCE = 5;
         private const int MINUTES_PER_LEVEL = 60;
-        private const int FAREWELL_AGE_MIN = 7 * 24 * 60;
+        private const int FAREWELL_AGE_MIN = 3 * 24 * 60;
         private const int RUNAWAY_TICKS = 60;
 
         private const int MED_LV10 = 1 << 0;
@@ -142,37 +278,22 @@ namespace TamaPoke.Models
         private bool _notifiedHunger = false;
         private bool _notifiedSadness = false;
 
-        #region 인벤토리 (아이템)
-        private bool _isInventoryOpen;
-        public bool IsInventoryOpen
-        {
-            get => _isInventoryOpen;
-            set { _isInventoryOpen = value; OnPropertyChanged(nameof(IsInventoryOpen)); }
-        }
-
-        private int _monsterBalls;
-        public int MonsterBalls
-        {
-            get => _monsterBalls;
-            set => SetProperty(ref _monsterBalls, value);
-        }
-
-        private int _potions;
-        public int Potions
-        {
-            get => _potions;
-            set => SetProperty(ref _potions, value);
-        }
-
-        public void ResetIdleMenus()
-        {
-            IsInventoryOpen = false;
-            IsFeedMenuOpen = false;
-            IsPlayMenuOpen = false;
-        }
-        #endregion
-
         #region 포켓몬 정보 및 상태 속성 (Pokemon Info & Status)
+        // 성별 여부 프로퍼티
+        private bool _isFemale = false;
+        public bool IsFemale
+        {
+            get => _isFemale;
+            set => SetProperty(ref _isFemale, value);
+        }
+
+        // UI에 텍스트로 띄워줄 성별 기호 속성
+        [JsonIgnore]
+        public string GenderDisplay => IsEgg ? "" : (IsFemale ? "♀" : "♂");
+
+        [JsonIgnore]
+        public System.Windows.Media.Brush GenderColor => IsFemale ? (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#E91E63")! : (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#1976D2")!;
+
         private int _speciesId = -1;
         public int SpeciesId
         {
@@ -187,11 +308,146 @@ namespace TamaPoke.Models
                     OnPropertyChanged(nameof(GrassColor)); OnPropertyChanged(nameof(SkyColor)); OnPropertyChanged(nameof(GroundColor));
                     OnPropertyChanged(nameof(FavoriteBerryName));
 
+                    OnPropertyChanged(nameof(Type1));
+                    OnPropertyChanged(nameof(Type2));
+                    OnPropertyChanged(nameof(HasType2));
+
                     UpdateBackgroundImage();
                     _animationFrames = null; _currentActionId = -1; CheckStateAndAnimate(); CheckMedals();
                 }
             }
         }
+
+        // ==========================================
+        // 🌟 [최적화됨] 강력한 리전 폼 타입 오버라이드 리스트
+        // 특정 폼(블레이즈, 워터)을 최상단에 배치하여 우선적으로 검사하도록 순서를 바꿨습니다!
+        // ==========================================
+        private static readonly List<(int Id, string Keyword, PokemonType Type1, PokemonType Type2)> FormTypeOverrides = new()
+        {
+            // 🌴 알로라의 모습 (7세대)
+            (19, "alola", PokemonType.Dark, PokemonType.Normal),
+            (20, "alola", PokemonType.Dark, PokemonType.Normal),
+            (26, "alola", PokemonType.Electric, PokemonType.Psychic),
+            (27, "alola", PokemonType.Ice, PokemonType.Steel),
+            (28, "alola", PokemonType.Ice, PokemonType.Steel),
+            (37, "alola", PokemonType.Ice, PokemonType.None),
+            (38, "alola", PokemonType.Ice, PokemonType.Fairy),
+            (50, "alola", PokemonType.Ground, PokemonType.Steel),
+            (51, "alola", PokemonType.Ground, PokemonType.Steel),
+            (52, "alola", PokemonType.Dark, PokemonType.None),
+            (53, "alola", PokemonType.Dark, PokemonType.None),
+            (74, "alola", PokemonType.Rock, PokemonType.Electric),
+            (75, "alola", PokemonType.Rock, PokemonType.Electric),
+            (76, "alola", PokemonType.Rock, PokemonType.Electric),
+            (88, "alola", PokemonType.Poison, PokemonType.Dark),
+            (89, "alola", PokemonType.Poison, PokemonType.Dark),
+            (103, "alola", PokemonType.Grass, PokemonType.Dragon),
+            (105, "alola", PokemonType.Fire, PokemonType.Ghost),
+
+            // 🚂 가라르의 모습 (8세대)
+            (52, "galar", PokemonType.Steel, PokemonType.None),
+            (77, "galar", PokemonType.Psychic, PokemonType.None),
+            (78, "galar", PokemonType.Psychic, PokemonType.Fairy),
+            (79, "galar", PokemonType.Poison, PokemonType.Psychic),
+            (80, "galar", PokemonType.Poison, PokemonType.Psychic),
+            (199, "galar", PokemonType.Poison, PokemonType.Psychic),
+            (83, "galar", PokemonType.Fighting, PokemonType.None),
+            (110, "galar", PokemonType.Poison, PokemonType.Fairy),
+            (122, "galar", PokemonType.Ice, PokemonType.Psychic),
+            (144, "galar", PokemonType.Psychic, PokemonType.Flying),
+            (145, "galar", PokemonType.Fighting, PokemonType.Flying),
+            (146, "galar", PokemonType.Dark, PokemonType.Flying),
+            (222, "galar", PokemonType.Ghost, PokemonType.None),
+            (263, "galar", PokemonType.Dark, PokemonType.Normal),
+            (264, "galar", PokemonType.Dark, PokemonType.Normal),
+            (554, "galar", PokemonType.Ice, PokemonType.None),
+            (555, "zen", PokemonType.Ice, PokemonType.Fire),
+            (555, "galar", PokemonType.Ice, PokemonType.None),
+            (562, "galar", PokemonType.Ground, PokemonType.Ghost),
+            (618, "galar", PokemonType.Ground, PokemonType.Steel),
+
+            // 🏔️ 히스이의 모습 (포켓몬 레전즈 아르세우스)
+            (58, "hisui", PokemonType.Fire, PokemonType.Rock),
+            (59, "hisui", PokemonType.Fire, PokemonType.Rock),
+            (100, "hisui", PokemonType.Electric, PokemonType.Grass),
+            (101, "hisui", PokemonType.Electric, PokemonType.Grass),
+            (157, "hisui", PokemonType.Fire, PokemonType.Ghost),
+            (211, "hisui", PokemonType.Dark, PokemonType.Poison),
+            (215, "hisui", PokemonType.Fighting, PokemonType.Poison),
+            (503, "hisui", PokemonType.Water, PokemonType.Dark),
+            (549, "hisui", PokemonType.Grass, PokemonType.Fighting),
+            (550, "hisui", PokemonType.Water, PokemonType.None),
+            (570, "hisui", PokemonType.Normal, PokemonType.Ghost),
+            (571, "hisui", PokemonType.Normal, PokemonType.Ghost),
+            (628, "hisui", PokemonType.Psychic, PokemonType.Flying),
+            (705, "hisui", PokemonType.Steel, PokemonType.Dragon),
+            (706, "hisui", PokemonType.Steel, PokemonType.Dragon),
+            (713, "hisui", PokemonType.Ice, PokemonType.Rock),
+            (724, "hisui", PokemonType.Grass, PokemonType.Fighting),
+
+            // 🇪🇸 팔데아의 모습 (9세대)
+            (194, "paldea", PokemonType.Poison, PokemonType.Ground), // 우파
+            
+            // 🌟 [핵심] 켄타로스: 특수 폼(블레이즈, 워터)을 먼저 검사하도록 순서 배치
+            (128, "blaze", PokemonType.Fighting, PokemonType.Fire),
+            (128, "_0002", PokemonType.Fighting, PokemonType.Fire),
+            (128, "aqua", PokemonType.Fighting, PokemonType.Water),
+            (128, "_0003", PokemonType.Fighting, PokemonType.Water),
+            (128, "combat", PokemonType.Fighting, PokemonType.None),
+            (128, "_0001", PokemonType.Fighting, PokemonType.None),
+            // 위의 디테일한 키워드가 없을 때, 단순 'paldea'만 있어도 무조건 격투로 빠지게 방어!
+            (128, "paldea", PokemonType.Fighting, PokemonType.None)
+        };
+
+        [JsonIgnore]
+        public PokemonType Type1
+        {
+            get
+            {
+                if (IsEgg) return PokemonType.Normal;
+
+                if (!string.IsNullOrEmpty(SpriteFileName))
+                {
+                    string lowerFile = SpriteFileName.ToLower();
+
+                    var overrideData = FormTypeOverrides.FirstOrDefault(x => x.Id == SpeciesId && lowerFile.Contains(x.Keyword));
+
+                    if (overrideData.Id != 0)
+                    {
+                        return overrideData.Type1;
+                    }
+                }
+
+                return PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId)?.Type1 ?? PokemonType.Normal;
+            }
+        }
+
+        [JsonIgnore]
+        public PokemonType Type2
+        {
+            get
+            {
+                if (IsEgg) return PokemonType.None;
+
+                if (!string.IsNullOrEmpty(SpriteFileName))
+                {
+                    string lowerFile = SpriteFileName.ToLower();
+
+                    var overrideData = FormTypeOverrides.FirstOrDefault(x => x.Id == SpeciesId && lowerFile.Contains(x.Keyword));
+
+                    if (overrideData.Id != 0)
+                    {
+                        return overrideData.Type2;
+                    }
+                }
+
+                return PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId)?.Type2 ?? PokemonType.None;
+            }
+        }
+
+        [JsonIgnore]
+        public bool HasType2 => Type2 != PokemonType.None;
+        // ==========================================
 
         private PokemonGene _genes = new PokemonGene();
         public PokemonGene Genes { get => _genes; set => SetProperty(ref _genes, value); }
@@ -208,8 +464,88 @@ namespace TamaPoke.Models
         [JsonIgnore]
         public string Name
         {
-            get => _overrideName ?? (IsEgg ? "알" : PokemonDex.GetName(SpeciesId) + (IsShiny ? " ✨" : ""));
+            get
+            {
+                if (_overrideName != null) return _overrideName;
+                if (IsEgg) return "알";
+
+                // 🌟 도감 원본 이름에서 암수 기호를 깔끔하게 지웁니다.
+                string baseName = PokemonDex.GetName(SpeciesId).Replace("♀", "").Replace("♂", "");
+
+                return baseName + (IsShiny ? " ✨" : "");
+            }
             set { _overrideName = value; OnPropertyChanged(nameof(Name)); }
+        }
+
+        [JsonIgnore]
+        public string FormDescription
+        {
+            get
+            {
+                if (IsEgg) return "";
+
+                string formText = "";
+                string shinyText = IsShiny ? "✨ 색이 다른 포켓몬" : "";
+
+                if (!string.IsNullOrEmpty(SpriteFileName))
+                {
+                    string lowerFile = SpriteFileName.ToLower();
+
+                    if (lowerFile.Contains("shiny"))
+                    {
+                        shinyText = "✨ 색이 다른 포켓몬";
+                    }
+
+                    // 🌟 리전 폼 및 특수 폼 키워드 매핑 사전
+                    var formKeywords = new Dictionary<string, string>
+            {
+                { "combat", "팔데아의 모습 (투쟁종)" },
+                { "_0001", "팔데아의 모습 (투쟁종)" },
+                { "blaze", "팔데아의 모습 (블레이즈종)" },
+                { "_0002", "팔데아의 모습 (블레이즈종)" },
+                { "aqua", "팔데아의 모습 (워터종)" },
+                { "_0003", "팔데아의 모습 (워터종)" },
+                { "alola", "알로라의 모습" },
+                { "galar", "가라르의 모습" },
+                { "hisui", "히스이의 모습" },
+                { "paldea", "팔데아의 모습" },
+                { "mega", "메가진화" }
+            };
+
+                    // 파일명에 등록된 키워드가 포함되어 있는지 확인합니다.
+                    foreach (var pair in formKeywords)
+                    {
+                        if (lowerFile.Contains(pair.Key))
+                        {
+                            // 켄타로스(128번)가 아닌데 _0001 등이 걸리는 것을 방지하기 위한 안전장치
+                            if ((pair.Key == "_0001" || pair.Key == "_0002" || pair.Key == "_0003") && SpeciesId != 128)
+                                continue;
+
+                            formText = pair.Value;
+                            break;
+                        }
+                    }
+
+                    // 사전에 등록되지 않은 기타 특수 형태 처리
+                    if (string.IsNullOrEmpty(formText) &&
+                        !lowerFile.Contains("_0000") &&
+                        !lowerFile.Contains("egg") &&
+                        !lowerFile.Contains("shiny") &&
+                        lowerFile.Contains("_"))
+                    {
+                        formText = "특수한 모습";
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(shinyText) && !string.IsNullOrEmpty(formText))
+                    return $"{shinyText} ({formText})";
+                else if (!string.IsNullOrEmpty(shinyText))
+                    return shinyText;
+                else if (!string.IsNullOrEmpty(formText))
+                    return formText;
+
+                return "";
+            }
         }
 
         private int? _overrideLevel;
@@ -249,7 +585,7 @@ namespace TamaPoke.Models
             var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
             if (p == null) return 0;
 
-            switch (p.Type1)
+            switch (Type1)
             {
                 case PokemonType.Water: return 1;
                 case PokemonType.Normal: case PokemonType.Flying: case PokemonType.Electric: return 2;
@@ -311,8 +647,19 @@ namespace TamaPoke.Models
         public double PosX { get => _posX; set => SetProperty(ref _posX, value); }
         private double _posY = 0;
         public double PosY { get => _posY; set => SetProperty(ref _posY, value); }
+        public double TargetPosX { get; set; } = 0;
+        public double TargetPosY { get; set; } = 0;
+
         private double _flipX = 1;
         public double FlipX { get => _flipX; set => SetProperty(ref _flipX, value); }
+
+        public void ResetPosition()
+        {
+            PosX = 0; PosY = 0; TargetPosX = 0; TargetPosY = 0; FlipX = 1;
+            _tempActionId = ANIM_IDLE;
+            _tempActionTimer = 0;
+            CheckStateAndAnimate();
+        }
 
         private bool _isMuted = true;
         public bool IsMuted { get => _isMuted; set { if (SetProperty(ref _isMuted, value)) OnPropertyChanged(nameof(SoundIcon)); } }
@@ -398,6 +745,11 @@ namespace TamaPoke.Models
         [JsonIgnore] public string JohtoCountText => $"({FullPokedex.Count(p => p.Id >= 152 && p.Id <= 251 && p.IsUnlocked)}/100)";
         [JsonIgnore] public string HoennCountText => $"({FullPokedex.Count(p => p.Id >= 252 && p.Id <= 386 && p.IsUnlocked)}/135)";
         [JsonIgnore] public string SinnohCountText => $"({FullPokedex.Count(p => p.Id >= 387 && p.Id <= 493 && p.IsUnlocked)}/107)";
+        [JsonIgnore] public string UnovaCountText => $"({FullPokedex.Count(p => p.Id >= 494 && p.Id <= 649 && p.IsUnlocked)}/156)";
+        [JsonIgnore] public string KalosCountText => $"({FullPokedex.Count(p => p.Id >= 650 && p.Id <= 721 && p.IsUnlocked)}/72)";
+        [JsonIgnore] public string AlolaCountText => $"({FullPokedex.Count(p => p.Id >= 722 && p.Id <= 809 && p.IsUnlocked)}/88)";
+        [JsonIgnore] public string GalarCountText => $"({FullPokedex.Count(p => p.Id >= 810 && p.Id <= 905 && p.IsUnlocked)}/96)";
+        [JsonIgnore] public string PaldeaCountText => $"({FullPokedex.Count(p => p.Id >= 906 && p.Id <= 1025 && p.IsUnlocked)}/120)";
 
         private int _currentRegionIndex = 0;
         public int CurrentRegionIndex
@@ -428,7 +780,7 @@ namespace TamaPoke.Models
         public void UpdateFilteredPokedex()
         {
             FilteredPokedex.Clear();
-            int startId = 1, endId = 493;
+            int startId = 1, endId = 1025;
 
             switch (CurrentRegionIndex)
             {
@@ -436,7 +788,12 @@ namespace TamaPoke.Models
                 case 1: startId = 152; endId = 251; break;
                 case 2: startId = 252; endId = 386; break;
                 case 3: startId = 387; endId = 493; break;
-                default: startId = 1; endId = 493; break;
+                case 4: startId = 494; endId = 649; break;
+                case 5: startId = 650; endId = 721; break;
+                case 6: startId = 722; endId = 809; break;
+                case 7: startId = 810; endId = 905; break;
+                case 8: startId = 906; endId = 1025; break;
+                default: startId = 1; endId = 1025; break;
             }
 
             foreach (var entry in FullPokedex.Where(p => p.Id >= startId && p.Id <= endId))
@@ -501,6 +858,18 @@ namespace TamaPoke.Models
         public bool BerryKnown { get => _berryKnown; set { if (SetProperty(ref _berryKnown, value)) CheckMedals(); } }
         [JsonIgnore] public int FavoriteBerry => Math.Abs(SpeciesId) % 3;
         [JsonIgnore] public string FavoriteBerryName => !BerryKnown ? "???" : (FavoriteBerry == 0 ? "🍒 빨간 열매" : FavoriteBerry == 1 ? "🫐 파란 열매" : "🍏 초록 열매");
+
+        public void ReloadSprite()
+        {
+            // 🌟 유저님이 이미 만들어두신 훌륭한 렌더링 시스템을 100% 활용합니다!
+            // 프레임 캐시를 초기화하여, 다음 CheckStateAndAnimate() 호출 시 
+            // 새로운 .bin 파일을 하드디스크에서 읽고 자르도록 유도합니다.
+            _animationFrames = null;
+            _currentActionId = -1;
+
+            CheckStateAndAnimate();
+        }
+
         #endregion
 
         #region 내부 시스템 로직 (Internal Logic & Timing)
@@ -633,6 +1002,7 @@ namespace TamaPoke.Models
                 InitializeEvolutionTable();
             }
 
+            InitializeBadgesList();
             RefreshPokedex(); UpdateDayNightCycle(); CheckDailyStreak(); UpdateBackgroundImage();
 
             if (_mainLoopTimer == null)
@@ -652,7 +1022,17 @@ namespace TamaPoke.Models
 
             if (_tempActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
             {
-                PosX = Math.Max(-80, Math.Min(80, PosX + (-FlipX * 1.5)));
+                PosX += (-FlipX * 1.5);
+                if (PosX >= 80)
+                {
+                    PosX = 80;
+                    FlipX = 1;
+                }
+                else if (PosX <= -80)
+                {
+                    PosX = -80;
+                    FlipX = -1;
+                }
             }
 
             if (_tempActionTimer > 0)
@@ -702,7 +1082,7 @@ namespace TamaPoke.Models
                             _tempActionTimer = moveRand.Next(120, 240);
                         }
                     }
-                    else if (r < 60) { int[] flair = { ANIM_POSE, ANIM_NOD, ANIM_BREATH }; _tempActionId = flair[moveRand.Next(flair.Length)]; _tempActionTimer = 90; }
+                    else if (r < 60) { int[] flair = { ANIM_POSE, ANIM_NOD, ANIM_DEEPBREATH }; _tempActionId = flair[moveRand.Next(flair.Length)]; _tempActionTimer = 90; }
                     else { _tempActionId = ANIM_IDLE; _tempActionTimer = moveRand.Next(60, 150); }
                     CheckStateAndAnimate();
                 }
@@ -732,32 +1112,50 @@ namespace TamaPoke.Models
 
                 Random rand = new Random();
 
-                // 🌟 수정됨: 응가를 할 때 트레이 알림 신호를 보냅니다.
                 if (Fullness > 40 && Poops < MAX_POOPS && rand.Next(100) < POOP_CHANCE)
                 {
                     Poops++;
                     Hygiene = Clamp100(Hygiene - (10 * Poops));
-                    TrayNotificationRequested?.Invoke("화장실 알림", $"{Name}이(가) 응가를 했어요! 청소해 주세요.");
+
+                    if (Settings.UseTrayNotifications)
+                        TrayNotificationRequested?.Invoke("화장실 알림", "💩");
                 }
 
                 if (AgeMinutes % 10 == 0) { int dJoy = 0; if (Fullness < 30) dJoy -= 2; if (Hygiene < 30) dJoy -= 3; Joy = Clamp100(Joy + dJoy); }
-                if (Fullness == 0 && Joy == 0 && Energy == 0 && Hygiene == 0) { if (NeglectTicks < RUNAWAY_TICKS) NeglectTicks++; } else { NeglectTicks = 0; }
 
-                // 🌟 새로 추가: 배고픔 알림 (30 미만일 때 한 번만 띄움)
+                if (Fullness == 0 && Joy == 0 && Energy == 0 && Hygiene == 0)
+                {
+                    if (NeglectTicks < RUNAWAY_TICKS)
+                        NeglectTicks++;
+
+                    if (CanRunawayNow)
+                    {
+                        StartRunaway();
+                        return;
+                    }
+                }
+                else
+                {
+                    NeglectTicks = 0;
+                }
+
                 if (Fullness < 30 && !_notifiedHunger)
                 {
-                    TrayNotificationRequested?.Invoke("배고픔 알림", $"{Name}이(가) 배가 고파요! 밥을 주세요.");
+                    if (Settings.UseTrayNotifications)
+                        TrayNotificationRequested?.Invoke("배고픔 알림", "🍚");
+
                     _notifiedHunger = true;
                 }
                 else if (Fullness >= 30)
                 {
-                    _notifiedHunger = false; // 밥을 먹여서 회복되면 알림 스위치 초기화
+                    _notifiedHunger = false;
                 }
 
-                // 🌟 새로 추가: 우울함 알림 (30 미만일 때 한 번만 띄움)
                 if (Joy < 30 && !_notifiedSadness)
                 {
-                    TrayNotificationRequested?.Invoke("우울함 알림", $"{Name}이(가) 우울해해요. 함께 놀아주세요!");
+                    if (Settings.UseTrayNotifications)
+                        TrayNotificationRequested?.Invoke("우울함 알림", "🥹");
+
                     _notifiedSadness = true;
                 }
                 else if (Joy >= 30)
@@ -873,15 +1271,23 @@ namespace TamaPoke.Models
         private int GetTargetAction()
         {
             if (IsProfileOpen || IsBattleOpen) return ANIM_IDLE;
+
             if (Ceremony == 1) return ANIM_POSE;
             if (Ceremony == 2) return ANIM_WALK;
             if (Ceremony == 3) return ANIM_HOP;
-            if (Ceremony == 4) return ANIM_POSE;
+            if (Ceremony == 4) return ANIM_FLOAT;
 
             if (IsAnyMiniGameOpen) return ANIM_IDLE;
             if (_tempActionTimer > 0) return _tempActionId;
+
             if (IsSleeping) return ANIM_SLEEP;
-            if (Poops > 0 || Hygiene < 30 || LowestStat < 30) return ANIM_HURT;
+            if (IsBathing) return ANIM_SHAKE;
+
+            if (Poops > 0) return ANIM_PAIN;
+            if (Hygiene < 30) return ANIM_HURT;
+            if (Fullness < 30) return ANIM_CRINGE;
+            if (Joy < 30) return ANIM_SINK;
+
             return ANIM_IDLE;
         }
 
@@ -904,51 +1310,121 @@ namespace TamaPoke.Models
         {
             _currentActionId = actionToLoad;
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string spriteFolder = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites");
+
+            List<SpriteFrameData>? rawStrips = null;
 
             if (IsEgg)
             {
-                string eggPath = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites", "egg.png");
-                if (File.Exists(eggPath))
-                {
-                    BitmapImage bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.UriSource = new Uri(eggPath);
-                    bitmap.EndInit();
-                    bitmap.Freeze();
-                    _animationFrames = new BitmapSource[] { bitmap };
-                    CurrentFrame = bitmap;
-                }
-                return;
+                string eggPath = Path.Combine(spriteFolder, "p0000_Egg.bin");
+                if (File.Exists(eggPath)) rawStrips = Utils.BinSpriteReader.LoadFramesFromBin(eggPath);
             }
-
-            BitmapSource[]? frames = null;
-            string normalPath = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites", $"p{SpeciesId:D3}.bin");
-            string shinyPath = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites", $"ps{SpeciesId:D3}.bin");
-
-            if (IsShiny && File.Exists(shinyPath)) frames = Tpk2Decoder.LoadAnimation(shinyPath, actionToLoad);
-            if (frames == null && File.Exists(normalPath)) frames = Tpk2Decoder.LoadAnimation(normalPath, actionToLoad);
-
-            if (frames == null && actionToLoad != ANIM_IDLE)
+            else
             {
-                if (IsShiny && File.Exists(shinyPath)) frames = Tpk2Decoder.LoadAnimation(shinyPath, ANIM_IDLE);
-                if (frames == null && File.Exists(normalPath)) frames = Tpk2Decoder.LoadAnimation(normalPath, ANIM_IDLE);
+                string targetPath = Path.Combine(spriteFolder, SpriteFileName);
+                if (!File.Exists(targetPath)) targetPath = Path.Combine(spriteFolder, $"p{SpeciesId:D4}.bin");
+                if (File.Exists(targetPath)) rawStrips = Utils.BinSpriteReader.LoadFramesFromBin(targetPath);
             }
 
-            if (frames != null && frames.Length > 0) { _animationFrames = frames; _currentFrameIndex = 0; CurrentFrame = frames[0]; }
+            if (rawStrips != null && rawStrips.Count > 0)
+            {
+                int stripIndex = actionToLoad;
+                if (stripIndex >= rawStrips.Count) stripIndex = rawStrips.Count - 1;
+                if (stripIndex < 0) stripIndex = 0;
+
+                var targetData = rawStrips[stripIndex];
+                if (targetData != null && targetData.Image != null)
+                {
+                    int directionRow = 0;
+
+                    switch (actionToLoad)
+                    {
+                        case ANIM_WALK:
+                        case ANIM_SLEEP:
+                        case ANIM_EVENTSLEEP:
+                        case ANIM_LAYING:
+                        case ANIM_ATTACK:
+                        case ANIM_STRIKE:
+                        case ANIM_SHOOT:
+                        case ANIM_HOP:
+                        case ANIM_CHARGE:
+                        case ANIM_LEAPFORTH:
+                        case ANIM_TUMBLE:
+                        case ANIM_HURT:
+                        case ANIM_PAIN:
+                        case ANIM_CRINGE:
+                        case ANIM_FAINT:
+                            directionRow = 6;
+                            break;
+
+                        default:
+                            directionRow = 0;
+                            break;
+                    }
+
+                    List<BitmapSource> slicedFrames = SliceStripIntoFrames(targetData.Image, targetData.FrameWidth, targetData.FrameHeight, directionRow);
+                    if (slicedFrames.Count > 0)
+                    {
+                        _animationFrames = slicedFrames.ToArray();
+                        _currentFrameIndex = 0;
+                        CurrentFrame = _animationFrames[0];
+                    }
+                }
+            }
         }
 
         private void UpdateEnemyAnimation(int actionToLoad)
         {
             _enemyTempActionId = actionToLoad;
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string enemyPath = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites", $"p{EnemySpeciesId:D3}.bin");
+            string spriteFolder = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites");
+            string enemyPath = Path.Combine(spriteFolder, $"p{EnemySpeciesId:D4}.bin");
+
+            if (Directory.Exists(spriteFolder))
+            {
+                var matchedFiles = Directory.GetFiles(spriteFolder, $"p{EnemySpeciesId:D4}*.bin");
+                if (matchedFiles.Length > 0) enemyPath = matchedFiles[0];
+            }
 
             if (File.Exists(enemyPath))
             {
-                var frames = Tpk2Decoder.LoadAnimation(enemyPath, actionToLoad);
-                if (frames != null && frames.Length > 0) EnemyCurrentFrame = frames[0];
+                var rawStrips = Utils.BinSpriteReader.LoadFramesFromBin(enemyPath);
+                if (rawStrips != null && rawStrips.Count > 0)
+                {
+                    int stripIndex = actionToLoad;
+                    if (stripIndex >= rawStrips.Count) stripIndex = rawStrips.Count - 1;
+                    if (stripIndex < 0) stripIndex = 0;
+
+                    var targetData = rawStrips[stripIndex];
+                    if (targetData != null && targetData.Image != null)
+                    {
+                        int directionRow = 6;
+
+                        List<BitmapSource> slicedFrames = SliceStripIntoFrames(targetData.Image, targetData.FrameWidth, targetData.FrameHeight, directionRow);
+                        if (slicedFrames.Count > 0) EnemyCurrentFrame = slicedFrames[0];
+                    }
+                }
             }
+        }
+
+        private List<BitmapSource> SliceStripIntoFrames(BitmapSource strip, int fw, int fh, int targetRow = 0)
+        {
+            List<BitmapSource> frames = new List<BitmapSource>();
+
+            if (fw <= 0 || fh <= 0) return frames;
+
+            int columns = strip.PixelWidth / fw;
+            int maxRow = (strip.PixelHeight / fh) - 1;
+            int safeRow = Math.Max(0, Math.Min(targetRow, maxRow));
+
+            for (int i = 0; i < columns; i++)
+            {
+                System.Windows.Int32Rect cropRect = new System.Windows.Int32Rect(i * fw, safeRow * fh, fw, fh);
+                CroppedBitmap croppedFrame = new CroppedBitmap(strip, cropRect);
+                croppedFrame.Freeze();
+                frames.Add(croppedFrame);
+            }
+            return frames;
         }
 
         private void UpdateDayNightCycle() { if (IsSleeping) { TimeOfDay = 3; return; } int hour = DateTime.Now.Hour; if (hour < 6 || hour >= 20) TimeOfDay = 3; else if (hour < 8) TimeOfDay = 0; else if (hour < 18) TimeOfDay = 1; else TimeOfDay = 2; }
@@ -987,6 +1463,12 @@ namespace TamaPoke.Models
                     if (pet != null)
                     {
                         pet.InitializeAfterLoad();
+
+                        if (pet.Inventory == null || pet.Inventory.Count == 0)
+                        {
+                            pet.InitializeInventory();
+                        }
+
                         return pet;
                     }
                 }
@@ -994,56 +1476,10 @@ namespace TamaPoke.Models
             }
 
             PokemonState newPet = new PokemonState();
-            newPet.MonsterBalls = 5;
-            newPet.Potions = 3;
-
+            newPet.InitializeInventory();
             newPet.InitializeAfterLoad();
             return newPet;
         }
-
-        /* 
-        // ====================================================================
-        // JSON 암호화 저장 및 불러오기 기능 추가 (Save & Load with JSON Encryption)
-        // ====================================================================
-        private static readonly string EncryptedSaveFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "save.dat");
-        public static bool CheckEncryptedSaveFileExists() => File.Exists(EncryptedSaveFilePath);
-        
-        public void EncryptedSave()
-        {
-            try
-            {
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                string jsonString = JsonSerializer.Serialize(this, options);
-                string encryptedData = TamaPoke.Utils.SaveEncryptionHelper.Encrypt(jsonString);
-                File.WriteAllText(EncryptedSaveFilePath, encryptedData);
-            }
-            catch (Exception ex) { Console.WriteLine($"저장 실패: {ex.Message}"); }
-        }
-        
-        public static PokemonState EncryptedLoad()
-        {
-            if (File.Exists(EncryptedSaveFilePath))
-            {
-                try
-                {
-                    string encryptedData = File.ReadAllText(EncryptedSaveFilePath);
-                    string jsonString = TamaPoke.Utils.SaveEncryptionHelper.Decrypt(encryptedData);
-                    var pet = JsonSerializer.Deserialize<PokemonState>(jsonString);
-                    if (pet != null)
-                    {
-                        pet.InitializeAfterLoad();
-                        return pet;
-                    }
-                }
-                catch { }
-            }
-            PokemonState newPet = new PokemonState();
-            newPet.MonsterBalls = 5;
-            newPet.Potions = 3;
-            newPet.InitializeAfterLoad();
-            return newPet;
-        }
-        */
         #endregion
 
         #region 디버그용 (Debug Tools)
@@ -1087,13 +1523,13 @@ namespace TamaPoke.Models
         }
         #endregion
 
-        #region INotifyPropertyChanged 구현 (UI Update Notifications)
+        #region 🌟 INotifyPropertyChanged 구현 (UI Update Notifications)
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        public void OnPropertyChanged([CallerMemberName] string? propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
+        public bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, newValue)) return false;
             field = newValue;

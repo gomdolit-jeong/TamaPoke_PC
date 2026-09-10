@@ -9,6 +9,8 @@ using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
+    public enum BattleAction { Dodge, Run }
+
     public partial class PokemonState
     {
         #region 실전 전투 능력치 계산 (Combat Stats)
@@ -46,10 +48,9 @@ namespace TamaPoke.Models
         #region 배틀 시스템 UI 상태 (Battle System UI)
         private bool _isBattleOpen = false;
         public bool IsBattleOpen { get => _isBattleOpen; set { if (SetProperty(ref _isBattleOpen, value)) { OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
-        // 🌟 패배 시 화면이 어두워지는 효과를 제어하는 상태 값
         private bool _isDefeatedFadeOut = false;
         public bool IsDefeatedFadeOut { get => _isDefeatedFadeOut; set => SetProperty(ref _isDefeatedFadeOut, value); }
-        
+
         private bool _isPlayerTurn = true;
         public bool IsPlayerTurn
         {
@@ -131,7 +132,6 @@ namespace TamaPoke.Models
         private string _battleMessage = "";
         public string BattleMessage { get => _battleMessage; set => SetProperty(ref _battleMessage, value); }
 
-        private int _restUsesLeft = 2;
         private bool _isCounterReady = false;
 
         public int[] EnemySkills { get; set; } = new int[4] { 0, 0, 0, 0 };
@@ -212,16 +212,26 @@ namespace TamaPoke.Models
                     int expectedDamage = (int)(Math.Max(2, enemyAtk - (CombatDef / 2)) * typeMult * stabMult * (m.Power / 50.0));
 
                     score = expectedDamage;
+
                     if (expectedDamage >= PlayerHp) score += 1000;
 
                     int acc = m.Accuracy == 0 ? 100 : m.Accuracy;
                     score = score * acc / 100;
-
                     if (m.Effect == SkillEffect.Recharge) score -= expectedDamage / 4;
                     if (m.Effect == SkillEffect.Recoil) score -= expectedDamage / 6;
+
+                    if (IsGymBattle)
+                    {
+                        if (typeMult == 0) score = -9999;
+                        else if (typeMult >= 2.0) score += 200;
+                        else if (typeMult <= 0.5) score -= 50;
+                    }
                 }
 
-                score += rand.Next(0, 5);
+                if (!IsGymBattle)
+                {
+                    score += rand.Next(0, 10);
+                }
 
                 if (score > bestScore) { bestScore = score; bestSkill = m; }
             }
@@ -370,7 +380,7 @@ namespace TamaPoke.Models
         }
         #endregion
 
-        #region 🌟 스킬 학습 및 교체 시스템 로직 (Skill Learning Logic)
+        #region 스킬 학습 및 교체 시스템 로직 (Skill Learning Logic)
         private bool _isSkillLearnMenuOpen = false;
         public bool IsSkillLearnMenuOpen { get => _isSkillLearnMenuOpen; set => SetProperty(ref _isSkillLearnMenuOpen, value); }
 
@@ -417,7 +427,6 @@ namespace TamaPoke.Models
             }
             else
             {
-                // 🌟 체육관 배틀일 경우 포획창을 스킵하고 배틀 닫기
                 if (IsGymBattle)
                 {
                     IsGymBattle = false;
@@ -482,7 +491,6 @@ namespace TamaPoke.Models
             _ = ShowEventMessageAsync(finalMessage);
             await Task.Delay(2000);
 
-            // 🌟 체육관 배틀일 경우 스킬을 배운 뒤 포획창을 스킵하고 즉시 배틀 종료
             if (IsGymBattle)
             {
                 IsGymBattle = false;
@@ -495,58 +503,14 @@ namespace TamaPoke.Models
         }
         #endregion
 
-        #region 가방(인벤토리) 시스템 (Bag System)
-
-        public ObservableCollection<ItemInfo> Inventory { get; set; } = new ObservableCollection<ItemInfo>();
-
-        public void InitializeInventory()
-        {
-            Inventory.Clear();
-
-            Inventory.Add(new ItemInfo
-            {
-                Name = "몬스터볼",
-                Description = "야생 포켓몬을 잡을 때 쓴다.",
-                Type = ItemType.monsterball,
-                EffectValue = 1,
-                Quantity = 5
-            });
-
-            Inventory.Add(new ItemInfo
-            {
-                Name = "상처약",
-                Description = "포켓몬의 체력을 20 회복한다.",
-                Type = ItemType.Potion,
-                EffectValue = 20,
-                Quantity = 3
-            });
-        }
-
-        public void AddItemToInventory(ItemType type, int amount)
-        {
-            if (type == ItemType.monsterball)
-            {
-                // 속성에 직접 더해주면 SetProperty가 작동하여 화면의 숫자가 즉시 올라갑니다!
-                MonsterBalls += amount;
-            }
-            else if (type == ItemType.Potion)
-            {
-                Potions += amount;
-            }
-
-            // 아이템을 획득했으니 데이터가 날아가지 않도록 즉시 저장합니다.
-            Save();
-        }
-        #endregion
-
         #region 배틀 로직 (Battle Logic)
         public async void StartWildBattle()
         {
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
 
-            IsProfileOpen = false; _restUsesLeft = 2; _isCounterReady = false;
+            IsProfileOpen = false; _isCounterReady = false;
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
-            IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false; // 전투 시작 시 스킬 메뉴 초기화
+            IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
             IsGymBattle = false;
 
             Random rand = new Random();
@@ -562,14 +526,14 @@ namespace TamaPoke.Models
             EnemyHp = EnemyMaxHp;
 
             GenerateEnemySkills();
-            UpdateEnemyAnimation(ANIM_IDLE);
+            UpdateEnemyAnimation(0);
 
             IsBattleOpen = true;
             IsPlayerTurn = false;
             BattleMessage = $"앗! 야생 {EnemyName}이(가) 나타났다!";
 
-            // 🌟 추가됨: 배틀이 시작되면 시스템 트레이로 신호를 보냅니다!
-            TrayNotificationRequested?.Invoke("야생 포켓몬 출현!", BattleMessage);
+            if (Settings.UseTrayNotifications)
+                TrayNotificationRequested?.Invoke("야생 포켓몬 출현!", "⚔️");
 
             await Task.Delay(1500);
 
@@ -589,7 +553,7 @@ namespace TamaPoke.Models
             BattleMessage = $"{EnemyName}을(를) 뒤로하고 길을 떠납니다...";
             await Task.Delay(1500);
 
-            await ProcessWildBattleRewardsAsync(); // 전리품 챙기기!
+            await ProcessWildBattleRewardsAsync();
         }
 
         public async Task ExecuteTurnAsync(BattleAction playerAction)
@@ -597,27 +561,29 @@ namespace TamaPoke.Models
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
             IsPlayerTurn = false; Random rand = new Random();
 
-            if (playerAction == BattleAction.Run) { BattleMessage = "무사히 도망쳤다!"; await Task.Delay(1000); CloseBattle(); IsPlayerTurn = true; return; }
-
-            if (playerAction == BattleAction.Rest)
+            if (playerAction == BattleAction.Run)
             {
-                if (_restUsesLeft > 0) { PlayerHp = Math.Min(PlayerMaxHp, PlayerHp + PlayerMaxHp / 3); _restUsesLeft--; BattleMessage = $"휴식을 취해 체력을 회복했다!\n(남은 휴식: {_restUsesLeft}회)"; _tempActionId = ANIM_NOD; _tempActionTimer = 45; UpdateAnimation(ANIM_NOD); }
-                else { BattleMessage = "더 이상 휴식할 수 없다!"; }
-                await Task.Delay(1500);
+                BattleMessage = "무사히 도망쳤다!";
+                await Task.Delay(1000);
+                CloseBattle();
+                IsPlayerTurn = true;
+                return;
             }
 
             bool playerDodged = false;
             if (playerAction == BattleAction.Dodge)
             {
-                if (rand.Next(100) < 70) { playerDodged = true; _isCounterReady = true; BattleMessage = "적의 공격을 피할 준비를 했다!\n(카운터 대기)"; }
-                else { BattleMessage = "회피 준비에 실패했다..."; }
+                if (rand.Next(100) < 70)
+                {
+                    playerDodged = true;
+                    _isCounterReady = true;
+                    BattleMessage = "적의 공격을 피할 준비를 했다!\n(카운터 대기)";
+                }
+                else
+                {
+                    BattleMessage = "회피 준비에 실패했다...";
+                }
                 await Task.Delay(1500);
-            }
-
-            if (playerAction == BattleAction.QuickAttack || playerAction == BattleAction.HeavyAttack)
-            {
-                IsPlayerTurn = true;
-                return;
             }
 
             if (EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
@@ -671,25 +637,24 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}적에게 {damage} 데미지를 입혔다!";
 
-                // 스킬 카테고리에 따른 모션 연출
                 if (playerSkill.Category == SkillCategory.Physical)
                 {
-                    _tempActionId = ANIM_ATTACK;
+                    _tempActionId = 1;
                 }
                 else if (playerSkill.Category == SkillCategory.Special)
                 {
-                    _tempActionId = ANIM_BREATH;
+                    _tempActionId = 21;
                 }
                 else
                 {
-                    _tempActionId = ANIM_POSE;
+                    _tempActionId = 17;
                 }
 
                 _tempActionTimer = 15;
                 UpdateAnimation(_tempActionId);
 
                 _enemyTempActionTimer = 15;
-                UpdateEnemyAnimation(ANIM_HURT);
+                UpdateEnemyAnimation(6);
 
                 await Task.Delay(600); IsEnemyTakingDamage = false; await Task.Delay(900);
             }
@@ -713,12 +678,17 @@ namespace TamaPoke.Models
 
             if (selectedItem.Type == ItemType.Potion)
             {
-                int healAmount = selectedItem.EffectValue;
+                // 🌟 상처약의 효과 수치를 퍼센트로 계산하여 체력을 회복합니다.
+                int healAmount = (int)(PlayerMaxHp * (selectedItem.EffectValue / 100.0));
+
+                // 최소 1의 체력은 회복되도록 보장합니다.
+                if (healAmount < 1) healAmount = 1;
+
                 PlayerHp = Math.Min(PlayerMaxHp, PlayerHp + healAmount);
 
                 BattleMessage = $"{Name}에게 {selectedItem.Name}을(를) 사용했다!\n체력이 {healAmount} 회복되었다!";
 
-                _tempActionId = ANIM_HOP;
+                _tempActionId = 10;
                 _tempActionTimer = 30;
                 CheckStateAndAnimate();
 
@@ -767,8 +737,8 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}{Name}(은)는 {enemyDamage} 데미지를 입었다!";
 
-                _enemyTempActionId = ANIM_ATTACK; _enemyTempActionTimer = 15; UpdateEnemyAnimation(ANIM_ATTACK);
-                _tempActionId = ANIM_HURT; _tempActionTimer = 15; UpdateAnimation(ANIM_HURT);
+                _enemyTempActionId = 1; _enemyTempActionTimer = 15; UpdateEnemyAnimation(1);
+                _tempActionId = 6; _tempActionTimer = 15; UpdateAnimation(6);
 
                 await Task.Delay(600); IsPlayerTakingDamage = false; await Task.Delay(900);
             }
@@ -788,13 +758,10 @@ namespace TamaPoke.Models
                 Joy = Math.Max(0, Joy - 10);
                 Energy = Math.Max(0, Energy - 20);
 
-                // 🌟 화면이 서서히 어두워지는 애니메이션 스위치 ON!
                 IsDefeatedFadeOut = true;
 
-                // 화면이 완전히 까매지도록 3초간 넉넉히 대기합니다.
                 await Task.Delay(3000);
 
-                // 상태 초기화 및 배틀 닫기
                 IsDefeatedFadeOut = false;
                 IsGymBattle = false;
                 CloseBattle();
@@ -807,23 +774,24 @@ namespace TamaPoke.Models
 
                 if (IsGymBattle)
                 {
-                    // 🌟 체육관 승리 로직
-                    var leader = GymLeaders[GymBadges];
-                    GymBadges++; // 배지 획득!
-                    Save(); // 진행도 저장
+                    var leader = GymManager.GetLeader(GymBadges);
 
-                    BattleMessage = $"대단한 승부였다!\n{leader.LeaderName}에게서\n[{leader.BadgeName}]을(를) 얻었다!";
-                    await Task.Delay(3000);
+                    if (leader != null)
+                    {
+                        GymBadges++;
+                        Save();
 
-                    // 🌟 기존에 여기서 IsGymBattle = false; 를 처리해서 포획창이 떴습니다. 
-                    // теперь OnBattleWon() 내부에서 IsGymBattle을 확인하도록 이 줄을 지웠습니다!
-                    OnBattleWon(); // 스킬 학습 기회 제공
+                        BattleMessage = $"대단한 승부였다!\n{leader.LeaderName}에게서\n[{leader.BadgeName}]을(를) 얻었다!";
+                        await Task.Delay(3000);
+                    }
+
+                    OnBattleWon();
                 }
                 else
                 {
                     BattleMessage = "배틀에서 승리했다!";
                     await Task.Delay(2000);
-                    OnBattleWon(); 
+                    OnBattleWon();
                 }
             }
         }
@@ -887,89 +855,61 @@ namespace TamaPoke.Models
             else
             {
                 IsEnemyVisible = true;
-                BattleMessage = "아아! 포켓몬이 볼에서 빠져나왔다!\n어떻게 할까?";
+                BattleMessage = $"아아! {EnemyName}이(가) 볼에서 빠져나왔다!";
                 await Task.Delay(2000);
 
-                IsCatchOffered = true;
+                IsCatchOffered = false;
+                await EnemyTurnAction(false);
             }
         }
 
-        // 🌟 1. 야생 배틀 종료 후 아이템을 획득하고 배틀을 닫는 공통 메서드
         private async Task ProcessWildBattleRewardsAsync()
         {
             Random rand = new Random();
             string dropMessage = "";
 
-            if (rand.Next(100) < 60)
+            if (rand.Next(100) < 50)
             {
-                if (rand.Next(100) < 70) { AddItemToInventory(ItemType.monsterball, 1); dropMessage = "몬스터볼 1개를 얻었다!"; }
-                else { AddItemToInventory(ItemType.Potion, 1); dropMessage = "상처약 1개를 얻었다!"; }
+                int itemRoll = rand.Next(100);
+
+                if (itemRoll < 50)
+                {
+                    AddItemToInventory("몬스터볼", "야생 포켓몬을 잡을 때 쓴다.", ItemType.monsterball, 1, 1);
+                    dropMessage = "몬스터볼 1개를 얻었다!";
+                }
+                else
+                {
+                    int potionRoll = rand.Next(100);
+
+                    if (potionRoll < 60)
+                    {
+                        AddItemToInventory("상처약", "포켓몬의 체력을 15% 회복한다.", ItemType.Potion, 15, 1);
+                        dropMessage = "상처약 1개를 얻었다!";
+                    }
+                    else if (potionRoll < 90)
+                    {
+                        AddItemToInventory("좋은상처약", "포켓몬의 체력을 30% 회복한다.", ItemType.Potion, 30, 1);
+                        dropMessage = "좋은상처약 1개를 얻었다!";
+                    }
+                    else
+                    {
+                        AddItemToInventory("고급상처약", "포켓몬의 체력을 50% 회복한다.", ItemType.Potion, 50, 1);
+                        dropMessage = "앗! 고급상처약 1개를 얻었다!";
+                    }
+                }
             }
 
             if (!string.IsNullOrEmpty(dropMessage))
             {
                 BattleMessage = dropMessage;
-                await Task.Delay(2000); // 사용자가 메시지를 읽을 시간을 줍니다.
+                await Task.Delay(2000);
             }
 
-            CloseBattle(); // 모든 연출이 끝났으므로 배틀을 완전히 종료합니다.
+            CloseBattle();
         }
         #endregion
 
         #region 체육관 시스템 (Gym System)
-
-        public class GymLeaderInfo
-        {
-            public string? GymName { get; set; }
-            public string? LeaderName { get; set; }
-            public string? BadgeName { get; set; }
-            public int PokemonSpeciesId { get; set; }
-            public int Level { get; set; }
-            public int[]? SpecificSkills { get; set; }
-        }
-
-        public static readonly GymLeaderInfo[] GymLeaders = new GymLeaderInfo[]
-        {
-            // === 1세대 관동지방 ===
-            new GymLeaderInfo { GymName = "회색 체육관", LeaderName = "웅이", BadgeName = "회색배지", PokemonSpeciesId = 95, Level = 14, SpecificSkills = new int[] { 60, 44, 1, 0 } },
-            new GymLeaderInfo { GymName = "블루 체육관", LeaderName = "이슬", BadgeName = "블루배지", PokemonSpeciesId = 121, Level = 21, SpecificSkills = new int[] { 19, 32, 86, 0 } },
-            new GymLeaderInfo { GymName = "갈색 체육관", LeaderName = "마티스", BadgeName = "오렌지배지", PokemonSpeciesId = 26, Level = 24, SpecificSkills = new int[] { 24, 23, 5, 0 } },
-            new GymLeaderInfo { GymName = "무지개 체육관", LeaderName = "민화", BadgeName = "무지개배지", PokemonSpeciesId = 45, Level = 29, SpecificSkills = new int[] { 29, 41, 28, 0 } },
-            new GymLeaderInfo { GymName = "연분홍 체육관", LeaderName = "독수", BadgeName = "핑크배지", PokemonSpeciesId = 110, Level = 43, SpecificSkills = new int[] { 41, 64, 8, 0 } },
-            new GymLeaderInfo { GymName = "노랑 체육관", LeaderName = "초련", BadgeName = "골드배지", PokemonSpeciesId = 65, Level = 43, SpecificSkills = new int[] { 51, 64, 86, 0 } },
-            new GymLeaderInfo { GymName = "홍련 체육관", LeaderName = "강연", BadgeName = "진홍배지", PokemonSpeciesId = 59, Level = 47, SpecificSkills = new int[] { 14, 8, 68, 0 } },
-            new GymLeaderInfo { GymName = "상록 체육관", LeaderName = "비주기", BadgeName = "그린배지", PokemonSpeciesId = 112, Level = 50, SpecificSkills = new int[] { 44, 60, 55, 9 } },
-
-            // === 2세대 성도지방 ===
-            new GymLeaderInfo { GymName = "도라지 체육관", LeaderName = "비상", BadgeName = "윙배지", PokemonSpeciesId = 18, Level = 55, SpecificSkills = new int[] { 47, 45, 5, 0 } },
-            new GymLeaderInfo { GymName = "고동 체육관", LeaderName = "호일", BadgeName = "인세트배지", PokemonSpeciesId = 123, Level = 58, SpecificSkills = new int[] { 57, 45, 75, 0 } },
-            new GymLeaderInfo { GymName = "금빛 체육관", LeaderName = "꼭두", BadgeName = "레귤러배지", PokemonSpeciesId = 241, Level = 62, SpecificSkills = new int[] { 7, 86, 68, 0 } },
-            new GymLeaderInfo { GymName = "인주 체육관", LeaderName = "유빈", BadgeName = "팬텀배지", PokemonSpeciesId = 94, Level = 65, SpecificSkills = new int[] { 64, 41, 89, 0 } },
-            new GymLeaderInfo { GymName = "진청 체육관", LeaderName = "사도", BadgeName = "쇼크배지", PokemonSpeciesId = 62, Level = 68, SpecificSkills = new int[] { 37, 18, 44, 0 } },
-            new GymLeaderInfo { GymName = "담청 체육관", LeaderName = "규리", BadgeName = "스틸배지", PokemonSpeciesId = 208, Level = 72, SpecificSkills = new int[] { 70, 44, 69, 0 } },
-            new GymLeaderInfo { GymName = "황토 체육관", LeaderName = "류옹", BadgeName = "아이스배지", PokemonSpeciesId = 221, Level = 75, SpecificSkills = new int[] { 33, 44, 7, 0 } },
-            new GymLeaderInfo { GymName = "검은먹 체육관", LeaderName = "이향", BadgeName = "라이징배지", PokemonSpeciesId = 230, Level = 80, SpecificSkills = new int[] { 67, 19, 32, 80 } },
-
-            // === 3세대 호연지방 ===
-            new GymLeaderInfo { GymName = "금탄 체육관", LeaderName = "원규", BadgeName = "스톤배지", PokemonSpeciesId = 306, Level = 82, SpecificSkills = new int[] { 60, 44, 8, 9 } },
-            new GymLeaderInfo { GymName = "무로 체육관", LeaderName = "철구", BadgeName = "너클배지", PokemonSpeciesId = 297, Level = 84, SpecificSkills = new int[] { 44, 8, 5, 0 } },
-            new GymLeaderInfo { GymName = "보라 체육관", LeaderName = "암전", BadgeName = "다이나모배지", PokemonSpeciesId = 310, Level = 86, SpecificSkills = new int[] { 24, 23, 5, 0 } },
-            new GymLeaderInfo { GymName = "용암 체육관", LeaderName = "민지", BadgeName = "히트배지", PokemonSpeciesId = 324, Level = 88, SpecificSkills = new int[] { 14, 44, 8, 0 } },
-            new GymLeaderInfo { GymName = "등화 체육관", LeaderName = "종길", BadgeName = "밸런스배지", PokemonSpeciesId = 289, Level = 90, SpecificSkills = new int[] { 44, 64, 8, 9 } },
-            new GymLeaderInfo { GymName = "검방울 체육관", LeaderName = "은송", BadgeName = "깃털배지", PokemonSpeciesId = 334, Level = 92, SpecificSkills = new int[] { 47, 45, 44, 0 } },
-            new GymLeaderInfo { GymName = "이끼 체육관", LeaderName = "풍&란", BadgeName = "마인드배지", PokemonSpeciesId = 338, Level = 94, SpecificSkills = new int[] { 51, 60, 64, 86 } },
-            new GymLeaderInfo { GymName = "루네 체육관", LeaderName = "아단", BadgeName = "레인배지", PokemonSpeciesId = 350, Level = 96, SpecificSkills = new int[] { 19, 32, 86, 9 } },
-
-            // === 4세대 신오지방 ===
-            new GymLeaderInfo { GymName = "무쇠 체육관", LeaderName = "강석", BadgeName = "콜배지", PokemonSpeciesId = 409, Level = 98, SpecificSkills = new int[] { 60, 44, 8, 9 } },
-            new GymLeaderInfo { GymName = "영원 체육관", LeaderName = "유채", BadgeName = "포레스트배지", PokemonSpeciesId = 407, Level = 100, SpecificSkills = new int[] { 29, 41, 86, 0 } },
-            new GymLeaderInfo { GymName = "연고 체육관", LeaderName = "멜리사", BadgeName = "레릭배지", PokemonSpeciesId = 429, Level = 102, SpecificSkills = new int[] { 64, 51, 23, 0 } },
-            new GymLeaderInfo { GymName = "장막 체육관", LeaderName = "자망", BadgeName = "코블배지", PokemonSpeciesId = 448, Level = 105, SpecificSkills = new int[] { 44, 64, 5, 9 } },
-            new GymLeaderInfo { GymName = "들초 체육관", LeaderName = "맥실러", BadgeName = "펜배지", PokemonSpeciesId = 419, Level = 108, SpecificSkills = new int[] { 19, 32, 68, 5 } },
-            new GymLeaderInfo { GymName = "운하 체육관", LeaderName = "동관", BadgeName = "마인배지", PokemonSpeciesId = 411, Level = 110, SpecificSkills = new int[] { 60, 44, 8, 86 } },
-            new GymLeaderInfo { GymName = "선단 체육관", LeaderName = "무청", BadgeName = "글레이셔배지", PokemonSpeciesId = 460, Level = 115, SpecificSkills = new int[] { 32, 44, 29, 0 } },
-            new GymLeaderInfo { GymName = "물가 체육관", LeaderName = "전진", BadgeName = "비컨배지", PokemonSpeciesId = 466, Level = 120, SpecificSkills = new int[] { 24, 23, 44, 9 } }
-        };
 
         private int _gymBadges = 0;
         public int GymBadges { get => _gymBadges; set => SetProperty(ref _gymBadges, value); }
@@ -977,9 +917,6 @@ namespace TamaPoke.Models
         private bool _isGymBattle = false;
         public bool IsGymBattle { get => _isGymBattle; set => SetProperty(ref _isGymBattle, value); }
 
-        // ==========================================
-        // 🌟 인게임 체육관 도전 확인창 상태 관리
-        // ==========================================
         private bool _isGymConfirmOpen;
         public bool IsGymConfirmOpen
         {
@@ -996,48 +933,42 @@ namespace TamaPoke.Models
 
         private int _selectedGymIndex;
 
-        // 뱃지 버튼을 눌렀을 때 시스템 팝업 대신 인게임 확인창을 띄우는 메서드
         public void PromptGymChallenge(int gymIndex)
         {
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
-            if (gymIndex < 0 || gymIndex >= GymLeaders.Length) return;
 
-            // 🌟 버그 수정: 내가 가진 뱃지 개수보다 높은 번호의 체육관은 도전할 수 없도록 막습니다.
-            // (예: 뱃지가 0개면 gymIndex 0(첫번째)만 도전 가능, 1 이상은 차단)
+            var leader = GymManager.GetLeader(gymIndex);
+            if (leader == null) return;
+
             if (gymIndex > GymBadges)
             {
-                return; // 아무 일도 일어나지 않고 무시됩니다.
+                return;
             }
 
             _selectedGymIndex = gymIndex;
-            SelectedGymLeader = GymLeaders[gymIndex];
+            SelectedGymLeader = leader;
             IsGymConfirmOpen = true;
         }
 
-        // 확인창에서 '도전하기'를 눌렀을 때 실제 배틀을 시작하는 메서드
         public void ConfirmGymChallenge()
         {
             IsGymConfirmOpen = false;
             StartSpecificGymBattle(_selectedGymIndex);
         }
 
-        // 확인창에서 '취소'를 눌렀을 때
         public void CancelGymChallenge()
         {
             IsGymConfirmOpen = false;
         }
 
-        // 🌟 특정 뱃지(체육관)를 직접 선택해서 도전하는 메서드
-        // 특정 뱃지(체육관)를 직접 선택해서 도전하는 메서드
         public async void StartSpecificGymBattle(int gymIndex)
         {
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
-            if (gymIndex < 0 || gymIndex >= GymLeaders.Length) return;
 
-            // 🌟 버그 수정: 이 부분에 있던 GymBadges = gymIndex; 코드를 삭제했습니다!
-            var leader = GymLeaders[gymIndex];
+            var leader = GymManager.GetLeader(gymIndex);
+            if (leader == null) return;
 
-            IsProfileOpen = false; _restUsesLeft = 2; _isCounterReady = false;
+            IsProfileOpen = false; _isCounterReady = false;
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
             IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
 
@@ -1045,8 +976,6 @@ namespace TamaPoke.Models
 
             EnemySpeciesId = leader.PokemonSpeciesId;
             EnemyLevel = leader.Level;
-
-            // ... (아래 체력 계산 및 애니메이션 초기화 로직은 기존과 동일하게 유지) ...
 
             PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;
 

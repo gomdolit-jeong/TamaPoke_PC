@@ -7,11 +7,8 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-
-        <!-- 🌟 스킬 타입에 색상을 입혀줄 변환기 등록 -->
         <conv:TypeToColorConverter x:Key="TypeToColor"/>
 
-        <!-- 공통 버튼 스타일 (메인 메뉴 및 승리 팝업용) -->
         <Style TargetType="Button" x:Key="RoundedButtonStyle">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -50,11 +47,8 @@
             <RowDefinition Height="115"/>
         </Grid.RowDefinitions>
 
-        <!-- ========================================== -->
-        <!-- 1. 상단 배틀 화면 영역 (적 / 플레이어 정보) -->
-        <!-- ========================================== -->
+        <!-- 1. 상단 배틀 화면 영역 -->
         <Grid Grid.Row="0">
-            <!-- 적 포켓몬 정보창 -->
             <Border Margin="60,25,0,0" Background="#FAFAFA" CornerRadius="8" Padding="8,4" BorderBrush="#555" BorderThickness="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="120">
                 <StackPanel>
                     <Grid>
@@ -88,17 +82,14 @@
                 </StackPanel>
             </Border>
 
-            <!-- 적 포켓몬 이미지 -->
             <Image Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,30,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
-            <!-- 내 포켓몬 이미지 -->
             <Image Source="{Binding CurrentFrame}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="40,0,0,10" RenderOptions.BitmapScalingMode="NearestNeighbor">
                 <Image.RenderTransform>
                     <ScaleTransform ScaleX="-1" ScaleY="1" CenterX="36" CenterY="36"/>
                 </Image.RenderTransform>
             </Image>
 
-            <!-- 몬스터볼 이펙트 애니메이션 객체 -->
             <Grid x:Name="PokeballIcon" Width="24" Height="24" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="70,0,0,40" Visibility="Collapsed" Panel.ZIndex="10">
                 <Grid.RenderTransform>
                     <TransformGroup>
@@ -113,7 +104,6 @@
                 <Ellipse Width="8" Height="8" Fill="White" Stroke="#333" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
 
-            <!-- 플레이어 포켓몬 정보창 -->
             <Border Margin="0,0,50,5" Background="#FAFAFA" CornerRadius="8" Padding="8,4" BorderBrush="#555" BorderThickness="2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="120">
                 <StackPanel>
                     <Grid>
@@ -156,9 +146,7 @@
             </Border>
         </Grid>
 
-        <!-- ========================================== -->
-        <!-- 2. 중앙 팝업: 승리 시 포획 / 도망 선택 창 -->
-        <!-- ========================================== -->
+        <!-- 2. 중앙 팝업 (포획 선택 창 등) -->
         <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsCatchOffered, Converter={StaticResource BoolToVis}}" Panel.ZIndex="100">
             <Border Background="#FAFAFA" CornerRadius="15" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
                 <StackPanel>
@@ -171,18 +159,12 @@
             </Border>
         </Grid>
 
-        <!-- ========================================== -->
-        <!-- 🌟 스킬 학습 창 (추천 스킬 2개) -->
-        <!-- ========================================== -->
+        <!-- 스킬 학습 창 -->
         <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsSkillLearnMenuOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="110">
             <Border Background="#FAFAFA" CornerRadius="15" Padding="15" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
                 <StackPanel>
                     <TextBlock Text="새로운 스킬을 떠올렸다!" FontSize="14" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,15"/>
-
-                    <!-- 🌟 가로(좌우) 배치를 위한 StackPanel 추가 -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-
-                        <!-- 추천 스킬 1 버튼 (크기 축소: Width 100) -->
                         <Button Visibility="{Binding HasRecommendedSkill1, Converter={StaticResource BoolToVis}}" 
                                 Width="100" Height="45" Margin="4,0" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnLearnSkill1_Click">
                             <Button.Resources>
@@ -197,8 +179,6 @@
                                 </Border>
                             </StackPanel>
                         </Button>
-
-                        <!-- 추천 스킬 2 버튼 (크기 축소: Width 100) -->
                         <Button Visibility="{Binding HasRecommendedSkill2, Converter={StaticResource BoolToVis}}" 
                                 Width="100" Height="45" Margin="4,0" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnLearnSkill2_Click">
                             <Button.Resources>
@@ -213,24 +193,18 @@
                                 </Border>
                             </StackPanel>
                         </Button>
-
                     </StackPanel>
-
-                    <!-- 하단 취소 버튼 (위의 버튼 2개 넓이에 맞춰 안정감 있게 변경) -->
                     <Button Content="배우지 않는다" Width="208" Height="30" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="BtnSkipSkill_Click"/>
                 </StackPanel>
             </Border>
         </Grid>
 
-        <!-- ========================================== -->
-        <!-- 🌟 스킬 교체 창 (기존 스킬 잊기) -->
-        <!-- ========================================== -->
+        <!-- 스킬 교체 창 -->
         <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsSkillReplaceMenuOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="110">
             <Border Background="#FAFAFA" CornerRadius="15" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
                 <StackPanel>
                     <TextBlock Text="스킬 4개가 꽉 찼습니다.&#x0a;어떤 스킬을 지우시겠습니까?" TextAlignment="Center" FontSize="13" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,5"/>
                     <UniformGrid Columns="2" Rows="2" Margin="0,0,0,10">
-                        <!-- 잊기 슬롯 0 -->
                         <Button Margin="3" Height="45" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnReplaceSkill0_Click">
                             <Button.Resources>
                                 <Style TargetType="Border">
@@ -244,7 +218,6 @@
                                 </Border>
                             </StackPanel>
                         </Button>
-                        <!-- 잊기 슬롯 1 -->
                         <Button Margin="3" Height="45" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnReplaceSkill1_Click">
                             <Button.Resources>
                                 <Style TargetType="Border">
@@ -258,7 +231,6 @@
                                 </Border>
                             </StackPanel>
                         </Button>
-                        <!-- 잊기 슬롯 2 -->
                         <Button Margin="3" Height="45" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnReplaceSkill2_Click">
                             <Button.Resources>
                                 <Style TargetType="Border">
@@ -272,7 +244,6 @@
                                 </Border>
                             </StackPanel>
                         </Button>
-                        <!-- 잊기 슬롯 3 -->
                         <Button Margin="3" Height="45" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnReplaceSkill3_Click">
                             <Button.Resources>
                                 <Style TargetType="Border">
@@ -292,9 +263,7 @@
             </Border>
         </Grid>
 
-        <!-- ========================================== -->
-        <!-- 3. 하단 컨트롤 영역 (메뉴 / 스킬 / 가방 전환) -->
-        <!-- ========================================== -->
+        <!-- 3. 하단 컨트롤 영역 -->
         <Grid Grid.Row="1" Background="#333333">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
@@ -330,12 +299,9 @@
                                     </Button.Resources>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,5,0"/>
-
-                                        <!-- 🌟 배경색을 컨버터로 예쁘게 바인딩합니다! -->
                                         <Border CornerRadius="3" Background="{Binding Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1">
                                             <TextBlock Text="{Binding Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                         </Border>
-
                                     </StackPanel>
                                 </Button>
                             </DataTemplate>
@@ -350,44 +316,45 @@
                     </Button>
                 </StackPanel>
 
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="#333333" 
-                        Visibility="{Binding IsBattleInventoryOpen, Converter={StaticResource BoolToVis}}">
-                    <UniformGrid Columns="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,10">
-                        <Button Width="85" Height="26" Margin="4" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="UseMonsterBall_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="4"/>
-                                </Style>
-                            </Button.Resources>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock Text="몬스터볼 " FontWeight="Bold" FontSize="11" Foreground="#333"/>
-                                <TextBlock Text="{Binding MonsterBalls, StringFormat={}x{0}}" FontSize="11" Foreground="#1E88E5" FontWeight="Bold"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Width="85" Height="26" Margin="4" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="UsePotion_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="4"/>
-                                </Style>
-                            </Button.Resources>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock Text="상처약 " FontWeight="Bold" FontSize="11" Foreground="#333"/>
-                                <TextBlock Text="{Binding Potions, StringFormat={}x{0}}" FontSize="11" Foreground="#1E88E5" FontWeight="Bold"/>
-                            </StackPanel>
-                        </Button>
-                    </UniformGrid>
-                    <Button Content="◀" Width="45" Height="22" Background="#E0D8C8" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CloseInventory_Click">
+                <!-- 🌟 4. 동적 인벤토리 (가방) 창 -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,5" Background="#333333" 
+                            Visibility="{Binding IsBattleInventoryOpen, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl ItemsSource="{Binding Inventory}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel MaxWidth="260" HorizontalAlignment="Center"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- 아이템을 동적으로 나열합니다 -->
+                                <Button Width="85" Height="25" Margin="3" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="UseBattleItem_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="6"/>
+                                        </Style>
+                                    </Button.Resources>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="11" Foreground="#333" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding Quantity, StringFormat={}x{0}}" FontSize="11" Foreground="#1E88E5" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="◀" Width="45" Height="20" Background="#E0D8C8" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CloseInventory_Click" Margin="0,5,0,0">
                         <Button.Resources>
                             <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="11"/>
+                                <Setter Property="CornerRadius" Value="10"/>
                             </Style>
                         </Button.Resources>
                     </Button>
                 </StackPanel>
+
             </Grid>
         </Grid>
 
-        <!-- 패배 시 눈앞이 깜깜해지는 페이드아웃 오버레이 -->
+        <!-- 패배 오버레이 -->
         <Grid Background="Black" Panel.ZIndex="999" IsHitTestVisible="False">
             <Grid.Style>
                 <Style TargetType="Grid">

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -89,39 +90,53 @@ namespace TamaPoke.Views
             if (pet != null) pet.IsBattleInventoryOpen = false;
         }
 
-        private void UseMonsterBall_Click(object sender, RoutedEventArgs e)
+        // 🌟 여러 종류의 아이템을 동적으로 처리하는 통합 메서드
+        private async void UseBattleItem_Click(object sender, RoutedEventArgs e)
         {
-            var pet = GetPet();
-            if (pet == null) return;
-
-            if (pet.MonsterBalls <= 0)
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is ItemInfo clickedItem)
             {
-                pet.BattleMessage = "몬스터볼이 부족합니다!";
-                return;
+                var pet = GetPet();
+                if (pet == null) return;
+
+                if (clickedItem.Quantity <= 0)
+                {
+                    pet.BattleMessage = $"{clickedItem.Name}이(가) 부족합니다!";
+                    return;
+                }
+
+                if (clickedItem.Type == ItemType.monsterball)
+                {
+                    if (pet.IsGymBattle)
+                    {
+                        pet.BattleMessage = "관장 배틀에서는\n몬스터볼을 쓸 수 없습니다!";
+                        return;
+                    }
+                    pet.IsBattleInventoryOpen = false;
+
+                    clickedItem.Quantity--;
+                    if (clickedItem.Quantity <= 0) pet.Inventory.Remove(clickedItem);
+
+                    Catch_Click(sender, e);
+                }
+                else if (clickedItem.Type == ItemType.Potion)
+                {
+                    // 🌟 [핵심 수정] 체력이 가득 찼는지 먼저 검사합니다.
+                    if (pet.PlayerHp >= pet.PlayerMaxHp)
+                    {
+                        // 턴을 넘기지 않고, 아이템도 소모하지 않은 채 경고 메시지만 보냅니다.
+                        pet.BattleMessage = "체력이 이미 가득 차 있습니다!";
+                        return;
+                    }
+
+                    // 체력이 깎여 있을 때만 아래 로직(아이템 소모 및 턴 넘김)이 실행됩니다.
+                    pet.IsBattleInventoryOpen = false;
+
+                    clickedItem.Quantity--;
+                    if (clickedItem.Quantity <= 0) pet.Inventory.Remove(clickedItem);
+
+                    await pet.ExecuteItemTurnAsync(clickedItem);
+                }
             }
-
-            pet.IsBattleInventoryOpen = false;
-            pet.MonsterBalls--;
-
-            Catch_Click(sender, e);
-        }
-
-        private async void UsePotion_Click(object sender, RoutedEventArgs e)
-        {
-            var pet = GetPet();
-            if (pet == null) return;
-
-            if (pet.Potions <= 0)
-            {
-                pet.BattleMessage = "상처약이 부족합니다!";
-                return;
-            }
-
-            pet.IsBattleInventoryOpen = false;
-            pet.Potions--;
-
-            var potionItem = new ItemInfo { Type = ItemType.Potion, Name = "상처약" };
-            await pet.ExecuteItemTurnAsync(potionItem);
         }
 
         // ==========================================
@@ -131,12 +146,6 @@ namespace TamaPoke.Views
         {
             var pet = GetPet();
             if (pet == null) return;
-
-            if (pet.MonsterBalls <= 0)
-            {
-                pet.BattleMessage = "몬스터볼이 부족합니다!";
-                return;
-            }
 
             pet.IsPlayerTurn = false;
             pet.IsCatchOffered = false;
@@ -203,7 +212,7 @@ namespace TamaPoke.Views
         }
 
         // ==========================================
-        // 🌟 스킬 학습 및 교체 UI 버튼 이벤트들
+        // 스킬 학습 및 교체 UI 버튼 이벤트들
         // ==========================================
         private void BtnLearnSkill1_Click(object sender, RoutedEventArgs e)
         {

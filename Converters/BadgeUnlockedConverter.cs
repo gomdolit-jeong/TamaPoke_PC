@@ -4,25 +4,26 @@ using System.Windows.Data;
 
 namespace TamaPoke.Converters
 {
-    // 🌟 획득한 배지 개수(GymBadges)와 요구하는 배지 번호(ConverterParameter)를 비교합니다.
-    public class BadgeUnlockedConverter : IValueConverter
+    // 🌟 IMultiValueConverter를 구현하도록 변경합니다.
+    public class BadgeUnlockedConverter : IMultiValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            // value: 현재 GymBadges 값
-            // parameter: XAML에서 넘겨준 배지 번호 (예: "1", "2", "32" 등)
-            if (value is int gymBadges && parameter != null)
+            if (values == null || values.Length < 2) return false;
+
+            // 첫 번째 값: 보유 중인 뱃지 데이터 (int 또는 비트 연산 값 등)
+            if (values[0] is int gymBadges && values[1] is int globalIndex)
             {
-                if (int.TryParse(parameter.ToString(), out int requiredBadge))
-                {
-                    // 현재 배지 개수가 요구 배지 번호보다 크거나 같으면 True를 반환합니다.
-                    return gymBadges >= requiredBadge;
-                }
+                // 예시: 비트 연산이나 개수 비교를 통해 해금 여부 판별
+                // (기존에 구현하셨던 로직에 맞춰서 값을 비교해 주시면 됩니다!)
+                int requiredBadges = globalIndex;
+                return gymBadges >= requiredBadges;
             }
+
             return false;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

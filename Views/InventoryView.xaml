@@ -4,7 +4,6 @@
              xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Width="288" Height="288">
 
-    <!-- 🌟 크기 제한(Width, Height)을 지워서 화면을 꽉 채우게 만듭니다. -->
     <Border Background="#F2111111" Padding="25,40,25,30">
         <Grid>
             <Grid.RowDefinitions>
@@ -20,37 +19,28 @@
             <TextBlock Grid.Row="0" Text="🎒 인벤토리" Foreground="White" 
                        FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
 
-            <!-- 아이템 리스트 -->
-            <StackPanel Grid.Row="1" Orientation="Vertical" VerticalAlignment="Top">
+            <!-- 🌟 동적으로 아이템을 렌더링하는 ItemsControl (스크롤 지원) -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Inventory}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#44FFFFFF" CornerRadius="10" Padding="15" Margin="0,0,0,12"
+                                    Cursor="Hand" MouseLeftButtonDown="UseItem_Click" ToolTip="{Binding Description}">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                        <emoji:TextBlock Text="{Binding Icon}" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Quantity, StringFormat='x {0}'}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-                <!-- 몬스터볼 -->
-                <Border Background="#44FFFFFF" CornerRadius="10" Padding="15" Margin="0,0,0,12"
-                        Cursor="Hand" MouseLeftButtonDown="UseMonsterBall_Click">
-                    <Grid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <emoji:TextBlock Text="🔴" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="몬스터볼" Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding MonsterBalls, StringFormat='x {0}'}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
-
-                <!-- 치료약 -->
-                <Border Background="#44FFFFFF" CornerRadius="10" Padding="15" Margin="0,0,0,12"
-                        Cursor="Hand" MouseLeftButtonDown="UseMonsterBall_Click">
-                    <Grid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <emoji:TextBlock Text="🧪" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="상처약" Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding Potions, StringFormat='x {0}'}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
-
-            </StackPanel>
-
-            <!-- 🌟 닫기 버튼: Command 대신 Click 이벤트로 변경했습니다. -->
-            <Button Grid.Row="2" Content="닫기" Padding="0,10" Margin="40,0,40,0"
+            <!-- 닫기 버튼 -->
+            <Button Grid.Row="2" Content="닫기" Padding="0,10" Margin="40,10,40,0"
                     FontSize="16" FontWeight="Bold" Background="#E53935" Foreground="White" BorderThickness="0"
                     Cursor="Hand" Click="CloseButton_Click">
                 <Button.Resources>

@@ -4,23 +4,20 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
-using TamaPoke.Utils.Service; // SoundManager 사용을 위해 필요
+using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Models
 {
-    // 🌟 partial 키워드를 통해 기존 PokemonState와 하나의 클래스로 합쳐집니다.
     public partial class PokemonState
     {
-        #region 미니게임 상태 관리 (Mini Games)
-
-        // 🌟 위치 헬퍼: 어느 상황에서든 닫을 때 무조건 중앙 복귀
-        private void ResetPosition()
+        public class DirtItem
         {
-            PosX = 0; PosY = 0; TargetPosX = 0; TargetPosY = 0; FlipX = 1;
-            _tempActionId = 0; // ANIM_IDLE
-            _tempActionTimer = 0;
-            CheckStateAndAnimate();
+            public int Id { get; set; }
+            public double X { get; set; }
+            public double Y { get; set; }
         }
+
+        #region 미니게임 상태 관리 (Mini Games)
 
         [JsonIgnore] public bool IsMinigameOpen => IsBallGameOpen;
 
@@ -38,9 +35,6 @@ namespace TamaPoke.Models
 
         [JsonIgnore]
         public bool IsAnyMiniGameOpen => IsBallGameOpen || IsCatchGameOpen || IsMemoGameOpen || IsCleanGameOpen;
-
-        public double TargetPosX { get; set; } = 0;
-        public double TargetPosY { get; set; } = 0;
 
         // --- 1. Ball Game ---
         private int _gameScore = 0;
@@ -102,7 +96,7 @@ namespace TamaPoke.Models
         {
             if (!IsCleanGameOpen) return;
             if (!IsMuted) SoundManager.Play(SoundManager.N_TAP);
-            UpdateAnimation(6); // ANIM_ATTACK
+            UpdateAnimation(6);
             await Task.Delay(500);
             if (IsCleanGameOpen) CheckStateAndAnimate();
         }
@@ -152,7 +146,7 @@ namespace TamaPoke.Models
                 _ballVelX += dx * 0.05;
                 if (_ballVelX > 5.0) _ballVelX = 5.0; if (_ballVelX < -5.0) _ballVelX = -5.0;
 
-                _tempActionId = 8; // ANIM_HOP
+                _tempActionId = 10;
                 _tempActionTimer = 15;
                 CheckStateAndAnimate();
             }
@@ -164,7 +158,7 @@ namespace TamaPoke.Models
             int v = TrSpeed + GameScore / 5; TrSpeed = v > 100 ? 100 : v;
             Joy = Clamp100(Joy + 5 + (GameScore > 15 ? 30 : GameScore * 2)); Energy = Math.Max(Energy - (10 + GameScore / 2), 5); Fullness = Math.Max(Fullness - 5, 5);
             int burn = Weight - GameScore * 2; Weight = Math.Max(burn, 0); Bond = Clamp100(Bond + 2);
-            ResetPosition(); _tempActionId = 7; // ANIM_POSE
+            ResetPosition(); _tempActionId = 17;
             _tempActionTimer = 90;
             OnPropertyChanged(nameof(IsPlaying)); CheckStateAndAnimate();
         }
@@ -182,7 +176,7 @@ namespace TamaPoke.Models
             if (FruitY > pokeAbsoluteY - 30 && FruitY < pokeAbsoluteY + 30) { if (Math.Abs(pokeAbsoluteX - FruitX) < 45) { CatchScore++; SpawnFruit(); } }
             if (FruitY > 288) SpawnFruit();
         }
-        private void EndCatchGame() { IsCatchGameOpen = false; if (CatchScore > CatchHighScore) CatchHighScore = CatchScore; TrSpeed = Math.Min(100, TrSpeed + CatchScore / 5); Fullness = Clamp100(Fullness + 10 + CatchScore); Energy = Math.Max(Energy - 10, 5); ResetPosition(); _tempActionId = 7; /* ANIM_POSE */ _tempActionTimer = 90; OnPropertyChanged(nameof(IsPlaying)); CheckStateAndAnimate(); }
+        private void EndCatchGame() { IsCatchGameOpen = false; if (CatchScore > CatchHighScore) CatchHighScore = CatchScore; TrSpeed = Math.Min(100, TrSpeed + CatchScore / 5); Fullness = Clamp100(Fullness + 10 + CatchScore); Energy = Math.Max(Energy - 10, 5); ResetPosition(); _tempActionId = 17; _tempActionTimer = 90; OnPropertyChanged(nameof(IsPlaying)); CheckStateAndAnimate(); }
 
         // --- 3. Memo Game ---
         public async void StartMemoGame() { if (IsEgg || IsSleeping || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return; IsPlayMenuOpen = false; IsMemoGameOpen = true; MemoScore = 0; _memoSequence.Clear(); _memoSequence.Add(new Random().Next(4)); TargetPosX = 0; PosX = 0; FlipX = 1; MemoStatusText = "준비... 시작! 🎮"; CheckStateAndAnimate(); await Task.Delay(2000); await PlayMemoSequence(); }
@@ -199,7 +193,7 @@ namespace TamaPoke.Models
             if (_memoSequence[_memoInputIndex] == btnIndex) { _memoInputIndex++; if (_memoInputIndex >= _memoSequence.Count) { MemoScore++; _memoSequence.Add(new Random().Next(4)); MemoStatusText = "정답! 다음 라운드! 👏"; await Task.Delay(1000); await PlayMemoSequence(); } else { _isMemoShowingSequence = false; } }
             else { EndMemoGame(); }
         }
-        private void EndMemoGame() { MemoStatusText = "앗, 틀렸어요! 😢"; IsMemoGameOpen = false; if (MemoScore > MemoHighScore) MemoHighScore = MemoScore; Bond = Clamp100(Bond + 5 + (MemoScore * 2)); Energy = Math.Max(Energy - 5, 5); Fullness = Math.Max(Fullness - 2, 5); ResetPosition(); _tempActionId = 7; /* ANIM_POSE */ _tempActionTimer = 90; OnPropertyChanged(nameof(IsPlaying)); CheckStateAndAnimate(); }
+        private void EndMemoGame() { MemoStatusText = "앗, 틀렸어요! 😢"; IsMemoGameOpen = false; if (MemoScore > MemoHighScore) MemoHighScore = MemoScore; Bond = Clamp100(Bond + 5 + (MemoScore * 2)); Energy = Math.Max(Energy - 5, 5); Fullness = Math.Max(Fullness - 2, 5); ResetPosition(); _tempActionId = 17; _tempActionTimer = 90; OnPropertyChanged(nameof(IsPlaying)); CheckStateAndAnimate(); }
 
         // --- 4. Clean Game ---
         public void StartCleanGame() { if (IsEgg || IsSleeping || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return; IsPlayMenuOpen = false; IsCleanGameOpen = true; CleanScore = 0; DirtItems.Clear(); _dirtIdCounter = 0; _dirtSpawnTimer = 0; TargetPosX = 0; TargetPosY = 0; PosX = 0; PosY = 0; FlipX = 1; CleanStatusText = "세균을 클릭해서 청소하세요!"; CheckStateAndAnimate(); }
@@ -252,7 +246,7 @@ namespace TamaPoke.Models
             Energy = Math.Max(Energy - 5, 5);
 
             ResetPosition();
-            _tempActionId = 7; // ANIM_POSE
+            _tempActionId = 17;
             _tempActionTimer = 30;
 
             OnPropertyChanged(nameof(IsPlaying));

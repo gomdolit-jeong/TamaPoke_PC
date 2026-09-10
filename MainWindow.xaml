@@ -13,7 +13,12 @@
         Icon="/Assets/Resource/monsterball.ico"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
+    <!-- 🌟 수정됨: Button이 Grid 안쪽으로 쏙 들어왔습니다! -->
     <Grid>
+
+        <!-- 🌟 개발자용 임시 에셋 변환 버튼 (작업이 끝나면 이 줄은 삭제하세요!) -->
+<!--         <Button Content="DEV: 변환기 실행" Width="100" Height="25" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" Background="Yellow" FontWeight="Bold" Click="DevConvertButton_Click" Panel.ZIndex="999"/> -->
+
         <!-- 1. 화면이 교체될 빈 공간 (다마포케 320x320 영역) -->
         <ContentControl x:Name="MainContentFrame" HorizontalAlignment="Center" VerticalAlignment="Center" />
 

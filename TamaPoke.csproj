@@ -20,6 +20,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Converters\SpriteConverter.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Assets\Resource\Badges\Badge_1.png" />
     <None Remove="Assets\Resource\Badges\Badge_10.png" />
     <None Remove="Assets\Resource\Badges\Badge_11.png" />
@@ -52,12 +56,18 @@
     <None Remove="Assets\Resource\Badges\Badge_7.png" />
     <None Remove="Assets\Resource\Badges\Badge_8.png" />
     <None Remove="Assets\Resource\Badges\Badge_9.png" />
+    <None Remove="Assets\Resource\PokemonSprites.zip" />
+    <None Remove="Data\pokemon_data - 복사본.json" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="Assets\Resource\monsterball.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Utils\SpriteConverter.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -74,40 +84,5 @@
     <None Update="Assets\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="Assets\Resource\Badges\Badge_1.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_10.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_11.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_12.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_13.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_14.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_15.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_16.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_17.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_18.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_19.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_2.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_20.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_21.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_22.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_23.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_24.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_25.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_26.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_27.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_28.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_29.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_3.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_30.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_31.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_32.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_4.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_5.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_6.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_7.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_8.png" />
-    <Resource Include="Assets\Resource\Badges\Badge_9.png" />
   </ItemGroup>
 </Project>

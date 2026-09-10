@@ -11,6 +11,10 @@ namespace TamaPoke.Models
     {
         public int SpeciesId { get; set; }
         public string Name { get; set; } = string.Empty;
+
+        // 🌟 핵심 추가: 파티에 들어가서도 이로치/특수 폼 파일명을 잊어버리지 않게 저장합니다!
+        public string SpriteFileName { get; set; } = string.Empty;
+
         public int Level { get; set; }
         public int AgeMinutes { get; set; }
         public bool IsShiny { get; set; }
@@ -19,7 +23,6 @@ namespace TamaPoke.Models
         public int TrDef { get; set; }
         public int TrSpeed { get; set; }
 
-        // 🌟 포켓몬의 컨디션과 고유 상태 완벽 보존
         public int Fullness { get; set; }
         public int Joy { get; set; }
         public int Energy { get; set; }
@@ -27,7 +30,7 @@ namespace TamaPoke.Models
         public int Bond { get; set; }
         public int Weight { get; set; }
         public bool IsEvolutionPostponed { get; set; }
-        public int Medals { get; set; } // 비트마스크 정수형 유지
+        public int Medals { get; set; }
 
         public int[] Skills { get; set; } = new int[4];
         public PokemonGene Genes { get; set; } = new PokemonGene();
@@ -37,14 +40,7 @@ namespace TamaPoke.Models
         public bool IsFirst
         {
             get => _isFirst;
-            set
-            {
-                if (_isFirst != value)
-                {
-                    _isFirst = value;
-                    OnPropertyChanged();
-                }
-            }
+            set { if (_isFirst != value) { _isFirst = value; OnPropertyChanged(); } }
         }
 
         private bool _isSelected;
@@ -52,14 +48,7 @@ namespace TamaPoke.Models
         public bool IsSelected
         {
             get => _isSelected;
-            set
-            {
-                if (_isSelected != value)
-                {
-                    _isSelected = value;
-                    OnPropertyChanged();
-                }
-            }
+            set { if (_isSelected != value) { _isSelected = value; OnPropertyChanged(); } }
         }
 
         [JsonIgnore]
@@ -92,15 +81,15 @@ namespace TamaPoke.Models
             get
             {
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string normalPath = System.IO.Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites", $"p{SpeciesId:D3}.bin");
-                string shinyPath = System.IO.Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites", $"ps{SpeciesId:D3}.bin");
 
-                string targetPath = (IsShiny && System.IO.File.Exists(shinyPath)) ? shinyPath : normalPath;
+                // 🌟 저장된 고유 파일명이 있다면 그걸 쓰고, 없으면 기본 번호 파일명으로 대처합니다.
+                string targetFile = string.IsNullOrEmpty(SpriteFileName) ? $"p{SpeciesId:D4}.bin" : SpriteFileName;
+                string targetPath = System.IO.Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites", targetFile);
 
                 if (System.IO.File.Exists(targetPath))
                 {
-                    var frames = TamaPoke.Utils.Service.Tpk2Decoder.LoadAnimation(targetPath, 0);
-                    if (frames != null && frames.Length > 0) return frames[0];
+                    // 완벽하게 1프레임만 잘라주는 썸네일 리더기를 사용합니다.
+                    return TamaPoke.Utils.BinSpriteReader.LoadPokedexThumbnail(targetPath);
                 }
                 return null;
             }

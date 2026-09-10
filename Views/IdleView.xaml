@@ -12,7 +12,6 @@
     <UserControl.Resources>
         <conv:ProgressBarColorConverter x:Key="BarColorConverter"/>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <conv:IdToImageConverter x:Key="IdToImage"/>
 
         <Style TargetType="TextBlock" x:Key="DynamicTextStyle">
             <Setter Property="Foreground" Value="#2a2a36"/>

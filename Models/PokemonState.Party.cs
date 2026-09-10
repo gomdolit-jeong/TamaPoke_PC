@@ -17,21 +17,19 @@ namespace TamaPoke.Models
             set => SetProperty(ref _isSwapMode, value);
         }
 
-        // 🌟 은퇴 및 파티 추가 시 모든 고유 데이터를 안전하게 복사
         public void RetireToParty()
         {
             var retiredPokemon = new PartyMember
             {
                 SpeciesId = this.SpeciesId,
                 Name = this.Name,
+                SpriteFileName = this.SpriteFileName,
                 Level = this.Level,
                 AgeMinutes = this.AgeMinutes,
                 IsShiny = this.IsShiny,
-
                 TrAtk = this.TrAtk,
                 TrDef = this.TrDef,
                 TrSpeed = this.TrSpeed,
-
                 Fullness = this.Fullness,
                 Joy = this.Joy,
                 Energy = this.Energy,
@@ -40,7 +38,6 @@ namespace TamaPoke.Models
                 Weight = this.Weight,
                 IsEvolutionPostponed = this.IsEvolutionPostponed,
                 Medals = this.Medals,
-
                 Skills = (int[])this.Skills.Clone(),
                 Genes = new PokemonGene
                 {
@@ -52,9 +49,7 @@ namespace TamaPoke.Models
             };
 
             if (Party.Count < 6)
-            {
                 Party.Add(retiredPokemon);
-            }
             else
             {
                 _pendingRetiree = retiredPokemon;
@@ -66,10 +61,7 @@ namespace TamaPoke.Models
         public void UpdatePartyFirstFlags()
         {
             if (Party == null) return;
-            for (int i = 0; i < Party.Count; i++)
-            {
-                Party[i].IsFirst = (i == 0);
-            }
+            for (int i = 0; i < Party.Count; i++) Party[i].IsFirst = (i == 0);
         }
 
         private bool _isPartyOpen = false;
@@ -92,25 +84,23 @@ namespace TamaPoke.Models
             {
                 int index = Party.IndexOf(targetToReplace);
                 Party[index] = _pendingRetiree;
-
                 _pendingRetiree = null;
                 IsSwapMode = false;
             }
         }
 
-        // 🌟 복사 버그를 방지하고 레벨이 꼬이지 않도록 완벽하게 분리된 스왑 메서드
         public void SwapMainWithParty(PartyMember targetMember)
         {
             if (targetMember == null || !Party.Contains(targetMember)) return;
 
             int targetIndex = Party.IndexOf(targetMember);
-            if (targetIndex == 0) return; // 0번(대표)을 클릭한 경우 무시
+            if (targetIndex == 0) return;
 
-            // 1. 선택한 타겟 포켓몬 데이터 백업 (메인으로 올라갈 포켓몬)
             var newLeader = new PartyMember
             {
                 SpeciesId = targetMember.SpeciesId,
                 Name = targetMember.Name,
+                SpriteFileName = targetMember.SpriteFileName,
                 Level = targetMember.Level,
                 AgeMinutes = targetMember.AgeMinutes,
                 IsShiny = targetMember.IsShiny,
@@ -126,20 +116,14 @@ namespace TamaPoke.Models
                 IsEvolutionPostponed = targetMember.IsEvolutionPostponed,
                 Medals = targetMember.Medals,
                 Skills = targetMember.Skills != null ? (int[])targetMember.Skills.Clone() : new int[4],
-                Genes = targetMember.Genes != null ? new PokemonGene
-                {
-                    HpGene = targetMember.Genes.HpGene,
-                    AtkGene = targetMember.Genes.AtkGene,
-                    DefGene = targetMember.Genes.DefGene,
-                    SpeGene = targetMember.Genes.SpeGene
-                } : new PokemonGene()
+                Genes = targetMember.Genes != null ? new PokemonGene { HpGene = targetMember.Genes.HpGene, AtkGene = targetMember.Genes.AtkGene, DefGene = targetMember.Genes.DefGene, SpeGene = targetMember.Genes.SpeGene } : new PokemonGene()
             };
 
-            // 2. 현재 메인 화면의 포켓몬 데이터 백업 (파티로 내려갈 포켓몬)
             var oldLeader = new PartyMember
             {
                 SpeciesId = this.SpeciesId,
                 Name = this.Name.Replace(" ✨", ""),
+                SpriteFileName = this.SpriteFileName,
                 Level = this.Level,
                 AgeMinutes = this.AgeMinutes,
                 IsShiny = this.IsShiny,
@@ -155,28 +139,18 @@ namespace TamaPoke.Models
                 IsEvolutionPostponed = this.IsEvolutionPostponed,
                 Medals = this.Medals,
                 Skills = this.Skills != null ? (int[])this.Skills.Clone() : new int[4],
-                Genes = this.Genes != null ? new PokemonGene
-                {
-                    HpGene = this.Genes.HpGene,
-                    AtkGene = this.Genes.AtkGene,
-                    DefGene = this.Genes.DefGene,
-                    SpeGene = this.Genes.SpeGene
-                } : new PokemonGene()
+                Genes = this.Genes != null ? new PokemonGene { HpGene = this.Genes.HpGene, AtkGene = this.Genes.AtkGene, DefGene = this.Genes.DefGene, SpeGene = this.Genes.SpeGene } : new PokemonGene()
             };
 
-            // 3. UI 바인딩 꼬임 방지를 위한 안전한 리스트 재배치 (Remove 후 Insert)
             Party.RemoveAt(targetIndex);
             Party.Insert(targetIndex, oldLeader);
-
             Party.RemoveAt(0);
             Party.Insert(0, newLeader);
 
-            // 4. 메인 화면 속성 덮어쓰기
             this.SpeciesId = newLeader.SpeciesId;
+            this.SpriteFileName = newLeader.SpriteFileName;
             this.Name = newLeader.Name;
             this._overrideLevel = null;
-
-            // 시간 및 컨디션 데이터 복원
             this.AgeMinutes = newLeader.AgeMinutes;
             _ageSeconds = this.AgeMinutes * 60;
             this.IsShiny = newLeader.IsShiny;
@@ -193,18 +167,8 @@ namespace TamaPoke.Models
             this.Medals = newLeader.Medals;
 
             if (newLeader.Skills != null) this.Skills = (int[])newLeader.Skills.Clone();
-            if (newLeader.Genes != null)
-            {
-                this.Genes = new PokemonGene
-                {
-                    HpGene = newLeader.Genes.HpGene,
-                    AtkGene = newLeader.Genes.AtkGene,
-                    DefGene = newLeader.Genes.DefGene,
-                    SpeGene = newLeader.Genes.SpeGene
-                };
-            }
+            if (newLeader.Genes != null) this.Genes = new PokemonGene { HpGene = newLeader.Genes.HpGene, AtkGene = newLeader.Genes.AtkGene, DefGene = newLeader.Genes.DefGene, SpeGene = newLeader.Genes.SpeGene };
 
-            // 5. 플래그 정리 및 화면 갱신
             for (int i = 0; i < Party.Count; i++)
             {
                 Party[i].IsFirst = (i == 0);
@@ -223,7 +187,6 @@ namespace TamaPoke.Models
             IsSwapMode = false;
         }
 
-        // 🌟 파티 창을 열 때 0번 포켓몬을 무조건 최신화
         public void SyncMainToLeader()
         {
             if (Party == null) return;
@@ -232,6 +195,7 @@ namespace TamaPoke.Models
             {
                 SpeciesId = this.SpeciesId,
                 Name = this.Name.Replace(" ✨", ""),
+                SpriteFileName = this.SpriteFileName,
                 Level = this.Level,
                 AgeMinutes = this.AgeMinutes,
                 IsShiny = this.IsShiny,
@@ -247,24 +211,11 @@ namespace TamaPoke.Models
                 IsEvolutionPostponed = this.IsEvolutionPostponed,
                 Medals = this.Medals,
                 Skills = this.Skills != null ? (int[])this.Skills.Clone() : new int[4],
-                Genes = this.Genes != null ? new PokemonGene
-                {
-                    HpGene = this.Genes.HpGene,
-                    AtkGene = this.Genes.AtkGene,
-                    DefGene = this.Genes.DefGene,
-                    SpeGene = this.Genes.SpeGene
-                } : new PokemonGene()
+                Genes = this.Genes != null ? new PokemonGene { HpGene = this.Genes.HpGene, AtkGene = this.Genes.AtkGene, DefGene = this.Genes.DefGene, SpeGene = this.Genes.SpeGene } : new PokemonGene()
             };
 
-            if (Party.Count == 0)
-            {
-                Party.Add(currentMain);
-            }
-            else
-            {
-                Party.RemoveAt(0);
-                Party.Insert(0, currentMain);
-            }
+            if (Party.Count == 0) Party.Add(currentMain);
+            else { Party.RemoveAt(0); Party.Insert(0, currentMain); }
         }
 
         public void OpenParty()

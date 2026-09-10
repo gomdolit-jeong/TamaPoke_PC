@@ -68,7 +68,7 @@ namespace TamaPoke.Models
         {
             if (speciesId < 0) return "알";
             var poke = AllPokemons.FirstOrDefault(p => p.Id == speciesId);
-            return poke?.DisplayName ?? $"MON #{speciesId:D3}";
+            return poke?.DisplayName ?? $"MON #{speciesId:D4}";
         }
     }
 }
