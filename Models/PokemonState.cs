@@ -221,10 +221,32 @@ namespace TamaPoke.Models
         private const int MED_FIT = 1 << 7;
 
         private static readonly int[] LegendaryIds = {
+            // 1세대 (관동)
             144, 145, 146, 150, 151,
+            
+            // 2세대 (성도)
             243, 244, 245, 249, 250, 251,
+            
+            // 3세대 (호연)
             377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
-            480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493
+            
+            // 4세대 (신오)
+            480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493,
+            
+            // 5세대 (하나) - 비크티니 ~ 게노세크트
+            494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649,
+            
+            // 6세대 (칼로스) - 제르네아스 ~ 볼케니온
+            716, 717, 718, 719, 720, 721,
+            
+            // 7세대 (알로라) - 타입:널, 수호신, 울트라비스트, 환상 등
+            772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809,
+            
+            // 8세대 (가라르) - 자시안, 무한다이노, 러스트보이 등 + 러브로스(히스이)
+            888, 889, 890, 891, 892, 893, 894, 895, 896, 897, 898, 905,
+            
+            // 9세대 (팔데아) - 사흉수, 코라이돈/미라이돈, DLC 전설/환상
+            1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017, 1024, 1025
         };
         #endregion
 
@@ -278,6 +300,12 @@ namespace TamaPoke.Models
         private bool _notifiedSadness = false;
 
         #region 포켓몬 정보 및 상태 속성 (Pokemon Info & Status)
+        private bool _isGenderless = false;
+        public bool IsGenderless
+        {
+            get => _isGenderless;
+            set => SetProperty(ref _isGenderless, value);
+        }
         // 성별 여부 프로퍼티
         private bool _isFemale = false;
         public bool IsFemale
@@ -928,6 +956,10 @@ namespace TamaPoke.Models
             {
                 if (IsEgg || IsSleeping || Ceremony != 0 || IsFinalEvolution || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return false;
                 if (!DexTable.ContainsKey(SpeciesId)) return false;
+
+                // 🌟 [추가] 수컷 세꿀버리(415)는 비퀸(416)으로 진화 불가!
+                if (SpeciesId == 415 && !IsFemale) return false;
+
                 return Level >= (DexTable[SpeciesId].EvolveLevel + CareMistakes) && LowestStat >= 40;
             }
         }
