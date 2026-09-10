@@ -61,5 +61,6 @@ TamaPoke는 바탕화면 위에 둥둥 떠 있는(Floating) 반투명 위젯 형
 
 ## 📝 Credits & Acknowledgements
 
+* **Sprite Assets**: 게임 내 사용된 모든 포켓몬 도트 스프라이트(Sprites)는 포켓몬 불가사의 던전 커뮤니티의 오픈소스 프로젝트인 [PMDCollab/SpriteCollab](https://github.com/PMDCollab/SpriteCollab)의 리소스를 사용하였습니다. 고품질의 스프라이트를 제공해 주신 커뮤니티 기여자분들께 감사드립니다.
 * **Badge Images**: 본 프로젝트에 사용된 체육관 뱃지 이미지는 [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page)의 자료를 참고 및 인용하였습니다. 
 * **Disclaimer**: 이 프로젝트는 비상업적 팬 프로젝트(Fan Project)이며, 포켓몬스터(Pokémon)와 관련된 모든 저작권 및 상표권은 Nintendo, Creatures Inc., GAME FREAK inc. 에 있습니다.
