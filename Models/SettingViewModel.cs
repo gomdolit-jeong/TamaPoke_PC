@@ -28,12 +28,19 @@ namespace TamaPoke.ViewModels
 
     public class SettingsViewModel : INotifyPropertyChanged
     {
-        private GameSettings _currentSettings;
+        // 🌟 외부 바인딩이 가능하도록 퍼블릭 프로퍼티로 변경합니다.
+        private GameSettings _settings = new GameSettings();
+
+        public GameSettings Settings
+        {
+            get => _settings;
+            set { _settings = value; OnPropertyChanged(); }
+        }
 
         public bool UseTrayNotifications
         {
-            get => _currentSettings.UseTrayNotifications;
-            set { _currentSettings.UseTrayNotifications = value; OnPropertyChanged(); }
+            get => Settings.UseTrayNotifications;
+            set { Settings.UseTrayNotifications = value; OnPropertyChanged(); }
         }
 
         // 🌟 세대 선택 체크박스용 컬렉션
@@ -44,7 +51,13 @@ namespace TamaPoke.ViewModels
 
         public SettingsViewModel()
         {
-            _currentSettings = SettingsManager.Load();
+            Settings = SettingsManager.Load();
+
+            // 🌟 저장된 파일에 이별 기준일 값이 없거나 0 이하일 경우 기본값 3으로 보정
+            if (Settings.FarewellAgeDays <= 0)
+            {
+                Settings.FarewellAgeDays = 3;
+            }
 
             // 1~9세대 지방명 매핑 초기화
             var genNames = new Dictionary<int, string>
@@ -67,7 +80,7 @@ namespace TamaPoke.ViewModels
                 {
                     GenNumber = kvp.Key,
                     DisplayText = kvp.Value,
-                    IsSelected = _currentSettings.SelectedGenerations.Contains(kvp.Key)
+                    IsSelected = Settings.SelectedGenerations.Contains(kvp.Key)
                 });
             }
 
@@ -77,18 +90,18 @@ namespace TamaPoke.ViewModels
         private void SaveSettings()
         {
             // 체크된 세대들만 뽑아서 저장 데이터에 반영
-            _currentSettings.SelectedGenerations = Generations
+            Settings.SelectedGenerations = Generations
                 .Where(g => g.IsSelected)
                 .Select(g => g.GenNumber)
                 .ToList();
 
             // 최소 1개 이상은 선택되어 있어야 하므로 모두 체크 해제했다면 1세대 강제 선택
-            if (_currentSettings.SelectedGenerations.Count == 0)
+            if (Settings.SelectedGenerations.Count == 0)
             {
-                _currentSettings.SelectedGenerations.Add(1);
+                Settings.SelectedGenerations.Add(1);
             }
 
-            SettingsManager.Save(_currentSettings);
+            SettingsManager.Save(Settings);
             RequestClose?.Invoke();
         }
 

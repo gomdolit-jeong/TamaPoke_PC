@@ -258,7 +258,13 @@ namespace TamaPoke.Models
                 SpriteFileName = "p0000.bin";
             }
 
-            Genes = new PokemonGene { HpGene = 90 + rand.Next(21), AtkGene = 90 + rand.Next(21), DefGene = 90 + rand.Next(21), SpeGene = 90 + rand.Next(21) };
+            Genes = new PokemonGene
+            {
+                HpGene = rand.Next(0, 32),
+                AtkGene = rand.Next(0, 32),
+                DefGene = rand.Next(0, 32),
+                SpeGene = rand.Next(0, 32)
+            };
 
             for (int i = 0; i < 4; i++) Skills[i] = 0;
             RelearnFromLevel();

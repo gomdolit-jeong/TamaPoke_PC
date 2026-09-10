@@ -209,7 +209,6 @@ namespace TamaPoke.Models
         private const int MAX_POOPS = 3;
         private const int POOP_CHANCE = 5;
         private const int MINUTES_PER_LEVEL = 60;
-        private const int FAREWELL_AGE_MIN = 3 * 24 * 60;
         private const int RUNAWAY_TICKS = 60;
 
         private const int MED_LV10 = 1 << 0;
@@ -933,7 +932,8 @@ namespace TamaPoke.Models
             }
         }
 
-        [JsonIgnore] public bool CanFarewellNow => !IsEgg && !IsSleeping && Ceremony == 0 && AgeMinutes >= FAREWELL_AGE_MIN && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
+        // 🌟 날짜(일) * 24시간 * 60분으로 계산하여 AgeMinutes와 비교합니다.
+        [JsonIgnore] public bool CanFarewellNow => !IsEgg && !IsSleeping && Ceremony == 0 && AgeMinutes >= (Settings.FarewellAgeDays * 24 * 60) && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
         [JsonIgnore] public bool CanRunawayNow => !IsEgg && !IsSleeping && Ceremony == 0 && NeglectTicks >= RUNAWAY_TICKS && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
 
         [JsonIgnore]

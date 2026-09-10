@@ -14,13 +14,19 @@ namespace TamaPoke.Models
     public partial class PokemonState
     {
         #region 실전 전투 능력치 계산 (Combat Stats)
+        // 원작 계산식: ((종족값 * 2 + 개체값 + (노력치 / 4)) * 레벨 / 100) + 보정치
+        // 체육관 배틀은 관장이 10% 더 강력함
+
         [JsonIgnore]
         public int CombatMaxHp
         {
             get
             {
                 var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
-                return (((p?.BaseHp ?? 50) * 2 + (Genes.HpGene - 80)) * Level / 100) + Level + 10 + (TrDef / 2);
+                int baseHp = p?.BaseHp ?? 50;
+
+                // 체력 공식: ((종족값 * 2 + 개체값(HpGene) + (노력치(TrDef) / 4)) * 레벨 / 100) + 레벨 + 10
+                return (((baseHp * 2 + Genes.HpGene + (TrDef / 4)) * Level) / 100) + Level + 10;
             }
         }
 
@@ -30,7 +36,10 @@ namespace TamaPoke.Models
             get
             {
                 var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
-                return (((p?.BaseAtk ?? 50) * 2 + (Genes.AtkGene - 80)) * Level / 100) + 5 + TrAtk;
+                int baseAtk = p?.BaseAtk ?? 50;
+
+                // 공격력 공식: ((종족값 * 2 + 개체값(AtkGene) + (노력치(TrAtk) / 4)) * 레벨 / 100) + 5
+                return (((baseAtk * 2 + Genes.AtkGene + (TrAtk / 4)) * Level) / 100) + 5;
             }
         }
 
@@ -40,7 +49,23 @@ namespace TamaPoke.Models
             get
             {
                 var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
-                return (((p?.BaseDef ?? 50) * 2 + (Genes.DefGene - 80)) * Level / 100) + 5 + TrDef;
+                int baseDef = p?.BaseDef ?? 50;
+
+                // 방어력 공식: ((종족값 * 2 + 개체값(DefGene) + (노력치(TrDef) / 4)) * 레벨 / 100) + 5
+                return (((baseDef * 2 + Genes.DefGene + (TrDef / 4)) * Level) / 100) + 5;
+            }
+        }
+
+        // 스피드 스탯도 배틀에 활용하신다면 동일한 공식으로 추가할 수 있습니다!
+        [JsonIgnore]
+        public int CombatSpeed
+        {
+            get
+            {
+                var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
+                int baseSpe = p?.BaseSpeed ?? 50;
+
+                return (((baseSpe * 2 + Genes.SpeGene + (TrSpeed / 4)) * Level) / 100) + 5;
             }
         }
         #endregion
@@ -625,6 +650,12 @@ namespace TamaPoke.Models
                     myCombatAtk = (((myInfo?.BaseSpA ?? 50) * 2 + (Genes.AtkGene - 80)) * Level / 100) + 5 + TrAtk;
                 }
 
+                // 🌟 [수정 완료 1] 체육관 관장 방어력 10% 버프 적용
+                if (IsGymBattle)
+                {
+                    enemyCombatDef = (int)(enemyCombatDef * 1.1);
+                }
+
                 int baseDamage = Math.Max(2, myCombatAtk - (enemyCombatDef / 2));
                 int damage = (int)(baseDamage * typeMultiplier * stabMultiplier * (playerSkill.Power / 50.0));
 
@@ -678,10 +709,8 @@ namespace TamaPoke.Models
 
             if (selectedItem.Type == ItemType.Potion)
             {
-                // 🌟 상처약의 효과 수치를 퍼센트로 계산하여 체력을 회복합니다.
                 int healAmount = (int)(PlayerMaxHp * (selectedItem.EffectValue / 100.0));
 
-                // 최소 1의 체력은 회복되도록 보장합니다.
                 if (healAmount < 1) healAmount = 1;
 
                 PlayerHp = Math.Min(PlayerMaxHp, PlayerHp + healAmount);
@@ -718,13 +747,21 @@ namespace TamaPoke.Models
                 double typeMultiplier = TypeMatchupHelper.GetMultiplier(enemySkill.Type, myType1) * (myType2 != PokemonType.None ? TypeMatchupHelper.GetMultiplier(enemySkill.Type, myType2) : 1.0);
                 double stabMultiplier = (enemyInfo != null && (enemyInfo.Type1 == enemySkill.Type || enemyInfo.Type2 == enemySkill.Type)) ? 1.5 : 1.0;
 
+                // 🌟 1. 기본 물리 스탯
                 int enemyCombatAtk = (((enemyInfo?.BaseAtk ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
                 int myCombatDef = CombatDef;
 
+                // 🌟 2. 특수 스킬일 경우 특수 스탯으로 덮어쓰기
                 if (enemySkill.Category == SkillCategory.Special)
                 {
                     enemyCombatAtk = (((enemyInfo?.BaseSpA ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
                     myCombatDef = (((myInfo?.BaseSpD ?? 50) * 2 + (Genes.DefGene - 80)) * Level / 100) + 5 + (TrDef / 2);
+                }
+
+                // 🌟 3. [수정 완료 2] 스탯이 확정된 마지막 순간에 체육관 10% 버프를 적용!
+                if (IsGymBattle)
+                {
+                    enemyCombatAtk = (int)(enemyCombatAtk * 1.1);
                 }
 
                 int baseEnemyDamage = Math.Max(2, enemyCombatAtk - (myCombatDef / 2));
@@ -982,7 +1019,9 @@ namespace TamaPoke.Models
             var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
             int enemyBaseHp = enemyInfo != null ? enemyInfo.BaseHp : 50;
 
-            EnemyMaxHp = (((enemyBaseHp * 2 + 100) * EnemyLevel / 100) + EnemyLevel + 50) * 2;
+            // 🌟 [수정 완료 3] 최대 체력을 1.1배로 먼저 늘린 후, 현재 체력을 동기화합니다.
+            int baseGymHp = (((enemyBaseHp * 2 + 31) * EnemyLevel) / 100) + EnemyLevel + 10;
+            EnemyMaxHp = (int)(baseGymHp * 1.1);
             EnemyHp = EnemyMaxHp;
 
             EnemySkills = (int[])(leader.SpecificSkills?.Clone() ?? new int[4]);
