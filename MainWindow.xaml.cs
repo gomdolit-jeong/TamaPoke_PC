@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using TamaPoke.Models;
 using TamaPoke.Views;
+using TamaPoke.Utils; // 🌟 Updater 유틸리티들을 사용하기 위한 네임스페이스
 
 namespace TamaPoke
 {
@@ -84,9 +85,13 @@ namespace TamaPoke
                 {
                     this.Hide();
 
-                    // 최신 설정을 파일에서 직접 다시 읽어옵니다.
+                    if (MyPet != null)
+                    {
+                        MyPet.IsFreeRoaming = true;
+                    }
+
                     var currentSettings = TamaPoke.Utils.SettingsManager.Load();
-                    int targetCount = currentSettings.RoamingPokemonCount;
+                    int targetCount = currentSettings != null ? currentSettings.RoamingPokemonCount : 1;
 
                     if (MyPet != null && MyPet.Party != null && MyPet.Party.Count > 0)
                     {
@@ -100,12 +105,17 @@ namespace TamaPoke
                 }
                 else
                 {
-                    // 산책 모드 종료 시 열려있던 모든 산책 창 닫기
                     foreach (var pet in _activePets.ToArray())
                     {
                         pet.WindowInstance?.Close();
                     }
                     _activePets.Clear();
+
+                    if (MyPet != null)
+                    {
+                        MyPet.IsFreeRoaming = false;
+                        MyPet.ResetPosition();
+                    }
 
                     this.Show();
                     this.WindowState = WindowState.Normal;
@@ -127,7 +137,36 @@ namespace TamaPoke
                 });
             };
 
-            // 🌟 완전 종료 로직 (모든 서브 창 정리 포함)
+            // =========================================================================
+            // 🌟 [통합 업데이트 메뉴] 하나의 버튼으로 두 기능을 순차적으로 실행합니다!
+            // =========================================================================
+            var updateAllMenuItem = new System.Windows.Forms.ToolStripMenuItem("포켓몬 전체 데이터 업데이트");
+            updateAllMenuItem.Click += async (s, e) =>
+            {
+                updateAllMenuItem.Enabled = false; // 중복 실행 방지
+                Action<string, string> trayNotifier = (title, msg) => ShowTrayNotification(title, msg);
+
+                try
+                {
+                    // 1. 기본 데이터(스탯, 이름 등) 업데이트 실행
+                    await PokemonDataUpdater.GenerateOfflineDataJsonAsync(null, trayNotifier);
+
+                    // 2. 스킬 데이터 업데이트 이어서 실행
+                    await PokemonSkillUpdater.GenerateOfflineSkillJsonAsync(null, trayNotifier);
+
+                    trayNotifier("통합 업데이트 완료", "포켓몬 기본 데이터와 스킬 데이터가 모두 최신 버전으로 갱신되었습니다!");
+                }
+                catch (Exception ex)
+                {
+                    trayNotifier("업데이트 오류", $"데이터를 갱신하는 중 문제가 발생했습니다: {ex.Message}");
+                }
+                finally
+                {
+                    updateAllMenuItem.Enabled = true; // 에러가 나든 성공하든 메뉴는 다시 활성화
+                }
+            };
+            // =========================================================================
+
             var exitMenuItem = new System.Windows.Forms.ToolStripMenuItem("완전히 종료하기");
             exitMenuItem.Click += (s, e) =>
             {
@@ -148,6 +187,9 @@ namespace TamaPoke
             contextMenu.Items.Add(walkModeMenuItem);
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(settingsMenuItem);
+            contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+            contextMenu.Items.Add(updateAllMenuItem); // 🌟 깔끔하게 통합된 하나의 메뉴!
+            contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(exitMenuItem);
 
             _notifyIcon.ContextMenuStrip = contextMenu;
@@ -168,9 +210,6 @@ namespace TamaPoke
             NavigateTo(startingView);
         }
 
-        // =========================================================================
-        // 🌟 [통합 핵심 메서드] 산책 모드: 설정값 즉시 반영 및 발바닥 밀착 로직
-        // =========================================================================
         private void SpawnPetWindow(PartyMember partyMember)
         {
             var petState = new PokemonState
@@ -182,16 +221,10 @@ namespace TamaPoke
             };
             petState.StartSubPetAnimationOnly();
 
-            // 🌟 1. [버그 수정] 불러온 gameSettings의 RoamingPetScale을 '직접' 읽습니다!
             var gameSettings = TamaPoke.Utils.SettingsManager.Load();
-            double rawScale = (gameSettings != null && gameSettings.RoamingPetScale > 0)
-                ? gameSettings.RoamingPetScale
-                : 2.0;
-
-            // 3.0배를 초과하면 무조건 3.0으로 고정합니다.
+            double rawScale = (gameSettings != null && gameSettings.RoamingPetScale > 0) ? gameSettings.RoamingPetScale : 2.0;
             double currentScale = Math.Min(rawScale, 3.0);
 
-            // 🌟 2. 원본 스프라이트 캔버스 크기(약 48px)를 기준으로 물리 창 크기를 계산합니다.
             double baseWidth = 100.0;
             double baseHeight = 100.0;
             double petWidth = baseWidth * currentScale;
@@ -212,7 +245,6 @@ namespace TamaPoke
                 SnapsToDevicePixels = true
             };
 
-            // 알트탭(Alt+Tab)에서 창 숨기기
             petWindow.SourceInitialized += (s, e) =>
             {
                 IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(petWindow).Handle;
@@ -220,12 +252,11 @@ namespace TamaPoke
                 SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TOOLWINDOW & ~WS_EX_APPWINDOW);
             };
 
-            // 🌟 3. 스프라이트 뷰 생성 및 '바닥(Bottom)' 밀착 정렬 적용
             var roamingView = new RoamingView
             {
                 DataContext = petState,
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                VerticalAlignment = System.Windows.VerticalAlignment.Bottom // 발이 바닥에 딱 붙도록 정렬!
+                VerticalAlignment = System.Windows.VerticalAlignment.Bottom
             };
             roamingView.LayoutTransform = new System.Windows.Media.ScaleTransform(currentScale, currentScale);
 
@@ -243,7 +274,6 @@ namespace TamaPoke
             bool isTaskbarMode = (gameSettings != null) ? gameSettings.IsTaskbarMode : false;
             Random rnd = new Random(Guid.NewGuid().GetHashCode());
 
-            // 🌟 4. [바닥 뚫림 방지] 정확한 작업표시줄 상단 기준선 산출
             (double x, double y) GetTargetOnCurrentScreen(bool taskbarMode)
             {
                 int centerX = (int)(petWindow.Left + (petWidth / 2));
@@ -255,7 +285,6 @@ namespace TamaPoke
                 double sMaxX = currentScreen.Bounds.Right;
                 double sMaxY = currentScreen.Bounds.Bottom;
 
-                // WorkingArea.Bottom은 작업표시줄의 바로 윗단 경계선입니다.
                 double sFixedY = currentScreen.WorkingArea.Bottom - petHeight;
 
                 double tX = rnd.Next((int)sMinX, (int)Math.Max(sMinX + 10, sMaxX - petWidth));
@@ -417,7 +446,6 @@ namespace TamaPoke
                     if (isTaskbarMode)
                     {
                         var currentScreen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)petWindow.Left, (int)petWindow.Top));
-                        // 🌟 작업표시줄 상단에 발이 정확히 올라오도록 고정
                         petWindow.Top = currentScreen.WorkingArea.Bottom - petHeight;
                         petState.Direction = (dx > 0) ? 2 : 6;
                     }
@@ -443,7 +471,6 @@ namespace TamaPoke
             moveTimer.Start();
         }
 
-        // 🌟 일반 모드(IdleView 등)일 때 메인 창 전체를 드래그 이동
         private void MainGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)

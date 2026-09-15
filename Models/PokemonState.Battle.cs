@@ -14,8 +14,6 @@ namespace TamaPoke.Models
     public partial class PokemonState
     {
         #region 실전 전투 능력치 계산 (Combat Stats)
-        // 원작 계산식: ((종족값 * 2 + 개체값 + (노력치 / 4)) * 레벨 / 100) + 보정치
-        // 체육관 배틀은 관장이 10% 더 강력함
 
         [JsonIgnore]
         public int CombatMaxHp
@@ -24,8 +22,6 @@ namespace TamaPoke.Models
             {
                 var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
                 int baseHp = p?.BaseHp ?? 50;
-
-                // 체력 공식: ((종족값 * 2 + 개체값(HpGene) + (노력치(TrDef) / 4)) * 레벨 / 100) + 레벨 + 10
                 return (((baseHp * 2 + Genes.HpGene + (TrDef / 4)) * Level) / 100) + Level + 10;
             }
         }
@@ -36,10 +32,7 @@ namespace TamaPoke.Models
             get
             {
                 var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
-                int baseAtk = p?.BaseAtk ?? 50;
-
-                // 공격력 공식: ((종족값 * 2 + 개체값(AtkGene) + (노력치(TrAtk) / 4)) * 레벨 / 100) + 5
-                return (((baseAtk * 2 + Genes.AtkGene + (TrAtk / 4)) * Level) / 100) + 5;
+                return CalculateStat(p?.BaseAtk ?? 50, Genes.AtkGene, TrAtk, Level);
             }
         }
 
@@ -49,14 +42,10 @@ namespace TamaPoke.Models
             get
             {
                 var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
-                int baseDef = p?.BaseDef ?? 50;
-
-                // 방어력 공식: ((종족값 * 2 + 개체값(DefGene) + (노력치(TrDef) / 4)) * 레벨 / 100) + 5
-                return (((baseDef * 2 + Genes.DefGene + (TrDef / 4)) * Level) / 100) + 5;
+                return CalculateStat(p?.BaseDef ?? 50, Genes.DefGene, TrDef, Level);
             }
         }
 
-        // 스피드 스탯도 배틀에 활용하신다면 동일한 공식으로 추가할 수 있습니다!
         [JsonIgnore]
         public int CombatSpeed
         {
@@ -64,10 +53,15 @@ namespace TamaPoke.Models
             {
                 var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
                 int baseSpe = p?.BaseSpeed ?? 50;
-
                 return (((baseSpe * 2 + Genes.SpeGene + (TrSpeed / 4)) * Level) / 100) + 5;
             }
         }
+
+        private int CalculateStat(int baseStat, int gene, int effortValue, int currentLevel)
+        {
+            return (((baseStat * 2 + gene + (effortValue / 4)) * currentLevel) / 100) + 5;
+        }
+
         #endregion
 
         #region 배틀 시스템 UI 상태 (Battle System UI)
@@ -177,23 +171,30 @@ namespace TamaPoke.Models
             }
 
             int[] score = new int[4];
+
+            // 🌟 야생 포켓몬도 2패스(레벨업 스킬 후 TM 스킬) 시스템 적용!
             for (int pass = 0; pass < 2; pass++)
             {
-                bool tmPass = pass == 1;
+                bool tmPass = (pass == 1);
                 for (int i = 0; i < n; i++)
                 {
                     int at = SkillDex.GetLearnLevel(EnemySpeciesId, i);
-                    if (at > EnemyLevel) continue;
                     if (tmPass != (at == 0)) continue;
 
+                    // 야생 포켓몬도 레벨에 맞는 기술만 배우며, 강력한 TM은 30렙 이상부터
+                    if (!tmPass && at > EnemyLevel) continue;
+                    if (tmPass && EnemyLevel < 30) continue;
+
                     int mv = SkillDex.GetLearnMove(EnemySpeciesId, i);
-                    if (mv == 0 || EnemySkills.Contains(mv)) continue;
+                    if (mv == 0 || mv >= SkillDex.MoveTable.Length || EnemySkills.Contains(mv)) continue;
+
                     var m = SkillDex.GetSkill(mv);
-                    if (m == null || (tmPass && EnemyLevel < 40)) continue;
+                    if (m == null) continue;
 
                     int sc = (m.Category == SkillCategory.Status) ? 10 : m.Power + 20;
                     if (m.Category != SkillCategory.Status && (m.Type == d.Type1 || m.Type == d.Type2)) sc += 40;
-                    sc += at;
+
+                    sc += (at == 0 ? 50 : at);
 
                     int slot = -1;
                     for (int s = 0; s < 4; s++) { if (sc > score[s]) { slot = s; break; } }
@@ -201,6 +202,24 @@ namespace TamaPoke.Models
                     for (int s = 3; s > slot; s--) { score[s] = score[s - 1]; EnemySkills[s] = EnemySkills[s - 1]; }
                     score[slot] = sc; EnemySkills[slot] = mv;
                 }
+            }
+
+            // 적 포켓몬 공격기 안전장치
+            bool hasAttack = false;
+            for (int i = 0; i < 4; i++)
+            {
+                if (EnemySkills[i] != 0 && SkillDex.GetSkill(EnemySkills[i])?.Category != SkillCategory.Status)
+                {
+                    hasAttack = true; break;
+                }
+            }
+
+            if (!hasAttack)
+            {
+                int slotToFill = 0;
+                for (int i = 0; i < 4; i++) { if (EnemySkills[i] == 0) { slotToFill = i; break; } }
+                int fallback = SkillDex.GetFallbackMove(d.Type1);
+                EnemySkills[slotToFill] = fallback > 0 ? fallback : 1;
             }
         }
 
@@ -275,6 +294,7 @@ namespace TamaPoke.Models
         public bool KnowsSkill(int skillId) => skillId != 0 && Array.Exists(Skills, s => s == skillId);
         [JsonIgnore] public int SkillCount => Skills.Count(s => s != 0);
 
+        // 🌟 [핵심 개선] 올바른 레벨업 디자인과 밸런스가 적용된 스킬 학습 시스템
         public void RelearnFromLevel()
         {
             for (int i = 0; i < 4; i++) Skills[i] = 0;
@@ -293,7 +313,7 @@ namespace TamaPoke.Models
 
             if (n == 0)
             {
-                Skills[0] = 1;
+                Skills[0] = 1; // 몸통박치기
                 int fallbackMove = SkillDex.GetFallbackMove(d.Type1);
                 if (fallbackMove != 1) Skills[1] = fallbackMove;
 
@@ -303,14 +323,22 @@ namespace TamaPoke.Models
 
             int[] score = new int[4] { 0, 0, 0, 0 };
 
+            // 🌟 1패스는 자력기(레벨업), 2패스는 TM(기술머신)으로 분리하여 순차적으로 채웁니다.
             for (int pass = 0; pass < 2; pass++)
             {
                 bool tmPass = (pass == 1);
                 for (int i = 0; i < n; i++)
                 {
                     int at = SkillDex.GetLearnLevel(SpeciesId, i);
-                    if (at > lvl) continue;
+
+                    // 레벨업 스킬과 TM 스킬을 패스별로 나눔
                     if (tmPass != (at == 0)) continue;
+
+                    // 레벨업 스킬(at>0)은 현재 내 레벨 이하여야 함
+                    if (!tmPass && at > lvl) continue;
+
+                    // 🌟 [밸런스 패치] 파괴광선 등 강력한 TM/유전기(at==0)는 30레벨 이상부터 습득 가능!
+                    if (tmPass && lvl < 30) continue;
 
                     int mv = SkillDex.GetLearnMove(SpeciesId, i);
                     if (mv == 0 || mv >= SkillDex.MoveTable.Length || KnowsSkill(mv)) continue;
@@ -318,17 +346,14 @@ namespace TamaPoke.Models
                     var m = SkillDex.GetSkill(mv);
                     if (m == null) continue;
 
-                    if (tmPass && lvl < 40) continue;
-
                     int sc = (m.Category == SkillCategory.Status) ? 10 : m.Power + 20;
 
                     if (m.Category != SkillCategory.Status && (m.Type == d.Type1 || m.Type == d.Type2)) sc += 40;
-
                     if (m.Effect == SkillEffect.Recharge) sc -= 35;
                     if (m.Effect == SkillEffect.Recoil) sc -= 20;
 
-                    sc += at;
-                    if (sc < 1) sc = 1;
+                    // 늦게 배우는 스킬일수록 기존 슬롯을 밀어내도록 레벨값을 점수에 더함 (TM은 가산점 50)
+                    sc += (at == 0 ? 50 : at);
 
                     int slot = -1;
                     for (int s = 0; s < 4; s++)
@@ -345,42 +370,40 @@ namespace TamaPoke.Models
                     score[slot] = sc;
                     Skills[slot] = mv;
                 }
-                if (SkillCount >= 4) break;
             }
 
-            bool hasStab = false;
+            // 🌟 [안전장치] 만약 위 로직을 다 돌았는데 공격 스킬이 하나도 없다면?
+            bool hasAttack = false;
             for (int i = 0; i < 4; i++)
             {
-                if (Skills[i] == 0) continue;
-                var m = SkillDex.GetSkill(Skills[i]);
-                if (m != null && m.Category != SkillCategory.Status && (m.Type == d.Type1 || m.Type == d.Type2))
+                if (Skills[i] != 0)
                 {
-                    hasStab = true;
-                    break;
+                    var m = SkillDex.GetSkill(Skills[i]);
+                    if (m != null && m.Category != SkillCategory.Status)
+                    {
+                        hasAttack = true;
+                        break;
+                    }
                 }
             }
 
-            if (!hasStab)
+            // 빈칸을 찾아 강제로 '몸통박치기'나 '속성 기본기'를 쥐어줍니다.
+            if (!hasAttack)
             {
-                int best = 0;
-                int bestSc = 0;
-                for (int i = 0; i < n; i++)
+                int slotToFill = 0;
+                for (int i = 0; i < 4; i++)
                 {
-                    int at = SkillDex.GetLearnLevel(SpeciesId, i);
-                    if (at > lvl) continue;
-                    int mv = SkillDex.GetLearnMove(SpeciesId, i);
-                    var m = SkillDex.GetSkill(mv);
-
-                    if (m == null || m.Category == SkillCategory.Status || (m.Type != d.Type1 && m.Type != d.Type2)) continue;
-                    if (at == 0 && lvl < 40) continue;
-
-                    int sc = m.Power;
-                    if (m.Effect == SkillEffect.Recharge) sc -= 35;
-                    if (m.Effect == SkillEffect.Recoil) sc -= 20;
-
-                    if (sc > bestSc) { bestSc = sc; best = mv; }
+                    if (Skills[i] == 0) { slotToFill = i; break; }
                 }
-                if (best != 0) Skills[3] = best;
+
+                int fallback = SkillDex.GetFallbackMove(d.Type1);
+                Skills[slotToFill] = fallback > 0 ? fallback : 1;
+
+                // 혹시 빈칸이 남았다면 몸통박치기(1)도 무조건 하나 챙겨줍니다.
+                if (slotToFill < 3 && !KnowsSkill(1))
+                {
+                    Skills[slotToFill + 1] = 1;
+                }
             }
 
             OnPropertyChanged(nameof(CurrentSkills));
@@ -650,7 +673,6 @@ namespace TamaPoke.Models
                     myCombatAtk = (((myInfo?.BaseSpA ?? 50) * 2 + (Genes.AtkGene - 80)) * Level / 100) + 5 + TrAtk;
                 }
 
-                // 🌟 [수정 완료 1] 체육관 관장 방어력 10% 버프 적용
                 if (IsGymBattle)
                 {
                     enemyCombatDef = (int)(enemyCombatDef * 1.1);
@@ -747,18 +769,15 @@ namespace TamaPoke.Models
                 double typeMultiplier = TypeMatchupHelper.GetMultiplier(enemySkill.Type, myType1) * (myType2 != PokemonType.None ? TypeMatchupHelper.GetMultiplier(enemySkill.Type, myType2) : 1.0);
                 double stabMultiplier = (enemyInfo != null && (enemyInfo.Type1 == enemySkill.Type || enemyInfo.Type2 == enemySkill.Type)) ? 1.5 : 1.0;
 
-                // 🌟 1. 기본 물리 스탯
                 int enemyCombatAtk = (((enemyInfo?.BaseAtk ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
                 int myCombatDef = CombatDef;
 
-                // 🌟 2. 특수 스킬일 경우 특수 스탯으로 덮어쓰기
                 if (enemySkill.Category == SkillCategory.Special)
                 {
                     enemyCombatAtk = (((enemyInfo?.BaseSpA ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
                     myCombatDef = (((myInfo?.BaseSpD ?? 50) * 2 + (Genes.DefGene - 80)) * Level / 100) + 5 + (TrDef / 2);
                 }
 
-                // 🌟 3. [수정 완료 2] 스탯이 확정된 마지막 순간에 체육관 10% 버프를 적용!
                 if (IsGymBattle)
                 {
                     enemyCombatAtk = (int)(enemyCombatAtk * 1.1);
@@ -1019,7 +1038,6 @@ namespace TamaPoke.Models
             var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
             int enemyBaseHp = enemyInfo != null ? enemyInfo.BaseHp : 50;
 
-            // 🌟 [수정 완료 3] 최대 체력을 1.1배로 먼저 늘린 후, 현재 체력을 동기화합니다.
             int baseGymHp = (((enemyBaseHp * 2 + 31) * EnemyLevel) / 100) + EnemyLevel + 10;
             EnemyMaxHp = (int)(baseGymHp * 1.1);
             EnemyHp = EnemyMaxHp;

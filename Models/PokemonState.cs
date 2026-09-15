@@ -221,31 +221,14 @@ namespace TamaPoke.Models
         private const int MED_FIT = 1 << 7;
 
         private static readonly int[] LegendaryIds = {
-            // 1세대 (관동)
             144, 145, 146, 150, 151,
-            
-            // 2세대 (성도)
             243, 244, 245, 249, 250, 251,
-            
-            // 3세대 (호연)
             377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
-            
-            // 4세대 (신오)
             480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493,
-            
-            // 5세대 (하나) - 비크티니 ~ 게노세크트
             494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649,
-            
-            // 6세대 (칼로스) - 제르네아스 ~ 볼케니온
             716, 717, 718, 719, 720, 721,
-            
-            // 7세대 (알로라) - 타입:널, 수호신, 울트라비스트, 환상 등
             772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809,
-            
-            // 8세대 (가라르) - 자시안, 무한다이노, 러스트보이 등 + 러브로스(히스이)
             888, 889, 890, 891, 892, 893, 894, 895, 896, 897, 898, 905,
-            
-            // 9세대 (팔데아) - 사흉수, 코라이돈/미라이돈, DLC 전설/환상
             1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017, 1024, 1025
         };
         #endregion
@@ -306,7 +289,7 @@ namespace TamaPoke.Models
             get => _isGenderless;
             set => SetProperty(ref _isGenderless, value);
         }
-        // 성별 여부 프로퍼티
+
         private bool _isFemale = false;
         public bool IsFemale
         {
@@ -314,7 +297,6 @@ namespace TamaPoke.Models
             set => SetProperty(ref _isFemale, value);
         }
 
-        // UI에 텍스트로 띄워줄 성별 기호 속성
         [JsonIgnore]
         public string GenderDisplay => IsEgg ? "" : (IsFemale ? "♀" : "♂");
 
@@ -345,12 +327,8 @@ namespace TamaPoke.Models
             }
         }
 
-        // ==========================================
-        // 🌟 강력한 리전 폼 타입 오버라이드 리스트
-        // ==========================================
         private static readonly List<(int Id, string Keyword, PokemonType Type1, PokemonType Type2)> FormTypeOverrides = new()
         {
-            // 🌴 알로라의 모습 (7세대)
             (19, "alola", PokemonType.Dark, PokemonType.Normal),
             (20, "alola", PokemonType.Dark, PokemonType.Normal),
             (26, "alola", PokemonType.Electric, PokemonType.Psychic),
@@ -370,7 +348,6 @@ namespace TamaPoke.Models
             (103, "alola", PokemonType.Grass, PokemonType.Dragon),
             (105, "alola", PokemonType.Fire, PokemonType.Ghost),
 
-            // 🚂 가라르의 모습 (8세대)
             (52, "galar", PokemonType.Steel, PokemonType.None),
             (77, "galar", PokemonType.Psychic, PokemonType.None),
             (78, "galar", PokemonType.Psychic, PokemonType.Fairy),
@@ -392,7 +369,6 @@ namespace TamaPoke.Models
             (562, "galar", PokemonType.Ground, PokemonType.Ghost),
             (618, "galar", PokemonType.Ground, PokemonType.Steel),
 
-            // 🏔️ 히스이의 모습 (포켓몬 레전즈 아르세우스)
             (58, "hisui", PokemonType.Fire, PokemonType.Rock),
             (59, "hisui", PokemonType.Fire, PokemonType.Rock),
             (100, "hisui", PokemonType.Electric, PokemonType.Grass),
@@ -411,10 +387,8 @@ namespace TamaPoke.Models
             (713, "hisui", PokemonType.Ice, PokemonType.Rock),
             (724, "hisui", PokemonType.Grass, PokemonType.Fighting),
 
-            // 🇪🇸 팔데아의 모습 (9세대)
             (194, "paldea", PokemonType.Poison, PokemonType.Ground),
-            
-            // 켄타로스 특수 폼 우선 검사
+
             (128, "blaze", PokemonType.Fighting, PokemonType.Fire),
             (128, "_0002", PokemonType.Fighting, PokemonType.Fire),
             (128, "aqua", PokemonType.Fighting, PokemonType.Water),
@@ -434,13 +408,9 @@ namespace TamaPoke.Models
                 if (!string.IsNullOrEmpty(SpriteFileName))
                 {
                     string lowerFile = SpriteFileName.ToLower();
-
                     var overrideData = FormTypeOverrides.FirstOrDefault(x => x.Id == SpeciesId && lowerFile.Contains(x.Keyword));
 
-                    if (overrideData.Id != 0)
-                    {
-                        return overrideData.Type1;
-                    }
+                    if (overrideData.Id != 0) return overrideData.Type1;
                 }
 
                 return PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId)?.Type1 ?? PokemonType.Normal;
@@ -457,13 +427,9 @@ namespace TamaPoke.Models
                 if (!string.IsNullOrEmpty(SpriteFileName))
                 {
                     string lowerFile = SpriteFileName.ToLower();
-
                     var overrideData = FormTypeOverrides.FirstOrDefault(x => x.Id == SpeciesId && lowerFile.Contains(x.Keyword));
 
-                    if (overrideData.Id != 0)
-                    {
-                        return overrideData.Type2;
-                    }
+                    if (overrideData.Id != 0) return overrideData.Type2;
                 }
 
                 return PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId)?.Type2 ?? PokemonType.None;
@@ -472,7 +438,6 @@ namespace TamaPoke.Models
 
         [JsonIgnore]
         public bool HasType2 => Type2 != PokemonType.None;
-        // ==========================================
 
         private PokemonGene _genes = new PokemonGene();
         public PokemonGene Genes { get => _genes; set => SetProperty(ref _genes, value); }
@@ -515,54 +480,42 @@ namespace TamaPoke.Models
                 {
                     string lowerFile = SpriteFileName.ToLower();
 
-                    if (lowerFile.Contains("shiny"))
-                    {
-                        shinyText = "✨ 색이 다른 포켓몬";
-                    }
+                    if (lowerFile.Contains("shiny")) shinyText = "✨ 색이 다른 포켓몬";
 
                     var formKeywords = new Dictionary<string, string>
-            {
-                { "combat", "팔데아의 모습 (투쟁종)" },
-                { "_0001", "팔데아의 모습 (투쟁종)" },
-                { "blaze", "팔데아의 모습 (블레이즈종)" },
-                { "_0002", "팔데아의 모습 (블레이즈종)" },
-                { "aqua", "팔데아의 모습 (워터종)" },
-                { "_0003", "팔데아의 모습 (워터종)" },
-                { "alola", "알로라의 모습" },
-                { "galar", "가라르의 모습" },
-                { "hisui", "히스이의 모습" },
-                { "paldea", "팔데아의 모습" },
-                { "mega", "메가진화" }
-            };
+                    {
+                        { "combat", "팔데아의 모습 (투쟁종)" },
+                        { "_0001", "팔데아의 모습 (투쟁종)" },
+                        { "blaze", "팔데아의 모습 (블레이즈종)" },
+                        { "_0002", "팔데아의 모습 (블레이즈종)" },
+                        { "aqua", "팔데아의 모습 (워터종)" },
+                        { "_0003", "팔데아의 모습 (워터종)" },
+                        { "alola", "알로라의 모습" },
+                        { "galar", "가라르의 모습" },
+                        { "hisui", "히스이의 모습" },
+                        { "paldea", "팔데아의 모습" },
+                        { "mega", "메가진화" }
+                    };
 
                     foreach (var pair in formKeywords)
                     {
                         if (lowerFile.Contains(pair.Key))
                         {
-                            if ((pair.Key == "_0001" || pair.Key == "_0002" || pair.Key == "_0003") && SpeciesId != 128)
-                                continue;
-
+                            if ((pair.Key == "_0001" || pair.Key == "_0002" || pair.Key == "_0003") && SpeciesId != 128) continue;
                             formText = pair.Value;
                             break;
                         }
                     }
 
-                    if (string.IsNullOrEmpty(formText) &&
-                        !lowerFile.Contains("_0000") &&
-                        !lowerFile.Contains("egg") &&
-                        !lowerFile.Contains("shiny") &&
-                        lowerFile.Contains("_"))
+                    if (string.IsNullOrEmpty(formText) && !lowerFile.Contains("_0000") && !lowerFile.Contains("egg") && !lowerFile.Contains("shiny") && lowerFile.Contains("_"))
                     {
                         formText = "특수한 모습";
                     }
                 }
 
-                if (!string.IsNullOrEmpty(shinyText) && !string.IsNullOrEmpty(formText))
-                    return $"{shinyText} ({formText})";
-                else if (!string.IsNullOrEmpty(shinyText))
-                    return shinyText;
-                else if (!string.IsNullOrEmpty(formText))
-                    return formText;
+                if (!string.IsNullOrEmpty(shinyText) && !string.IsNullOrEmpty(formText)) return $"{shinyText} ({formText})";
+                else if (!string.IsNullOrEmpty(shinyText)) return shinyText;
+                else if (!string.IsNullOrEmpty(formText)) return formText;
 
                 return "";
             }
@@ -999,9 +952,7 @@ namespace TamaPoke.Models
                 return count;
             }
         }
-        #endregion
 
-        #region 초기화 및 게임 루프 (Init & Main Loop)
         public void InitializeAfterLoad()
         {
             IsPartyOpen = false;
@@ -1051,8 +1002,6 @@ namespace TamaPoke.Models
             _frameTickCounter++;
             if (_frameTickCounter >= 6) { _frameTickCounter = 0; if (_animationFrames != null && _animationFrames.Length > 0) { _currentFrameIndex = (_currentFrameIndex + 1) % _animationFrames.Length; CurrentFrame = _animationFrames[_currentFrameIndex]; } }
 
-            // 🌟 [안전장치 강화] _currentActionId가 ANIM_WALK일 때만 실제로 위치를 이동하게 합니다.
-            // 걷기 타이머가 남아있더라도, 응가 때문에 상태가 아픔(ANIM_PAIN)으로 바뀌었다면 밀려나지 않습니다!
             if (!IsFreeRoaming && _currentActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
             {
                 PosX += (-FlipX * 1.5);
@@ -1089,114 +1038,128 @@ namespace TamaPoke.Models
             if (IsCleanGameOpen) StepCleanGame();
         }
 
+        // =======================================================================
+        // 🌟 [리팩토링 핵심] 거대했던 Tick 메서드를 가독성 있게 역할별로 추출했습니다!
+        // =======================================================================
         public void Tick()
         {
             if (IsFreeRoaming || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
-            _ageSeconds++; UpdateDayNightCycle();
 
-            if (_ageSeconds % 60 == 0) { Save(); }
+            _ageSeconds++;
+            UpdateDayNightCycle();
+
+            if (_ageSeconds % 60 == 0) Save();
             if (DateTime.Now.Date > LastPlayedDate.Date) CheckDailyStreak();
-            if (IsEgg) { if (_ageSeconds >= 180) Hatch(); return; }
 
-            // =========================================================================
-            // 🌟 [순서 변경 1] 60초마다 일어나는 상태 증감(포만감, 응가 등)을 먼저 계산합니다.
-            // =========================================================================
-            if (_ageSeconds % 60 == 0)
+            if (IsEgg)
             {
-                if (AgeMinutes % MINUTES_PER_LEVEL == 0)
-                {
-                    IsEvolutionPostponed = false;
-                    IsFarewellPostponed = false;
-                }
-
-                AgeMinutes++;
-                if (AgeMinutes % MINUTES_PER_LEVEL == 0) IsEvolutionPostponed = false;
-                if (LowestStat >= 40) { _goodTicks++; if (_goodTicks >= 720) { _goodTicks = 0; if (TrDef < 100) TrDef++; } } else { _goodTicks = 0; }
-
-                if (IsSleeping)
-                {
-                    Energy = Clamp100(Energy + 6);
-                    if (AgeMinutes % 30 == 0) Hygiene = Math.Max(0, Hygiene - 1);
-                    CheckStateAndAnimate();
-                    return;
-                }
-
-                if (AgeMinutes % 20 == 0) { Fullness = Math.Max(0, Fullness - 2); Energy = Math.Max(0, Energy - 1); }
-
-                Random rand = new Random();
-
-                if (Fullness > 40 && Poops < MAX_POOPS && rand.Next(100) < POOP_CHANCE)
-                {
-                    Poops++;
-                    Hygiene = Clamp100(Hygiene - (10 * Poops));
-
-                    if (Settings.UseTrayNotifications)
-                        TrayNotificationRequested?.Invoke("화장실 알림", "💩");
-                }
-
-                if (AgeMinutes % 10 == 0) { int dJoy = 0; if (Fullness < 30) dJoy -= 2; if (Hygiene < 30) dJoy -= 3; Joy = Clamp100(Joy + dJoy); }
-
-                if (Fullness == 0 && Joy == 0 && Energy == 0 && Hygiene == 0)
-                {
-                    if (NeglectTicks < RUNAWAY_TICKS)
-                        NeglectTicks++;
-
-                    if (CanRunawayNow)
-                    {
-                        StartRunaway();
-                        return;
-                    }
-                }
-                else
-                {
-                    NeglectTicks = 0;
-                }
-
-                if (Fullness < 30 && !_notifiedHunger)
-                {
-                    if (Settings.UseTrayNotifications)
-                        TrayNotificationRequested?.Invoke("배고픔 알림", "🍚");
-
-                    _notifiedHunger = true;
-                }
-                else if (Fullness >= 30)
-                {
-                    _notifiedHunger = false;
-                }
-
-                if (Joy < 30 && !_notifiedSadness)
-                {
-                    if (Settings.UseTrayNotifications)
-                        TrayNotificationRequested?.Invoke("우울함 알림", "🥹");
-
-                    _notifiedSadness = true;
-                }
-                else if (Joy >= 30)
-                {
-                    _notifiedSadness = false;
-                }
-
-                CheckMedals();
+                if (_ageSeconds >= 180) Hatch();
+                return;
             }
 
-            // =========================================================================
-            // 🌟 [새로운 로직 2] 응가를 했거나 청결도가 낮아졌을 때, 걷기 등의 임시 동작을 "강제 취소" 합니다.
-            // =========================================================================
+            if (_ageSeconds % 60 == 0)
+            {
+                UpdateVitalsAndNeeds(); // 🌟 스탯 감소 로직 분리
+            }
+
+            HandleStatusInterrupts();   // 🌟 상태 이상(똥, 더러움) 차단 로직 분리
+            ProcessIdleBehaviors();     // 🌟 무작위 행동 로직 분리
+
+            CheckStateAndAnimate();
+        }
+
+        // 🌟 스탯, 포만감, 응가 등을 처리하는 헬퍼 메서드
+        private void UpdateVitalsAndNeeds()
+        {
+            if (AgeMinutes % MINUTES_PER_LEVEL == 0)
+            {
+                IsEvolutionPostponed = false;
+                IsFarewellPostponed = false;
+            }
+
+            AgeMinutes++;
+            if (AgeMinutes % MINUTES_PER_LEVEL == 0) IsEvolutionPostponed = false;
+            if (LowestStat >= 40) { _goodTicks++; if (_goodTicks >= 720) { _goodTicks = 0; if (TrDef < 100) TrDef++; } } else { _goodTicks = 0; }
+
+            if (IsSleeping)
+            {
+                Energy = Clamp100(Energy + 6);
+                if (AgeMinutes % 30 == 0) Hygiene = Math.Max(0, Hygiene - 1);
+                return;
+            }
+
+            if (AgeMinutes % 20 == 0) { Fullness = Math.Max(0, Fullness - 2); Energy = Math.Max(0, Energy - 1); }
+
+            Random rand = new Random();
+
+            if (Fullness > 40 && Poops < MAX_POOPS && rand.Next(100) < POOP_CHANCE)
+            {
+                Poops++;
+                Hygiene = Clamp100(Hygiene - (10 * Poops));
+
+                if (Settings.UseTrayNotifications)
+                    TrayNotificationRequested?.Invoke("화장실 알림", "💩");
+            }
+
+            if (AgeMinutes % 10 == 0) { int dJoy = 0; if (Fullness < 30) dJoy -= 2; if (Hygiene < 30) dJoy -= 3; Joy = Clamp100(Joy + dJoy); }
+
+            if (Fullness == 0 && Joy == 0 && Energy == 0 && Hygiene == 0)
+            {
+                if (NeglectTicks < RUNAWAY_TICKS)
+                    NeglectTicks++;
+
+                if (CanRunawayNow)
+                {
+                    StartRunaway();
+                    return;
+                }
+            }
+            else
+            {
+                NeglectTicks = 0;
+            }
+
+            if (Fullness < 30 && !_notifiedHunger)
+            {
+                if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke("배고픔 알림", "🍚");
+                _notifiedHunger = true;
+            }
+            else if (Fullness >= 30)
+            {
+                _notifiedHunger = false;
+            }
+
+            if (Joy < 30 && !_notifiedSadness)
+            {
+                if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke("우울함 알림", "🥹");
+                _notifiedSadness = true;
+            }
+            else if (Joy >= 30)
+            {
+                _notifiedSadness = false;
+            }
+
+            CheckMedals();
+        }
+
+        // 🌟 똥이 있거나 더러울 때 동작을 정지시키는 헬퍼 메서드
+        private void HandleStatusInterrupts()
+        {
             if (Poops > 0 || Hygiene < 30)
             {
                 if (_tempActionTimer > 0)
                 {
-                    _tempActionTimer = 0; // 진행 중이던 무작위 걷기나 포즈를 즉시 중단합니다.
+                    _tempActionTimer = 0;
                     _tempActionId = ANIM_IDLE;
                 }
             }
+        }
 
-            // =========================================================================
-            // 🌟 [순서 변경 3] 무작위 행동(걷기 등)은 포켓몬이 건강할 때만 발생하도록 조건을 추가했습니다.
-            // =========================================================================
+        // 🌟 건강할 때 가끔씩 무작위 행동을 취하게 하는 헬퍼 메서드
+        private void ProcessIdleBehaviors()
+        {
             if (!IsSleeping && !IsCeremony && !IsBattleOpen && _tempActionTimer <= 0)
             {
-                // 응가가 없고 청결도가 30 이상일 때만 랜덤 걷기를 실행합니다!
                 if (_currentActionId == ANIM_IDLE && Poops == 0 && Hygiene >= 30)
                 {
                     Random moveRand = new Random(); int r = moveRand.Next(100);
@@ -1217,8 +1180,6 @@ namespace TamaPoke.Models
                     else { _tempActionId = ANIM_IDLE; _tempActionTimer = moveRand.Next(60, 150); }
                 }
             }
-
-            CheckStateAndAnimate();
         }
         #endregion
 
@@ -1336,9 +1297,6 @@ namespace TamaPoke.Models
             if (IsSleeping) return ANIM_SLEEP;
             if (IsBathing) return ANIM_SHAKE;
 
-            // =========================================================================
-            // 🌟 [우선순위 변경] 아픈 상태(응가, 청결도 부족)를 일반 이동(tempActionTimer)보다 위로 올립니다!
-            // =========================================================================
             if (Poops > 0) return ANIM_PAIN;
             if (Hygiene < 30) return ANIM_HURT;
 
@@ -1364,6 +1322,13 @@ namespace TamaPoke.Models
             if (_currentActionId != targetAction || _animationFrames == null)
                 UpdateAnimation(targetAction);
         }
+
+        private static readonly HashSet<int> SideViewActions = new()
+        {
+            ANIM_WALK, ANIM_SLEEP, ANIM_EVENTSLEEP, ANIM_LAYING, ANIM_ATTACK,
+            ANIM_STRIKE, ANIM_SHOOT, ANIM_HOP, ANIM_CHARGE, ANIM_LEAPFORTH,
+            ANIM_TUMBLE, ANIM_HURT, ANIM_PAIN, ANIM_CRINGE, ANIM_FAINT
+        };
 
         private void UpdateAnimation(int actionToLoad)
         {
@@ -1406,29 +1371,7 @@ namespace TamaPoke.Models
 
                     if (!IsFreeRoaming)
                     {
-                        switch (actionToLoad)
-                        {
-                            case ANIM_WALK:
-                            case ANIM_SLEEP:
-                            case ANIM_EVENTSLEEP:
-                            case ANIM_LAYING:
-                            case ANIM_ATTACK:
-                            case ANIM_STRIKE:
-                            case ANIM_SHOOT:
-                            case ANIM_HOP:
-                            case ANIM_CHARGE:
-                            case ANIM_LEAPFORTH:
-                            case ANIM_TUMBLE:
-                            case ANIM_HURT:
-                            case ANIM_PAIN:
-                            case ANIM_CRINGE:
-                            case ANIM_FAINT:
-                                directionRow = 6;
-                                break;
-                            default:
-                                directionRow = 0;
-                                break;
-                        }
+                        directionRow = SideViewActions.Contains(actionToLoad) ? 6 : 0;
                     }
 
                     if (targetData.Image.PixelHeight / targetData.FrameHeight < 2)

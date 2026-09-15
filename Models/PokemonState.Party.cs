@@ -17,12 +17,13 @@ namespace TamaPoke.Models
             set => SetProperty(ref _isSwapMode, value);
         }
 
-        public void RetireToParty()
+        // 🌟 [리팩토링 핵심 1] 파티 멤버 데이터를 복사하는 공통 헬퍼 메서드입니다!
+        private PartyMember CreatePartyMemberSnapshot()
         {
-            var retiredPokemon = new PartyMember
+            return new PartyMember
             {
                 SpeciesId = this.SpeciesId,
-                Name = this.Name,
+                Name = this.Name.Replace(" ✨", ""), // 이름의 이로치 별표는 제거하고 순수 이름만 저장
                 SpriteFileName = this.SpriteFileName,
                 Level = this.Level,
                 AgeMinutes = this.AgeMinutes,
@@ -38,15 +39,21 @@ namespace TamaPoke.Models
                 Weight = this.Weight,
                 IsEvolutionPostponed = this.IsEvolutionPostponed,
                 Medals = this.Medals,
-                Skills = (int[])this.Skills.Clone(),
-                Genes = new PokemonGene
+                Skills = this.Skills != null ? (int[])this.Skills.Clone() : new int[4],
+                Genes = this.Genes != null ? new PokemonGene
                 {
                     HpGene = this.Genes.HpGene,
                     AtkGene = this.Genes.AtkGene,
                     DefGene = this.Genes.DefGene,
                     SpeGene = this.Genes.SpeGene
-                }
+                } : new PokemonGene()
             };
+        }
+
+        public void RetireToParty()
+        {
+            // 🌟 20줄이 1줄로 단축되었습니다!
+            var retiredPokemon = CreatePartyMemberSnapshot();
 
             if (Party.Count < 6)
                 Party.Add(retiredPokemon);
@@ -119,28 +126,8 @@ namespace TamaPoke.Models
                 Genes = targetMember.Genes != null ? new PokemonGene { HpGene = targetMember.Genes.HpGene, AtkGene = targetMember.Genes.AtkGene, DefGene = targetMember.Genes.DefGene, SpeGene = targetMember.Genes.SpeGene } : new PokemonGene()
             };
 
-            var oldLeader = new PartyMember
-            {
-                SpeciesId = this.SpeciesId,
-                Name = this.Name.Replace(" ✨", ""),
-                SpriteFileName = this.SpriteFileName,
-                Level = this.Level,
-                AgeMinutes = this.AgeMinutes,
-                IsShiny = this.IsShiny,
-                TrAtk = this.TrAtk,
-                TrDef = this.TrDef,
-                TrSpeed = this.TrSpeed,
-                Fullness = this.Fullness,
-                Joy = this.Joy,
-                Energy = this.Energy,
-                Hygiene = this.Hygiene,
-                Bond = this.Bond,
-                Weight = this.Weight,
-                IsEvolutionPostponed = this.IsEvolutionPostponed,
-                Medals = this.Medals,
-                Skills = this.Skills != null ? (int[])this.Skills.Clone() : new int[4],
-                Genes = this.Genes != null ? new PokemonGene { HpGene = this.Genes.HpGene, AtkGene = this.Genes.AtkGene, DefGene = this.Genes.DefGene, SpeGene = this.Genes.SpeGene } : new PokemonGene()
-            };
+            // 🌟 예전 리더 데이터를 파티로 넣을 때 헬퍼 메서드 사용!
+            var oldLeader = CreatePartyMemberSnapshot();
 
             Party.RemoveAt(targetIndex);
             Party.Insert(targetIndex, oldLeader);
@@ -191,28 +178,8 @@ namespace TamaPoke.Models
         {
             if (Party == null) return;
 
-            var currentMain = new PartyMember
-            {
-                SpeciesId = this.SpeciesId,
-                Name = this.Name.Replace(" ✨", ""),
-                SpriteFileName = this.SpriteFileName,
-                Level = this.Level,
-                AgeMinutes = this.AgeMinutes,
-                IsShiny = this.IsShiny,
-                TrAtk = this.TrAtk,
-                TrDef = this.TrDef,
-                TrSpeed = this.TrSpeed,
-                Fullness = this.Fullness,
-                Joy = this.Joy,
-                Energy = this.Energy,
-                Hygiene = this.Hygiene,
-                Bond = this.Bond,
-                Weight = this.Weight,
-                IsEvolutionPostponed = this.IsEvolutionPostponed,
-                Medals = this.Medals,
-                Skills = this.Skills != null ? (int[])this.Skills.Clone() : new int[4],
-                Genes = this.Genes != null ? new PokemonGene { HpGene = this.Genes.HpGene, AtkGene = this.Genes.AtkGene, DefGene = this.Genes.DefGene, SpeGene = this.Genes.SpeGene } : new PokemonGene()
-            };
+            // 🌟 여기서도 20줄이 1줄로 단축되었습니다!
+            var currentMain = CreatePartyMemberSnapshot();
 
             if (Party.Count == 0) Party.Add(currentMain);
             else { Party.RemoveAt(0); Party.Insert(0, currentMain); }
