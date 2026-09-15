@@ -1046,13 +1046,25 @@ namespace TamaPoke.Models
             CheckStateAndAnimate(); _mainLoopTimer.Start(); Save();
         }
 
+        public void StartSubPetAnimationOnly()
+        {
+            if (_mainLoopTimer == null)
+            {
+                _mainLoopTimer = new DispatcherTimer(DispatcherPriority.Render);
+                _mainLoopTimer.Interval = TimeSpan.FromMilliseconds(33);
+                _mainLoopTimer.Tick += MainLoopTimer_Tick;
+            }
+            CheckStateAndAnimate();
+            _mainLoopTimer.Start();
+        }
+
         private int _frameTickCounter = 0;
         private void MainLoopTimer_Tick(object? sender, EventArgs e)
         {
             _frameTickCounter++;
             if (_frameTickCounter >= 6) { _frameTickCounter = 0; if (_animationFrames != null && _animationFrames.Length > 0) { _currentFrameIndex = (_currentFrameIndex + 1) % _animationFrames.Length; CurrentFrame = _animationFrames[_currentFrameIndex]; } }
 
-            if (_tempActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
+            if (!IsFreeRoaming && _tempActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
             {
                 PosX += (-FlipX * 1.5);
                 if (PosX >= 80)
@@ -1090,9 +1102,10 @@ namespace TamaPoke.Models
 
         public void Tick()
         {
-            if (IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
+            if (IsFreeRoaming || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
             _ageSeconds++; UpdateDayNightCycle();
 
+            if (_ageSeconds % 60 == 0) { Save(); }
             if (DateTime.Now.Date > LastPlayedDate.Date) CheckDailyStreak();
             if (IsEgg) { if (_ageSeconds >= 180) Hatch(); return; }
 
@@ -1361,37 +1374,57 @@ namespace TamaPoke.Models
             if (rawStrips != null && rawStrips.Count > 0)
             {
                 int stripIndex = actionToLoad;
-                if (stripIndex >= rawStrips.Count) stripIndex = rawStrips.Count - 1;
-                if (stripIndex < 0) stripIndex = 0;
+
+                if (stripIndex >= rawStrips.Count)
+                {
+                    // 땅파기 등 없는 모션을 요청받으면 안전하게 '대기(ANIM_IDLE)' 모션으로 대체합니다.
+                    stripIndex = ANIM_IDLE;
+
+                    // 만약 몬스터가 너무 단순해서 대기 모션조차 없다면 최후의 보루인 0번(걷기)으로 대체합니다.
+                    if (stripIndex >= rawStrips.Count)
+                    {
+                        stripIndex = 0;
+                    }
+                }
 
                 var targetData = rawStrips[stripIndex];
                 if (targetData != null && targetData.Image != null)
                 {
-                    int directionRow = 0;
+                    // 🌟 기본 방향은 우리가 설정한 Direction을 따릅니다.
+                    int directionRow = Direction;
 
-                    switch (actionToLoad)
+                    // 🌟 [핵심] 놀아주기 모드가 아닐 때 (다마고치 화면 안일 때)는 좌우(옆모습)로만 걷도록 예전처럼 강제 고정합니다!
+                    if (!IsFreeRoaming)
                     {
-                        case ANIM_WALK:
-                        case ANIM_SLEEP:
-                        case ANIM_EVENTSLEEP:
-                        case ANIM_LAYING:
-                        case ANIM_ATTACK:
-                        case ANIM_STRIKE:
-                        case ANIM_SHOOT:
-                        case ANIM_HOP:
-                        case ANIM_CHARGE:
-                        case ANIM_LEAPFORTH:
-                        case ANIM_TUMBLE:
-                        case ANIM_HURT:
-                        case ANIM_PAIN:
-                        case ANIM_CRINGE:
-                        case ANIM_FAINT:
-                            directionRow = 6;
-                            break;
+                        switch (actionToLoad)
+                        {
+                            case ANIM_WALK:
+                            case ANIM_SLEEP:
+                            case ANIM_EVENTSLEEP:
+                            case ANIM_LAYING:
+                            case ANIM_ATTACK:
+                            case ANIM_STRIKE:
+                            case ANIM_SHOOT:
+                            case ANIM_HOP:
+                            case ANIM_CHARGE:
+                            case ANIM_LEAPFORTH:
+                            case ANIM_TUMBLE:
+                            case ANIM_HURT:
+                            case ANIM_PAIN:
+                            case ANIM_CRINGE:
+                            case ANIM_FAINT:
+                                directionRow = 6; // PMD 스프라이트 기준 6번(옆모습)
+                                break;
+                            default:
+                                directionRow = 0; // 정면
+                                break;
+                        }
+                    }
 
-                        default:
-                            directionRow = 0;
-                            break;
+                    // 1줄짜리 이펙트 애니메이션 등을 위한 예외 처리 (방어 코드)
+                    if (targetData.Image.PixelHeight / targetData.FrameHeight < 2)
+                    {
+                        directionRow = 0;
                     }
 
                     List<BitmapSource> slicedFrames = SliceStripIntoFrames(targetData.Image, targetData.FrameWidth, targetData.FrameHeight, directionRow);

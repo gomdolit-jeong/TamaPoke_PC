@@ -1,0 +1,31 @@
+﻿<UserControl x:Class="TamaPoke.Views.RoamingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             Background="Transparent">
+
+    <!-- 🌟 핵심: 몬스터볼 테두리나 UI 없이, 오직 투명한 바탕에 포켓몬 이미지만 띄웁니다. -->
+    <Grid Background="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center">
+
+        <!-- IdleView에서 포켓몬을 그리는 로직만 그대로 가져왔습니다! -->
+        <Image Source="{Binding CurrentFrame}" 
+               Width="80" Height="80" 
+               RenderOptions.BitmapScalingMode="NearestNeighbor" 
+               RenderTransformOrigin="0.5,0.5">
+            <Image.RenderTransform>
+                <TransformGroup>
+                    <!-- 이동 방향에 따라 좌우를 바라보게 해주는 바인딩 -->
+                    <ScaleTransform ScaleX="{Binding FlipX}"/>
+                    <!-- 걷거나 숨 쉴 때 미세하게 움직이는 바인딩 -->
+                    <TranslateTransform X="{Binding PosX}" Y="{Binding PosY}"/>
+                </TransformGroup>
+            </Image.RenderTransform>
+        </Image>
+
+        <!-- 원하신다면 여기에 땀방울(💧)이나 기분(❤️) 이모지를 띄우는 코드를 
+             IdleView에서 복사해 와서 살짝 얹어주셔도 아주 귀엽습니다! -->
+    </Grid>
+
+</UserControl>
