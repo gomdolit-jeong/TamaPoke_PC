@@ -192,8 +192,8 @@ namespace TamaPoke
             double currentScale = Math.Min(rawScale, 3.0);
 
             // 🌟 2. 원본 스프라이트 캔버스 크기(약 48px)를 기준으로 물리 창 크기를 계산합니다.
-            double baseWidth = 56.0;
-            double baseHeight = 56.0;
+            double baseWidth = 100.0;
+            double baseHeight = 100.0;
             double petWidth = baseWidth * currentScale;
             double petHeight = baseHeight * currentScale;
 
