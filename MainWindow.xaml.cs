@@ -9,6 +9,9 @@ namespace TamaPoke
 {
     public partial class MainWindow : Window
     {
+        // ==========================================
+        // 🌟 알트탭 및 작업표시줄 제어를 위한 Win32 API 선언
+        // ==========================================
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern int GetWindowLong(IntPtr hwnd, int index);
 
@@ -22,15 +25,14 @@ namespace TamaPoke
         // ==========================================
         // 🌟 포켓몬 공통 설정 변수
         // ==========================================
-        private readonly double PET_SIZE = 80.0;          // 포켓몬 창 크기
-        private readonly double BASE_ROAMING_SPEED = 3.0;   // 포켓몬 기본 이동 속도
+        private readonly double BASE_ROAMING_SPEED = 3.0;
 
         public PokemonState? MyPet { get; set; }
         private DispatcherTimer? _gameTimer;
         private System.Windows.Forms.NotifyIcon? _notifyIcon;
 
-        // 놀아주기 모드 상태 관리 변수
-        private bool _isPlayModeActive = false;
+        // 산책 모드 상태 관리 변수
+        private bool _isWalkModeActive = false;
 
         private static readonly System.Collections.Generic.List<PetWindowInfo> _activePets = new System.Collections.Generic.List<PetWindowInfo>();
 
@@ -71,25 +73,26 @@ namespace TamaPoke
             var openMenuItem = new System.Windows.Forms.ToolStripMenuItem("다마포케 화면에 띄우기");
             openMenuItem.Click += (s, e) => { this.Show(); this.WindowState = WindowState.Normal; this.Activate(); };
 
-            // 🌟 놀아주기 모드 메뉴 설정
-            var playModeMenuItem = new System.Windows.Forms.ToolStripMenuItem("놀아주기 모드");
-            playModeMenuItem.CheckOnClick = true;
-            playModeMenuItem.CheckedChanged += (s, e) =>
+            // 🌟 산책 모드 메뉴 설정
+            var walkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem("산책 모드");
+            walkModeMenuItem.CheckOnClick = true;
+            walkModeMenuItem.CheckedChanged += (s, e) =>
             {
-                _isPlayModeActive = playModeMenuItem.Checked;
+                _isWalkModeActive = walkModeMenuItem.Checked;
 
-                if (_isPlayModeActive)
+                if (_isWalkModeActive)
                 {
-                    // 놀아주기 모드 시작: 메인 창은 숨기고 트레이로 보냅니다.
                     this.Hide();
+
+                    // 최신 설정을 파일에서 직접 다시 읽어옵니다.
+                    var currentSettings = TamaPoke.Utils.SettingsManager.Load();
+                    int targetCount = currentSettings.RoamingPokemonCount;
 
                     if (MyPet != null && MyPet.Party != null && MyPet.Party.Count > 0)
                     {
-                        // 설정된 최대 표시 수와 실제 파티원 수 중 작은 값을 선택
-                        int targetCount = Math.Min(MyPet.Settings.RoamingPokemonCount, MyPet.Party.Count);
+                        int spawnCount = Math.Min(targetCount, MyPet.Party.Count);
 
-                        // 파티원 전체를 독립된 서브 창(드래그 및 작업표시줄 모드 지원)으로 소환합니다!
-                        for (int i = 0; i < targetCount; i++)
+                        for (int i = 0; i < spawnCount; i++)
                         {
                             SpawnPetWindow(MyPet.Party[i]);
                         }
@@ -97,7 +100,13 @@ namespace TamaPoke
                 }
                 else
                 {
-                    // 놀아주기 모드 종료 시 메인 창 복구 (서브 창들은 타이머 안에서 스스로 닫힙니다)
+                    // 산책 모드 종료 시 열려있던 모든 산책 창 닫기
+                    foreach (var pet in _activePets.ToArray())
+                    {
+                        pet.WindowInstance?.Close();
+                    }
+                    _activePets.Clear();
+
                     this.Show();
                     this.WindowState = WindowState.Normal;
                     this.Activate();
@@ -118,6 +127,7 @@ namespace TamaPoke
                 });
             };
 
+            // 🌟 완전 종료 로직 (모든 서브 창 정리 포함)
             var exitMenuItem = new System.Windows.Forms.ToolStripMenuItem("완전히 종료하기");
             exitMenuItem.Click += (s, e) =>
             {
@@ -125,12 +135,17 @@ namespace TamaPoke
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
                     _notifyIcon?.Dispose();
-                    this.Close();
+                    foreach (var pet in _activePets.ToArray())
+                    {
+                        pet.WindowInstance?.Close();
+                    }
+                    _activePets.Clear();
+                    System.Windows.Application.Current.Shutdown();
                 }
             };
 
             contextMenu.Items.Add(openMenuItem);
-            contextMenu.Items.Add(playModeMenuItem);
+            contextMenu.Items.Add(walkModeMenuItem);
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(settingsMenuItem);
             contextMenu.Items.Add(exitMenuItem);
@@ -154,7 +169,7 @@ namespace TamaPoke
         }
 
         // =========================================================================
-        // 🌟 [통합 핵심 메서드] 모든 포켓몬(리더 포함)을 독립 서브 창으로 생성하고 움직이는 로직
+        // 🌟 [통합 핵심 메서드] 산책 모드: 설정값 즉시 반영 및 발바닥 밀착 로직
         // =========================================================================
         private void SpawnPetWindow(PartyMember partyMember)
         {
@@ -167,38 +182,37 @@ namespace TamaPoke
             };
             petState.StartSubPetAnimationOnly();
 
+            // 🌟 1. [버그 수정] 불러온 gameSettings의 RoamingPetScale을 '직접' 읽습니다!
+            var gameSettings = TamaPoke.Utils.SettingsManager.Load();
+            double rawScale = (gameSettings != null && gameSettings.RoamingPetScale > 0)
+                ? gameSettings.RoamingPetScale
+                : 2.0;
+
+            // 3.0배를 초과하면 무조건 3.0으로 고정합니다.
+            double currentScale = Math.Min(rawScale, 3.0);
+
+            // 🌟 2. 원본 스프라이트 캔버스 크기(약 48px)를 기준으로 물리 창 크기를 계산합니다.
+            double baseWidth = 56.0;
+            double baseHeight = 56.0;
+            double petWidth = baseWidth * currentScale;
+            double petHeight = baseHeight * currentScale;
+
             Window petWindow = new Window
             {
-                Width = PET_SIZE,
-                Height = PET_SIZE,
+                Width = petWidth,
+                Height = petHeight,
                 WindowStyle = WindowStyle.None,
                 AllowsTransparency = true,
                 Background = System.Windows.Media.Brushes.Transparent,
                 Topmost = true,
                 ShowInTaskbar = false,
-                // 🌟 [핵심 추가] 알트탭 목록과 작업표시줄에 표시되지 않는 도구 창 스타일로 설정합니다.
                 WindowStartupLocation = WindowStartupLocation.Manual,
-                ShowActivated = false
+                ShowActivated = false,
+                UseLayoutRounding = true,
+                SnapsToDevicePixels = true
             };
 
-            System.Windows.Controls.Viewbox viewBox = new System.Windows.Controls.Viewbox
-            {
-                Stretch = System.Windows.Media.Stretch.Uniform,
-                Child = new RoamingView { DataContext = petState }
-            };
-            System.Windows.Media.RenderOptions.SetBitmapScalingMode(viewBox, System.Windows.Media.BitmapScalingMode.NearestNeighbor);
-            System.Windows.Media.RenderOptions.SetEdgeMode(viewBox, System.Windows.Media.EdgeMode.Aliased);
-            petWindow.Content = viewBox;
-
-            bool isTaskbarMode = TamaPoke.Utils.SettingsManager.Load().IsTaskbarMode;
-            double screenWidth = SystemParameters.WorkArea.Width;
-            double screenHeight = SystemParameters.WorkArea.Height;
-            double fixedY = screenHeight - PET_SIZE;
-
-            Random rnd = new Random(Guid.NewGuid().GetHashCode());
-            petWindow.Left = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
-            petWindow.Top = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
-
+            // 알트탭(Alt+Tab)에서 창 숨기기
             petWindow.SourceInitialized += (s, e) =>
             {
                 IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(petWindow).Handle;
@@ -206,49 +220,89 @@ namespace TamaPoke
                 SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TOOLWINDOW & ~WS_EX_APPWINDOW);
             };
 
+            // 🌟 3. 스프라이트 뷰 생성 및 '바닥(Bottom)' 밀착 정렬 적용
+            var roamingView = new RoamingView
+            {
+                DataContext = petState,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                VerticalAlignment = System.Windows.VerticalAlignment.Bottom // 발이 바닥에 딱 붙도록 정렬!
+            };
+            roamingView.LayoutTransform = new System.Windows.Media.ScaleTransform(currentScale, currentScale);
+
+            System.Windows.Controls.Grid containerGrid = new System.Windows.Controls.Grid
+            {
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
+                VerticalAlignment = System.Windows.VerticalAlignment.Stretch
+            };
+            System.Windows.Media.RenderOptions.SetBitmapScalingMode(containerGrid, System.Windows.Media.BitmapScalingMode.NearestNeighbor);
+            System.Windows.Media.RenderOptions.SetEdgeMode(containerGrid, System.Windows.Media.EdgeMode.Aliased);
+            containerGrid.Children.Add(roamingView);
+
+            petWindow.Content = containerGrid;
+
+            bool isTaskbarMode = (gameSettings != null) ? gameSettings.IsTaskbarMode : false;
+            Random rnd = new Random(Guid.NewGuid().GetHashCode());
+
+            // 🌟 4. [바닥 뚫림 방지] 정확한 작업표시줄 상단 기준선 산출
+            (double x, double y) GetTargetOnCurrentScreen(bool taskbarMode)
+            {
+                int centerX = (int)(petWindow.Left + (petWidth / 2));
+                int centerY = (int)(petWindow.Top + (petHeight / 2));
+                var currentScreen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point(centerX, centerY));
+
+                double sMinX = currentScreen.Bounds.Left;
+                double sMinY = currentScreen.Bounds.Top;
+                double sMaxX = currentScreen.Bounds.Right;
+                double sMaxY = currentScreen.Bounds.Bottom;
+
+                // WorkingArea.Bottom은 작업표시줄의 바로 윗단 경계선입니다.
+                double sFixedY = currentScreen.WorkingArea.Bottom - petHeight;
+
+                double tX = rnd.Next((int)sMinX, (int)Math.Max(sMinX + 10, sMaxX - petWidth));
+                double tY = taskbarMode ? sFixedY : rnd.Next((int)sMinY, (int)Math.Max(sMinY + 10, sMaxY - petHeight));
+                return (tX, tY);
+            }
+
+            var primaryScreen = System.Windows.Forms.Screen.PrimaryScreen;
+            if (primaryScreen != null)
+            {
+                petWindow.Left = rnd.Next(primaryScreen.Bounds.Left, primaryScreen.Bounds.Right - (int)petWidth);
+                petWindow.Top = isTaskbarMode ? primaryScreen.WorkingArea.Bottom - petHeight : rnd.Next(primaryScreen.Bounds.Top, primaryScreen.Bounds.Bottom - (int)petHeight);
+            }
             petWindow.Show();
 
-            // 🌟 생성된 창 정보를 공유 리스트에 등록
             var currentPetInfo = new PetWindowInfo { WindowInstance = petWindow, State = petState };
             _activePets.Add(currentPetInfo);
 
-            double targetX = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
-            double targetY = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
+            var targetPos = GetTargetOnCurrentScreen(isTaskbarMode);
+            double targetX = targetPos.x;
+            double targetY = targetPos.y;
 
             int restCounter = 0;
-            int behaviorStep = 0; // 0: 일반 이동, 1: 수면, 2: 땅파기, 3: 상호작용 중
-            int interactionCooldown = 0; // 연속 상호작용 방지 쿨타임
-            bool isDragging = false;
+            int behaviorStep = 0;
+            int interactionCooldown = 0;
 
-            DispatcherTimer moveTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(16)
-            };
+            double speedVariation = 0.8 + (rnd.NextDouble() * 0.4);
+            double currentPetSpeed = BASE_ROAMING_SPEED * speedVariation;
 
-            petWindow.Closed += (s, e) =>
-            {
-                _activePets.Remove(currentPetInfo);
-            };
+            DispatcherTimer moveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+
+            petWindow.Closed += (s, e) => { _activePets.Remove(currentPetInfo); };
 
             petWindow.MouseLeftButtonDown += (s, e) =>
             {
                 if (e.ChangedButton == MouseButton.Left)
                 {
-                    isDragging = true;
                     moveTimer.Stop();
                     behaviorStep = 0;
                     SafeSetAction(petState, PokemonState.ANIM_HURT, PokemonState.ANIM_IDLE, 9999);
-                    petWindow.DragMove();
-                }
-            };
 
-            petWindow.MouseLeftButtonUp += (s, e) =>
-            {
-                if (isDragging)
-                {
-                    isDragging = false;
-                    targetX = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
-                    targetY = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
+                    try { petWindow.DragMove(); } catch { }
+
+                    var newTarget = GetTargetOnCurrentScreen(isTaskbarMode);
+                    targetX = newTarget.x;
+                    targetY = newTarget.y;
+
                     SafeSetAction(petState, PokemonState.ANIM_WALK);
                     moveTimer.Start();
                 }
@@ -256,7 +310,7 @@ namespace TamaPoke
 
             moveTimer.Tick += (s, e) =>
             {
-                if (!_isPlayModeActive)
+                if (!_isWalkModeActive)
                 {
                     moveTimer.Stop();
                     petWindow.Close();
@@ -265,16 +319,12 @@ namespace TamaPoke
 
                 if (interactionCooldown > 0) interactionCooldown--;
 
-                // 🌟 특별 행동 또는 상호작용 진행 중 처리
                 if (restCounter > 0)
                 {
                     restCounter--;
 
-                    if (behaviorStep == 1) // 수면
-                    {
-                        if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_WAKE, PokemonState.ANIM_IDLE, 30);
-                    }
-                    else if (behaviorStep == 2) // 땅파기
+                    if (behaviorStep == 1) { if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_WAKE, PokemonState.ANIM_IDLE, 30); }
+                    else if (behaviorStep == 2)
                     {
                         if (restCounter == 60) SafeSetAction(petState, PokemonState.ANIM_LEAPFORTH, PokemonState.ANIM_IDLE, 60);
                         else if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_HITGROUND, PokemonState.ANIM_IDLE, 30);
@@ -282,20 +332,29 @@ namespace TamaPoke
 
                     if (restCounter <= 0)
                     {
-                        // 🌟 [핵심 개선] 상호작용(인사/티격태격) 직후였다면 서로 엉켜서 멈추지 않도록 각자 다른 방향으로 확실하게 멀어지게 만듭니다!
                         if (behaviorStep == 3)
                         {
                             double escapeAngle = rnd.NextDouble() * Math.PI * 2;
-                            double escapeDistance = 120.0; // 상호작용 후 최소 120픽셀 이상 떨어진 곳으로 이동
+                            double escapeDistance = 120.0;
 
-                            targetX = Math.Clamp(petWindow.Left + Math.Cos(escapeAngle) * escapeDistance, 0, screenWidth - PET_SIZE);
-                            targetY = isTaskbarMode ? fixedY : Math.Clamp(petWindow.Top + Math.Sin(escapeAngle) * escapeDistance, 0, screenHeight - PET_SIZE);
+                            int centerX = (int)(petWindow.Left + (petWidth / 2));
+                            int centerY = (int)(petWindow.Top + (petHeight / 2));
+                            var currentScreen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point(centerX, centerY));
+
+                            double cMinX = currentScreen.Bounds.Left;
+                            double cMinY = currentScreen.Bounds.Top;
+                            double cMaxX = currentScreen.Bounds.Right;
+                            double cMaxY = currentScreen.Bounds.Bottom;
+                            double cFixedY = currentScreen.WorkingArea.Bottom - petHeight;
+
+                            targetX = Math.Clamp(petWindow.Left + Math.Cos(escapeAngle) * escapeDistance, cMinX, cMaxX - petWidth);
+                            targetY = isTaskbarMode ? cFixedY : Math.Clamp(petWindow.Top + Math.Sin(escapeAngle) * escapeDistance, cMinY, cMaxY - petHeight);
                         }
                         else
                         {
-                            // 일반적인 목적지 도착 후 휴식 끝났을 때의 무작위 이동
-                            targetX = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
-                            targetY = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
+                            var nextTarget = GetTargetOnCurrentScreen(isTaskbarMode);
+                            targetX = nextTarget.x;
+                            targetY = nextTarget.y;
                         }
 
                         behaviorStep = 0;
@@ -304,7 +363,6 @@ namespace TamaPoke
                     return;
                 }
 
-                // 🌟 [핵심 추가] 다른 포켓몬과의 근접 충돌(마주침) 감지 로직
                 if (interactionCooldown <= 0 && behaviorStep == 0)
                 {
                     foreach (var other in _activePets)
@@ -315,26 +373,17 @@ namespace TamaPoke
                         double diffY = other.WindowInstance.Top - petWindow.Top;
                         double distBetweenPets = Math.Sqrt(diffX * diffX + diffY * diffY);
 
-                        // 두 포켓몬의 거리가 50픽셀 이내로 가까워졌을 때 마주침 발생!
-                        if (distBetweenPets < 50.0)
+                        if (distBetweenPets < (50.0 * currentScale))
                         {
-                            behaviorStep = 3; // 상호작용 상태 진입
-                            restCounter = 45; // 약 1.5초 동안 상호작용 모션 유지
-                            interactionCooldown = 150; // 재발동 쿨타임 설정
+                            behaviorStep = 3;
+                            restCounter = 45;
+                            interactionCooldown = 150;
 
-                            // 서로 마주 보도록 방향 설정
                             petState.Direction = (diffX > 0) ? 2 : 6;
 
-                            // 50% 확률로 '인사하기(ANIM_HOP)' 또는 '티격태격하기(ANIM_STRIKE)' 선택
                             int interactionType = rnd.Next(0, 2);
-                            if (interactionType == 0)
-                            {
-                                SafeSetAction(petState, PokemonState.ANIM_HOP, PokemonState.ANIM_IDLE, 45);
-                            }
-                            else
-                            {
-                                SafeSetAction(petState, PokemonState.ANIM_STRIKE, PokemonState.ANIM_IDLE, 45);
-                            }
+                            if (interactionType == 0) SafeSetAction(petState, PokemonState.ANIM_HOP, PokemonState.ANIM_IDLE, 45);
+                            else SafeSetAction(petState, PokemonState.ANIM_STRIKE, PokemonState.ANIM_IDLE, 45);
                             return;
                         }
                     }
@@ -344,7 +393,6 @@ namespace TamaPoke
                 double dy = targetY - petWindow.Top;
                 double distance = Math.Sqrt(dx * dx + dy * dy);
 
-                // 목적지 도착 시 행동 추첨
                 if (distance < 5.0)
                 {
                     petState.Direction = 0;
@@ -352,53 +400,25 @@ namespace TamaPoke
 
                     int actionRoll = rnd.Next(0, 100);
 
-                    if (actionRoll < 18)
-                    {
-                        SafeSetAction(petState, PokemonState.ANIM_IDLE, PokemonState.ANIM_IDLE, 60);
-                        restCounter = 60;
-                    }
-                    else if (actionRoll < 36)
-                    {
-                        SafeSetAction(petState, PokemonState.ANIM_POSE, PokemonState.ANIM_IDLE, 40);
-                        restCounter = 40;
-                    }
-                    else if (actionRoll < 52)
-                    {
-                        SafeSetAction(petState, PokemonState.ANIM_DEEPBREATH, PokemonState.ANIM_IDLE, 60);
-                        restCounter = 60;
-                    }
-                    else if (actionRoll < 68)
-                    {
-                        SafeSetAction(petState, PokemonState.ANIM_NOD, PokemonState.ANIM_IDLE, 60);
-                        restCounter = 60;
-                    }
-                    else if (actionRoll < 84)
-                    {
-                        behaviorStep = 1;
-                        SafeSetAction(petState, PokemonState.ANIM_SLEEP, PokemonState.ANIM_IDLE, 300);
-                        restCounter = 300;
-                    }
-                    else
-                    {
-                        behaviorStep = 2;
-                        SafeSetAction(petState, PokemonState.ANIM_SINK, PokemonState.ANIM_IDLE, 90);
-                        restCounter = 90;
-                    }
+                    if (actionRoll < 18) { SafeSetAction(petState, PokemonState.ANIM_IDLE, PokemonState.ANIM_IDLE, 60); restCounter = 60; }
+                    else if (actionRoll < 36) { SafeSetAction(petState, PokemonState.ANIM_POSE, PokemonState.ANIM_IDLE, 40); restCounter = 40; }
+                    else if (actionRoll < 52) { SafeSetAction(petState, PokemonState.ANIM_DEEPBREATH, PokemonState.ANIM_IDLE, 60); restCounter = 60; }
+                    else if (actionRoll < 68) { SafeSetAction(petState, PokemonState.ANIM_NOD, PokemonState.ANIM_IDLE, 60); restCounter = 60; }
+                    else if (actionRoll < 84) { behaviorStep = 1; SafeSetAction(petState, PokemonState.ANIM_SLEEP, PokemonState.ANIM_IDLE, 300); restCounter = 300; }
+                    else { behaviorStep = 2; SafeSetAction(petState, PokemonState.ANIM_SINK, PokemonState.ANIM_IDLE, 90); restCounter = 90; }
                 }
                 else
                 {
-                    double speed = BASE_ROAMING_SPEED;
+                    double speed = currentPetSpeed;
 
                     petWindow.Left += (dx / distance) * speed;
                     petWindow.Top += (dy / distance) * speed;
 
                     if (isTaskbarMode)
                     {
-                        petWindow.Top = fixedY;
-                    }
-
-                    if (isTaskbarMode)
-                    {
+                        var currentScreen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)petWindow.Left, (int)petWindow.Top));
+                        // 🌟 작업표시줄 상단에 발이 정확히 올라오도록 고정
+                        petWindow.Top = currentScreen.WorkingArea.Bottom - petHeight;
                         petState.Direction = (dx > 0) ? 2 : 6;
                     }
                     else
@@ -423,37 +443,32 @@ namespace TamaPoke
             moveTimer.Start();
         }
 
-        // 🌟 안전한 애니메이션 실행 헬퍼 메서드
-        private void SafeSetAction(PokemonState petState, int animId, int fallbackAnim = PokemonState.ANIM_IDLE)
+        // 🌟 일반 모드(IdleView 등)일 때 메인 창 전체를 드래그 이동
+        private void MainGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            try
+            if (e.ChangedButton == MouseButton.Left)
             {
-                petState.SetPlayModeAction(animId);
-            }
-            catch
-            {
-                petState.SetPlayModeAction(fallbackAnim);
+                if (!_isWalkModeActive)
+                {
+                    this.DragMove();
+                }
             }
         }
 
-        // 🌟 2. 지속 시간(Duration)까지 함께 지정할 때 호출되는 오버로딩 메서드
+        private void SafeSetAction(PokemonState petState, int animId, int fallbackAnim = PokemonState.ANIM_IDLE)
+        {
+            try { petState.SetPlayModeAction(animId); }
+            catch { petState.SetPlayModeAction(fallbackAnim); }
+        }
+
         private void SafeSetAction(PokemonState petState, int animId, int fallbackAnim, int duration)
         {
             try
             {
-                if (duration > 0)
-                {
-                    petState.SetPlayModeAction(animId, duration);
-                }
-                else
-                {
-                    petState.SetPlayModeAction(animId);
-                }
+                if (duration > 0) petState.SetPlayModeAction(animId, duration);
+                else petState.SetPlayModeAction(animId);
             }
-            catch
-            {
-                petState.SetPlayModeAction(fallbackAnim);
-            }
+            catch { petState.SetPlayModeAction(fallbackAnim); }
         }
 
         private void ShowTrayNotification(string title, string message)
@@ -493,7 +508,12 @@ namespace TamaPoke
             if (result == System.Windows.MessageBoxResult.Yes)
             {
                 _notifyIcon?.Dispose();
-                this.Close();
+                foreach (var pet in _activePets.ToArray())
+                {
+                    pet.WindowInstance?.Close();
+                }
+                _activePets.Clear();
+                System.Windows.Application.Current.Shutdown();
             }
         }
 
@@ -509,17 +529,6 @@ namespace TamaPoke
                     border.Background = Topmost
                         ? new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FF2196F3"))
                         : new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#80000000"));
-                }
-            }
-        }
-        private void MainGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                // 놀아주기 모드가 아닐 때만 메인 창 드래그 이동을 허용합니다.
-                if (!_isPlayModeActive)
-                {
-                    this.DragMove();
                 }
             }
         }

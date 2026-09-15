@@ -7,6 +7,8 @@
              xmlns:views="clr-namespace:TamaPoke.Views"
              xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              mc:Ignorable="d" 
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
              Height="320" Width="350">
 
     <UserControl.Resources>
@@ -219,26 +221,24 @@
 
                     <Grid Grid.RowSpan="3">
                         <Grid Visibility="{Binding IsEgg, Converter={StaticResource BoolToVis}}">
-                            <Image Source="{Binding CurrentFrame}" Width="90" Height="90" Cursor="Hand" MouseLeftButtonDown="PetImage_MouseLeftButtonDown" RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                            <!-- 🌟 [수정 완료] 알(Egg) 이미지: 흔들림 트리거 완전 삭제됨 -->
+                            <Image Source="{Binding CurrentFrame}" Stretch="None" Cursor="Hand" MouseLeftButtonDown="PetImage_MouseLeftButtonDown" RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <Image.LayoutTransform>
+                                    <ScaleTransform ScaleX="5.0" ScaleY="5.0"/>
+                                </Image.LayoutTransform>
                                 <Image.RenderTransform>
                                     <RotateTransform Angle="0"/>
                                 </Image.RenderTransform>
-                                <Image.Triggers>
-                                    <EventTrigger RoutedEvent="Loaded">
-                                        <BeginStoryboard>
-                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="-15" To="15" Duration="0:0:0.5" />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </EventTrigger>
-                                </Image.Triggers>
                             </Image>
                         </Grid>
 
                         <Grid Visibility="{Binding IsAliveAndNotEgg, Converter={StaticResource BoolToVis}}">
-                            <Image Source="{Binding CurrentFrame}" Width="90" Height="90" Margin="0,15,0,0" Cursor="Hand" 
+                            <Image Source="{Binding CurrentFrame}" Stretch="None" Margin="0,15,0,0" Cursor="Hand" 
                                    MouseLeftButtonDown="PetImage_MouseLeftButtonDown" 
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <Image.LayoutTransform>
+                                    <ScaleTransform ScaleX="2.0" ScaleY="2.0"/>
+                                </Image.LayoutTransform>
                                 <Image.RenderTransform>
                                     <TransformGroup>
                                         <ScaleTransform ScaleX="{Binding FlipX}"/>
@@ -280,6 +280,7 @@
                             </Grid>
                         </Grid>
 
+                        <!-- 이벤트 프롬프트 뷰 등 생략 없이 동일하게 유지 -->
                         <Grid Visibility="{Binding CanShowEvolvePrompt, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="✨ 진화하기 ✨" FontSize="14" FontWeight="Bold" Background="#E53935" Foreground="#FFFFFF" Padding="15,8" BorderThickness="0" Cursor="Hand" Click="Evolve_Click" Margin="0,0,5,0">
@@ -351,7 +352,7 @@
                         <ProgressBar Grid.Row="1" Grid.Column="3" Value="{Binding Hygiene}" Foreground="{Binding Hygiene, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Hygiene, StringFormat={}{0} / 100}"/>
                     </Grid>
 
-                    <!-- 밥 주기 메뉴 -->
+                    <!-- 각종 메뉴 및 오버레이 동일 유지 -->
                     <Border Grid.Row="2" Width="180" Height="48" CornerRadius="24" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Button Style="{StaticResource PhysicalButton}" ToolTip="빨간 열매" Click="FeedItem_Click" Tag="0">
@@ -369,7 +370,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- 미니게임 메뉴 -->
                     <Border Grid.Row="2" Width="220" Height="55" CornerRadius="28" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Button Style="{StaticResource PhysicalButton}" ToolTip="BALL: 공 튕기기" Click="PlayBall_Click">
@@ -387,7 +387,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- 하단 메인 메뉴 버튼 -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18">
                         <StackPanel.Style>
                             <Style TargetType="StackPanel">
@@ -411,25 +410,21 @@
                         <Button Style="{StaticResource PhysicalButton}" ToolTip="목욕" Click="CleanButton_Click" IsEnabled="{Binding IsAlive}">
                             <emoji:TextBlock Text="🫧" FontSize="13" Foreground="#4DD0E1"/>
                         </Button>
-                        <!-- 🌟 디버그 모드에서만 나타나는 시간 가속 버튼 (릴리즈 모드에서는 완전히 사라짐) -->
                         <Button Style="{StaticResource PhysicalButton}" ToolTip="시간 가속" Click="SkipTimeButton_Click" IsEnabled="{Binding IsAlive}"
                             Visibility="{Binding IsDebugMode, Converter={StaticResource BoolToVis}}">
                             <emoji:TextBlock Text="⏩" FontSize="13" Foreground="#8E24AA"/>
                         </Button>
                     </StackPanel>
 
-                    <!-- 🌟 뷰 컨트롤 (화면 오버레이 관리 영역) 🌟 -->
+                    <!-- 뷰 컨트롤 영역 -->
                     <views:ProfileCardView Grid.RowSpan="3" Visibility="{Binding IsProfileOpen, Converter={StaticResource BoolToVis}}"/>
                     <views:BattleView Grid.RowSpan="3" Visibility="{Binding IsBattleOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1500"/>
                     <views:PokemonDexView Grid.RowSpan="3" Visibility="{Binding IsDexOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1400"/>
-                    <!-- 🌟 새로 추가된 파티 뷰 -->
                     <views:PartyView Grid.RowSpan="3" Visibility="{Binding IsPartyOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="1450"/>
-                    <!-- 🌟 가방(인벤토리) 팝업 창 -->
                     <views:InventoryView Grid.RowSpan="3" Visibility="{Binding IsInventoryOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="10"/>
-                    <!-- 🌟 진화 연출 전용 뷰 (빛나는 하얀색 실루엣 이펙트 포함) -->
+
                     <Grid Visibility="{Binding IsCeremony, Converter={StaticResource BoolToVis}}" Background="#EE1A1A1A" Grid.RowSpan="3" Panel.ZIndex="99999" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="-15">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,-30,0,0">
-                            <!-- 🌟 포켓몬 이미지와 빛 마스크 겹치기 -->
                             <Grid Width="100" Height="100">
                                 <Image Source="{Binding CurrentFrame}" Width="100" Height="100" RenderOptions.BitmapScalingMode="NearestNeighbor" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                                     <Image.RenderTransform>
@@ -438,20 +433,8 @@
                                             <TranslateTransform X="{Binding PosX}" Y="{Binding PosY}"/>
                                         </TransformGroup>
                                     </Image.RenderTransform>
-                                    <Image.Triggers>
-                                        <EventTrigger RoutedEvent="Loaded">
-                                            <BeginStoryboard>
-                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.3" To="1.0" Duration="0:0:0.3"/>
-                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" From="0.9" To="1.15" Duration="0:0:0.3"/>
-                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" From="0.9" To="1.15" Duration="0:0:0.3"/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </Image.Triggers>
                                 </Image>
 
-                                <!-- 🌟 하얀색 빛 이펙트 -->
                                 <Rectangle Fill="White" Width="100" Height="100" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding IsEvolvingFlash, Converter={StaticResource BoolToVis}}">
                                     <Rectangle.RenderTransform>
                                         <TransformGroup>
@@ -482,8 +465,6 @@
                                     </Rectangle.Style>
                                 </Rectangle>
                             </Grid>
-
-                            <!-- 🌟 대사 텍스트 추가 -->
                             <TextBlock Text="{Binding MoodText}" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,20,0,0" FontFamily="Consolas"/>
                         </StackPanel>
                     </Grid>
@@ -491,7 +472,7 @@
             </Grid>
         </Border>
 
-        <!-- 소리 설정 버튼 -->
+        <!-- 소리 설정 및 투명도 슬라이더 -->
         <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,-15,0" Width="40" Height="40" Click="MuteButton_Click" ToolTip="소리 설정" Cursor="Hand">
             <Button.Style>
                 <Style TargetType="Button">
@@ -517,7 +498,6 @@
                 </Style>
             </Button.Style>
         </Button>
-        <!-- 🌟 위치가 완벽하게 교정된 투명도 조절 슬라이더 -->
         <Slider Minimum="0.15" Maximum="1.0" 
         Value="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=Opacity}" 
         Orientation="Vertical" 
@@ -526,29 +506,19 @@
         Height="100" Width="22" 
         IsMoveToPointEnabled="True"
         ToolTip="몰래 하기 (투명도 조절)">
-
-            <!-- 🌟 수정 포인트 1: 전체 슬라이더의 회전 각도를 조절합니다. -->
             <Slider.RenderTransform>
                 <RotateTransform Angle="-24.5" CenterX="11" CenterY="50"/>
             </Slider.RenderTransform>
-
             <Slider.Template>
                 <ControlTemplate TargetType="Slider">
                     <Grid>
-                        <!-- 🌟 수정 포인트 2: 선을 구부리지 않고 '완벽한 직선(L)'으로 그립니다. -->
-                        <!-- 시작점(11,7)과 끝점(11,93)의 X좌표를 11로 동일하게 맞춥니다. -->
-                        <Path Stroke="#88FFFFFF" StrokeThickness="2" 
-                      Data="M 11,7 Q 20,50 11,93" 
-                      HorizontalAlignment="Left" VerticalAlignment="Top"/>
-
-                        <!-- 물리적 트랙 (이 트랙은 완벽한 수직 일직선으로 작동합니다) -->
+                        <Path Stroke="#88FFFFFF" StrokeThickness="2" Data="M 11,7 Q 20,50 11,93" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                         <Track x:Name="PART_Track">
                             <Track.Thumb>
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Ellipse Width="14" Height="14" Fill="Blue" Stroke="White" StrokeThickness="2" Cursor="Hand"
-                                             HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Ellipse Width="14" Height="14" Fill="Blue" Stroke="White" StrokeThickness="2" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Ellipse.Effect>
                                                     <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.4"/>
                                                 </Ellipse.Effect>

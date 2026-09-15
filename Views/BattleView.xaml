@@ -82,7 +82,7 @@
                 </StackPanel>
             </Border>
 
-            <Image Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,30,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+            <Image Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,40,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
             <Image Source="{Binding CurrentFrame}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="40,0,0,10" RenderOptions.BitmapScalingMode="NearestNeighbor">
                 <Image.RenderTransform>

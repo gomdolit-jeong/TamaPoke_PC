@@ -18,7 +18,7 @@
         <!-- 1. 화면이 교체될 빈 공간 (다마포케 320x320 영역) -->
         <ContentControl x:Name="MainContentFrame" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
-        <!-- 2. 컨트롤 패널 (놀아주기 모드일 때 숨겨집니다) -->
+        <!-- 2. 컨트롤 패널 (산책 모드일 때 숨겨집니다) -->
         <StackPanel x:Name="ControlPanel" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,10,0" Panel.ZIndex="1">
 
             <Button x:Name="PinButton" Width="24" Height="24" Margin="0,0,8,0" Foreground="White" FontWeight="Bold" Click="PinButton_Click" ToolTip="항상 위 고정 토글">

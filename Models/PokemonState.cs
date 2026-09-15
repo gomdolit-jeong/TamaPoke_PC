@@ -346,8 +346,7 @@ namespace TamaPoke.Models
         }
 
         // ==========================================
-        // 🌟 [최적화됨] 강력한 리전 폼 타입 오버라이드 리스트
-        // 특정 폼(블레이즈, 워터)을 최상단에 배치하여 우선적으로 검사하도록 순서를 바꿨습니다!
+        // 🌟 강력한 리전 폼 타입 오버라이드 리스트
         // ==========================================
         private static readonly List<(int Id, string Keyword, PokemonType Type1, PokemonType Type2)> FormTypeOverrides = new()
         {
@@ -413,16 +412,15 @@ namespace TamaPoke.Models
             (724, "hisui", PokemonType.Grass, PokemonType.Fighting),
 
             // 🇪🇸 팔데아의 모습 (9세대)
-            (194, "paldea", PokemonType.Poison, PokemonType.Ground), // 우파
+            (194, "paldea", PokemonType.Poison, PokemonType.Ground),
             
-            // 🌟 [핵심] 켄타로스: 특수 폼(블레이즈, 워터)을 먼저 검사하도록 순서 배치
+            // 켄타로스 특수 폼 우선 검사
             (128, "blaze", PokemonType.Fighting, PokemonType.Fire),
             (128, "_0002", PokemonType.Fighting, PokemonType.Fire),
             (128, "aqua", PokemonType.Fighting, PokemonType.Water),
             (128, "_0003", PokemonType.Fighting, PokemonType.Water),
             (128, "combat", PokemonType.Fighting, PokemonType.None),
             (128, "_0001", PokemonType.Fighting, PokemonType.None),
-            // 위의 디테일한 키워드가 없을 때, 단순 'paldea'만 있어도 무조건 격투로 빠지게 방어!
             (128, "paldea", PokemonType.Fighting, PokemonType.None)
         };
 
@@ -496,7 +494,6 @@ namespace TamaPoke.Models
                 if (_overrideName != null) return _overrideName;
                 if (IsEgg) return "알";
 
-                // 🌟 도감 원본 이름에서 암수 기호를 깔끔하게 지웁니다.
                 string baseName = PokemonDex.GetName(SpeciesId).Replace("♀", "").Replace("♂", "");
 
                 return baseName + (IsShiny ? " ✨" : "");
@@ -523,7 +520,6 @@ namespace TamaPoke.Models
                         shinyText = "✨ 색이 다른 포켓몬";
                     }
 
-                    // 🌟 리전 폼 및 특수 폼 키워드 매핑 사전
                     var formKeywords = new Dictionary<string, string>
             {
                 { "combat", "팔데아의 모습 (투쟁종)" },
@@ -539,12 +535,10 @@ namespace TamaPoke.Models
                 { "mega", "메가진화" }
             };
 
-                    // 파일명에 등록된 키워드가 포함되어 있는지 확인합니다.
                     foreach (var pair in formKeywords)
                     {
                         if (lowerFile.Contains(pair.Key))
                         {
-                            // 켄타로스(128번)가 아닌데 _0001 등이 걸리는 것을 방지하기 위한 안전장치
                             if ((pair.Key == "_0001" || pair.Key == "_0002" || pair.Key == "_0003") && SpeciesId != 128)
                                 continue;
 
@@ -553,7 +547,6 @@ namespace TamaPoke.Models
                         }
                     }
 
-                    // 사전에 등록되지 않은 기타 특수 형태 처리
                     if (string.IsNullOrEmpty(formText) &&
                         !lowerFile.Contains("_0000") &&
                         !lowerFile.Contains("egg") &&
@@ -888,12 +881,8 @@ namespace TamaPoke.Models
 
         public void ReloadSprite()
         {
-            // 🌟 유저님이 이미 만들어두신 훌륭한 렌더링 시스템을 100% 활용합니다!
-            // 프레임 캐시를 초기화하여, 다음 CheckStateAndAnimate() 호출 시 
-            // 새로운 .bin 파일을 하드디스크에서 읽고 자르도록 유도합니다.
             _animationFrames = null;
             _currentActionId = -1;
-
             CheckStateAndAnimate();
         }
 
@@ -957,14 +946,12 @@ namespace TamaPoke.Models
                 if (IsEgg || IsSleeping || Ceremony != 0 || IsFinalEvolution || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return false;
                 if (!DexTable.ContainsKey(SpeciesId)) return false;
 
-                // 🌟 [추가] 수컷 세꿀버리(415)는 비퀸(416)으로 진화 불가!
                 if (SpeciesId == 415 && !IsFemale) return false;
 
                 return Level >= (DexTable[SpeciesId].EvolveLevel + CareMistakes) && LowestStat >= 40;
             }
         }
 
-        // 🌟 날짜(일) * 24시간 * 60분으로 계산하여 AgeMinutes와 비교합니다.
         [JsonIgnore] public bool CanFarewellNow => !IsEgg && !IsSleeping && Ceremony == 0 && AgeMinutes >= (Settings.FarewellAgeDays * 24 * 60) && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
         [JsonIgnore] public bool CanRunawayNow => !IsEgg && !IsSleeping && Ceremony == 0 && NeglectTicks >= RUNAWAY_TICKS && !IsAnyMiniGameOpen && !IsProfileOpen && !IsBattleOpen;
 
@@ -1064,7 +1051,9 @@ namespace TamaPoke.Models
             _frameTickCounter++;
             if (_frameTickCounter >= 6) { _frameTickCounter = 0; if (_animationFrames != null && _animationFrames.Length > 0) { _currentFrameIndex = (_currentFrameIndex + 1) % _animationFrames.Length; CurrentFrame = _animationFrames[_currentFrameIndex]; } }
 
-            if (!IsFreeRoaming && _tempActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
+            // 🌟 [안전장치 강화] _currentActionId가 ANIM_WALK일 때만 실제로 위치를 이동하게 합니다.
+            // 걷기 타이머가 남아있더라도, 응가 때문에 상태가 아픔(ANIM_PAIN)으로 바뀌었다면 밀려나지 않습니다!
+            if (!IsFreeRoaming && _currentActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
             {
                 PosX += (-FlipX * 1.5);
                 if (PosX >= 80)
@@ -1109,30 +1098,9 @@ namespace TamaPoke.Models
             if (DateTime.Now.Date > LastPlayedDate.Date) CheckDailyStreak();
             if (IsEgg) { if (_ageSeconds >= 180) Hatch(); return; }
 
-            if (!IsSleeping && !IsCeremony && !IsBattleOpen && _tempActionTimer <= 0)
-            {
-                if (_currentActionId == ANIM_IDLE)
-                {
-                    Random moveRand = new Random(); int r = moveRand.Next(100);
-                    if (r < 35)
-                    {
-                        if (moveRand.Next(10000) < 3)
-                        {
-                            StartWildBattle();
-                        }
-                        else
-                        {
-                            FlipX = moveRand.Next(0, 2) == 0 ? -1 : 1;
-                            _tempActionId = ANIM_WALK;
-                            _tempActionTimer = moveRand.Next(120, 240);
-                        }
-                    }
-                    else if (r < 60) { int[] flair = { ANIM_POSE, ANIM_NOD, ANIM_DEEPBREATH }; _tempActionId = flair[moveRand.Next(flair.Length)]; _tempActionTimer = 90; }
-                    else { _tempActionId = ANIM_IDLE; _tempActionTimer = moveRand.Next(60, 150); }
-                    CheckStateAndAnimate();
-                }
-            }
-
+            // =========================================================================
+            // 🌟 [순서 변경 1] 60초마다 일어나는 상태 증감(포만감, 응가 등)을 먼저 계산합니다.
+            // =========================================================================
             if (_ageSeconds % 60 == 0)
             {
                 if (AgeMinutes % MINUTES_PER_LEVEL == 0)
@@ -1208,8 +1176,49 @@ namespace TamaPoke.Models
                     _notifiedSadness = false;
                 }
 
-                CheckMedals(); CheckStateAndAnimate();
+                CheckMedals();
             }
+
+            // =========================================================================
+            // 🌟 [새로운 로직 2] 응가를 했거나 청결도가 낮아졌을 때, 걷기 등의 임시 동작을 "강제 취소" 합니다.
+            // =========================================================================
+            if (Poops > 0 || Hygiene < 30)
+            {
+                if (_tempActionTimer > 0)
+                {
+                    _tempActionTimer = 0; // 진행 중이던 무작위 걷기나 포즈를 즉시 중단합니다.
+                    _tempActionId = ANIM_IDLE;
+                }
+            }
+
+            // =========================================================================
+            // 🌟 [순서 변경 3] 무작위 행동(걷기 등)은 포켓몬이 건강할 때만 발생하도록 조건을 추가했습니다.
+            // =========================================================================
+            if (!IsSleeping && !IsCeremony && !IsBattleOpen && _tempActionTimer <= 0)
+            {
+                // 응가가 없고 청결도가 30 이상일 때만 랜덤 걷기를 실행합니다!
+                if (_currentActionId == ANIM_IDLE && Poops == 0 && Hygiene >= 30)
+                {
+                    Random moveRand = new Random(); int r = moveRand.Next(100);
+                    if (r < 35)
+                    {
+                        if (moveRand.Next(10000) < 3)
+                        {
+                            StartWildBattle();
+                        }
+                        else
+                        {
+                            FlipX = moveRand.Next(0, 2) == 0 ? -1 : 1;
+                            _tempActionId = ANIM_WALK;
+                            _tempActionTimer = moveRand.Next(120, 240);
+                        }
+                    }
+                    else if (r < 60) { int[] flair = { ANIM_POSE, ANIM_NOD, ANIM_DEEPBREATH }; _tempActionId = flair[moveRand.Next(flair.Length)]; _tempActionTimer = 90; }
+                    else { _tempActionId = ANIM_IDLE; _tempActionTimer = moveRand.Next(60, 150); }
+                }
+            }
+
+            CheckStateAndAnimate();
         }
         #endregion
 
@@ -1323,13 +1332,18 @@ namespace TamaPoke.Models
             if (Ceremony == 4) return ANIM_FLOAT;
 
             if (IsAnyMiniGameOpen) return ANIM_IDLE;
-            if (_tempActionTimer > 0) return _tempActionId;
 
             if (IsSleeping) return ANIM_SLEEP;
             if (IsBathing) return ANIM_SHAKE;
 
+            // =========================================================================
+            // 🌟 [우선순위 변경] 아픈 상태(응가, 청결도 부족)를 일반 이동(tempActionTimer)보다 위로 올립니다!
+            // =========================================================================
             if (Poops > 0) return ANIM_PAIN;
             if (Hygiene < 30) return ANIM_HURT;
+
+            if (_tempActionTimer > 0) return _tempActionId;
+
             if (Fullness < 30) return ANIM_CRINGE;
             if (Joy < 30) return ANIM_SINK;
 
@@ -1377,10 +1391,8 @@ namespace TamaPoke.Models
 
                 if (stripIndex >= rawStrips.Count)
                 {
-                    // 땅파기 등 없는 모션을 요청받으면 안전하게 '대기(ANIM_IDLE)' 모션으로 대체합니다.
                     stripIndex = ANIM_IDLE;
 
-                    // 만약 몬스터가 너무 단순해서 대기 모션조차 없다면 최후의 보루인 0번(걷기)으로 대체합니다.
                     if (stripIndex >= rawStrips.Count)
                     {
                         stripIndex = 0;
@@ -1390,10 +1402,8 @@ namespace TamaPoke.Models
                 var targetData = rawStrips[stripIndex];
                 if (targetData != null && targetData.Image != null)
                 {
-                    // 🌟 기본 방향은 우리가 설정한 Direction을 따릅니다.
                     int directionRow = Direction;
 
-                    // 🌟 [핵심] 놀아주기 모드가 아닐 때 (다마고치 화면 안일 때)는 좌우(옆모습)로만 걷도록 예전처럼 강제 고정합니다!
                     if (!IsFreeRoaming)
                     {
                         switch (actionToLoad)
@@ -1413,15 +1423,14 @@ namespace TamaPoke.Models
                             case ANIM_PAIN:
                             case ANIM_CRINGE:
                             case ANIM_FAINT:
-                                directionRow = 6; // PMD 스프라이트 기준 6번(옆모습)
+                                directionRow = 6;
                                 break;
                             default:
-                                directionRow = 0; // 정면
+                                directionRow = 0;
                                 break;
                         }
                     }
 
-                    // 1줄짜리 이펙트 애니메이션 등을 위한 예외 처리 (방어 코드)
                     if (targetData.Image.PixelHeight / targetData.FrameHeight < 2)
                     {
                         directionRow = 0;
@@ -1571,6 +1580,7 @@ namespace TamaPoke.Models
             IsFarewellPostponed = false;
 
             TrAtk = Math.Min(100, TrAtk + 10);
+            TrDef = Math.Min(100, TrDef + 10);
 
             OnPropertyChanged(nameof(Level));
             OnPropertyChanged(nameof(LevelDisplay));
