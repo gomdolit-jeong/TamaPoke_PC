@@ -9,6 +9,16 @@ namespace TamaPoke
 {
     public partial class MainWindow : Window
     {
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hwnd, int index);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
+
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int WS_EX_APPWINDOW = 0x00040000;
+
         // ==========================================
         // 🌟 포켓몬 공통 설정 변수
         // ==========================================
@@ -166,8 +176,9 @@ namespace TamaPoke
                 Background = System.Windows.Media.Brushes.Transparent,
                 Topmost = true,
                 ShowInTaskbar = false,
-                UseLayoutRounding = true,
-                SnapsToDevicePixels = true
+                // 🌟 [핵심 추가] 알트탭 목록과 작업표시줄에 표시되지 않는 도구 창 스타일로 설정합니다.
+                WindowStartupLocation = WindowStartupLocation.Manual,
+                ShowActivated = false
             };
 
             System.Windows.Controls.Viewbox viewBox = new System.Windows.Controls.Viewbox
@@ -187,6 +198,14 @@ namespace TamaPoke
             Random rnd = new Random(Guid.NewGuid().GetHashCode());
             petWindow.Left = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
             petWindow.Top = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
+
+            petWindow.SourceInitialized += (s, e) =>
+            {
+                IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(petWindow).Handle;
+                int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TOOLWINDOW & ~WS_EX_APPWINDOW);
+            };
+
             petWindow.Show();
 
             // 🌟 생성된 창 정보를 공유 리스트에 등록
@@ -203,7 +222,7 @@ namespace TamaPoke
 
             DispatcherTimer moveTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(33)
+                Interval = TimeSpan.FromMilliseconds(16)
             };
 
             petWindow.Closed += (s, e) =>
