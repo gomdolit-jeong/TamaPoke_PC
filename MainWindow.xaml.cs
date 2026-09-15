@@ -22,6 +22,14 @@ namespace TamaPoke
         // 놀아주기 모드 상태 관리 변수
         private bool _isPlayModeActive = false;
 
+        private static readonly System.Collections.Generic.List<PetWindowInfo> _activePets = new System.Collections.Generic.List<PetWindowInfo>();
+
+        public class PetWindowInfo
+        {
+            public Window WindowInstance { get; set; }
+            public PokemonState State { get; set; }
+        }
+
         public MainWindow()
         {
             try { InitializeComponent(); } catch (Exception ex) { System.Windows.MessageBox.Show($"XAML 로드 에러: {ex.InnerException?.Message ?? ex.Message}", "에러 추적기"); }
@@ -181,14 +189,26 @@ namespace TamaPoke
             petWindow.Top = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
             petWindow.Show();
 
+            // 🌟 생성된 창 정보를 공유 리스트에 등록
+            var currentPetInfo = new PetWindowInfo { WindowInstance = petWindow, State = petState };
+            _activePets.Add(currentPetInfo);
+
             double targetX = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
             double targetY = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
+
             int restCounter = 0;
+            int behaviorStep = 0; // 0: 일반 이동, 1: 수면, 2: 땅파기, 3: 상호작용 중
+            int interactionCooldown = 0; // 연속 상호작용 방지 쿨타임
             bool isDragging = false;
 
             DispatcherTimer moveTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(33)
+            };
+
+            petWindow.Closed += (s, e) =>
+            {
+                _activePets.Remove(currentPetInfo);
             };
 
             petWindow.MouseLeftButtonDown += (s, e) =>
@@ -197,7 +217,8 @@ namespace TamaPoke
                 {
                     isDragging = true;
                     moveTimer.Stop();
-                    petState.SetPlayModeAction(PokemonState.ANIM_HURT, 9999);
+                    behaviorStep = 0;
+                    SafeSetAction(petState, PokemonState.ANIM_HURT, PokemonState.ANIM_IDLE, 9999);
                     petWindow.DragMove();
                 }
             };
@@ -209,7 +230,7 @@ namespace TamaPoke
                     isDragging = false;
                     targetX = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
                     targetY = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
-                    petState.SetPlayModeAction(PokemonState.ANIM_WALK);
+                    SafeSetAction(petState, PokemonState.ANIM_WALK);
                     moveTimer.Start();
                 }
             };
@@ -223,30 +244,127 @@ namespace TamaPoke
                     return;
                 }
 
+                if (interactionCooldown > 0) interactionCooldown--;
+
+                // 🌟 특별 행동 또는 상호작용 진행 중 처리
                 if (restCounter > 0)
                 {
                     restCounter--;
+
+                    if (behaviorStep == 1) // 수면
+                    {
+                        if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_WAKE, PokemonState.ANIM_IDLE, 30);
+                    }
+                    else if (behaviorStep == 2) // 땅파기
+                    {
+                        if (restCounter == 60) SafeSetAction(petState, PokemonState.ANIM_LEAPFORTH, PokemonState.ANIM_IDLE, 60);
+                        else if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_HITGROUND, PokemonState.ANIM_IDLE, 30);
+                    }
+
                     if (restCounter <= 0)
                     {
-                        targetX = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
-                        targetY = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
-                        petState.SetPlayModeAction(PokemonState.ANIM_WALK);
+                        // 🌟 [핵심 개선] 상호작용(인사/티격태격) 직후였다면 서로 엉켜서 멈추지 않도록 각자 다른 방향으로 확실하게 멀어지게 만듭니다!
+                        if (behaviorStep == 3)
+                        {
+                            double escapeAngle = rnd.NextDouble() * Math.PI * 2;
+                            double escapeDistance = 120.0; // 상호작용 후 최소 120픽셀 이상 떨어진 곳으로 이동
+
+                            targetX = Math.Clamp(petWindow.Left + Math.Cos(escapeAngle) * escapeDistance, 0, screenWidth - PET_SIZE);
+                            targetY = isTaskbarMode ? fixedY : Math.Clamp(petWindow.Top + Math.Sin(escapeAngle) * escapeDistance, 0, screenHeight - PET_SIZE);
+                        }
+                        else
+                        {
+                            // 일반적인 목적지 도착 후 휴식 끝났을 때의 무작위 이동
+                            targetX = rnd.Next(0, (int)Math.Max(10, screenWidth - PET_SIZE));
+                            targetY = isTaskbarMode ? fixedY : rnd.Next(0, (int)Math.Max(10, screenHeight - PET_SIZE));
+                        }
+
+                        behaviorStep = 0;
+                        SafeSetAction(petState, PokemonState.ANIM_WALK);
                     }
                     return;
+                }
+
+                // 🌟 [핵심 추가] 다른 포켓몬과의 근접 충돌(마주침) 감지 로직
+                if (interactionCooldown <= 0 && behaviorStep == 0)
+                {
+                    foreach (var other in _activePets)
+                    {
+                        if (other == currentPetInfo) continue;
+
+                        double diffX = other.WindowInstance.Left - petWindow.Left;
+                        double diffY = other.WindowInstance.Top - petWindow.Top;
+                        double distBetweenPets = Math.Sqrt(diffX * diffX + diffY * diffY);
+
+                        // 두 포켓몬의 거리가 50픽셀 이내로 가까워졌을 때 마주침 발생!
+                        if (distBetweenPets < 50.0)
+                        {
+                            behaviorStep = 3; // 상호작용 상태 진입
+                            restCounter = 45; // 약 1.5초 동안 상호작용 모션 유지
+                            interactionCooldown = 150; // 재발동 쿨타임 설정
+
+                            // 서로 마주 보도록 방향 설정
+                            petState.Direction = (diffX > 0) ? 2 : 6;
+
+                            // 50% 확률로 '인사하기(ANIM_HOP)' 또는 '티격태격하기(ANIM_STRIKE)' 선택
+                            int interactionType = rnd.Next(0, 2);
+                            if (interactionType == 0)
+                            {
+                                SafeSetAction(petState, PokemonState.ANIM_HOP, PokemonState.ANIM_IDLE, 45);
+                            }
+                            else
+                            {
+                                SafeSetAction(petState, PokemonState.ANIM_STRIKE, PokemonState.ANIM_IDLE, 45);
+                            }
+                            return;
+                        }
+                    }
                 }
 
                 double dx = targetX - petWindow.Left;
                 double dy = targetY - petWindow.Top;
                 double distance = Math.Sqrt(dx * dx + dy * dy);
 
+                // 목적지 도착 시 행동 추첨
                 if (distance < 5.0)
                 {
                     petState.Direction = 0;
                     petState.FlipX = 1;
 
-                    int rndAction = rnd.Next(0, 100);
-                    if (rndAction < 50) { petState.SetPlayModeAction(PokemonState.ANIM_IDLE, 60); restCounter = 60; }
-                    else { petState.SetPlayModeAction(PokemonState.ANIM_POSE, 40); restCounter = 40; }
+                    int actionRoll = rnd.Next(0, 100);
+
+                    if (actionRoll < 18)
+                    {
+                        SafeSetAction(petState, PokemonState.ANIM_IDLE, PokemonState.ANIM_IDLE, 60);
+                        restCounter = 60;
+                    }
+                    else if (actionRoll < 36)
+                    {
+                        SafeSetAction(petState, PokemonState.ANIM_POSE, PokemonState.ANIM_IDLE, 40);
+                        restCounter = 40;
+                    }
+                    else if (actionRoll < 52)
+                    {
+                        SafeSetAction(petState, PokemonState.ANIM_DEEPBREATH, PokemonState.ANIM_IDLE, 60);
+                        restCounter = 60;
+                    }
+                    else if (actionRoll < 68)
+                    {
+                        SafeSetAction(petState, PokemonState.ANIM_NOD, PokemonState.ANIM_IDLE, 60);
+                        restCounter = 60;
+                    }
+                    else if (actionRoll < 84)
+                    {
+                        behaviorStep = 1;
+                        SafeSetAction(petState, PokemonState.ANIM_SLEEP, PokemonState.ANIM_IDLE, 300);
+                        restCounter = 300;
+                    }
+                    else
+                    {
+                        behaviorStep = 2;
+                        SafeSetAction(petState, PokemonState.ANIM_SINK, PokemonState.ANIM_IDLE, 90);
+                        restCounter = 90;
+                    }
                 }
                 else
                 {
@@ -282,8 +400,41 @@ namespace TamaPoke
                 }
             };
 
-            petState.SetPlayModeAction(PokemonState.ANIM_WALK);
+            SafeSetAction(petState, PokemonState.ANIM_WALK);
             moveTimer.Start();
+        }
+
+        // 🌟 안전한 애니메이션 실행 헬퍼 메서드
+        private void SafeSetAction(PokemonState petState, int animId, int fallbackAnim = PokemonState.ANIM_IDLE)
+        {
+            try
+            {
+                petState.SetPlayModeAction(animId);
+            }
+            catch
+            {
+                petState.SetPlayModeAction(fallbackAnim);
+            }
+        }
+
+        // 🌟 2. 지속 시간(Duration)까지 함께 지정할 때 호출되는 오버로딩 메서드
+        private void SafeSetAction(PokemonState petState, int animId, int fallbackAnim, int duration)
+        {
+            try
+            {
+                if (duration > 0)
+                {
+                    petState.SetPlayModeAction(animId, duration);
+                }
+                else
+                {
+                    petState.SetPlayModeAction(animId);
+                }
+            }
+            catch
+            {
+                petState.SetPlayModeAction(fallbackAnim);
+            }
         }
 
         private void ShowTrayNotification(string title, string message)
