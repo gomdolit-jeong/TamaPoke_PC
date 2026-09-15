@@ -26,8 +26,8 @@ namespace TamaPoke
 
         public class PetWindowInfo
         {
-            public Window WindowInstance { get; set; }
-            public PokemonState State { get; set; }
+            public required Window WindowInstance { get; set; }
+            public required PokemonState State { get; set; }
         }
 
         public MainWindow()
@@ -490,6 +490,17 @@ namespace TamaPoke
                     border.Background = Topmost
                         ? new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FF2196F3"))
                         : new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#80000000"));
+                }
+            }
+        }
+        private void MainGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                // 놀아주기 모드가 아닐 때만 메인 창 드래그 이동을 허용합니다.
+                if (!_isPlayModeActive)
+                {
+                    this.DragMove();
                 }
             }
         }

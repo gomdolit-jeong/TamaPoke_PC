@@ -11,9 +11,10 @@
         Background="Transparent"
         Topmost="True"
         Icon="/Assets/Resource/monsterball.ico">
-    <!-- 🌟 맨 위에 있던 MouseLeftButtonDown, Up 속성을 과감하게 삭제했습니다! -->
 
-    <Grid>
+    <!-- 🌟 메인 창 전체 Grid에 마우스 클릭 이벤트를 다시 연결합니다! -->
+    <Grid Background="Transparent" MouseLeftButtonDown="MainGrid_MouseLeftButtonDown">
+
         <!-- 1. 화면이 교체될 빈 공간 (다마포케 320x320 영역) -->
         <ContentControl x:Name="MainContentFrame" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
