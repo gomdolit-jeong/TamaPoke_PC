@@ -273,13 +273,35 @@ namespace TamaPoke.Models
 
         #region 배틀 로직 및 상태이상 관리 (Battle Logic & Ailments)
 
+        // 🌟 플레이어 상태이상 관리 및 UI 바인딩
         private SkillAilment _playerAilment = SkillAilment.None;
-        public SkillAilment PlayerAilment { get => _playerAilment; set => SetProperty(ref _playerAilment, value); }
+        public SkillAilment PlayerAilment
+        {
+            get => _playerAilment;
+            set
+            {
+                if (SetProperty(ref _playerAilment, value))
+                    OnPropertyChanged(nameof(PlayerAilmentUI));
+            }
+        }
+        [JsonIgnore]
+        public string PlayerAilmentUI => PlayerAilment != SkillAilment.None ? AilmentHelper.GetAilmentIcon(PlayerAilment) : "";
         private int _playerAilmentTurns = 0;
         private int _playerBadPoisonTurnCount = 0;
 
+        // 🌟 적 상태이상 관리 및 UI 바인딩
         private SkillAilment _enemyAilment = SkillAilment.None;
-        public SkillAilment EnemyAilment { get => _enemyAilment; set => SetProperty(ref _enemyAilment, value); }
+        public SkillAilment EnemyAilment
+        {
+            get => _enemyAilment;
+            set
+            {
+                if (SetProperty(ref _enemyAilment, value))
+                    OnPropertyChanged(nameof(EnemyAilmentUI));
+            }
+        }
+        [JsonIgnore]
+        public string EnemyAilmentUI => EnemyAilment != SkillAilment.None ? AilmentHelper.GetAilmentIcon(EnemyAilment) : "";
         private int _enemyAilmentTurns = 0;
         private int _enemyBadPoisonTurnCount = 0;
 
@@ -427,7 +449,6 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}적에게 {damage} 데미지를 입혔다!";
 
-                // 🌟 [상태이상 부여] 플레이어 스킬 명중 시 적에게 상태이상 적용 체크
                 if (playerSkill.Ailment != SkillAilment.None && EnemyAilment == SkillAilment.None)
                 {
                     if (rand.Next(100) < playerSkill.AilmentChance)
@@ -510,7 +531,6 @@ namespace TamaPoke.Models
             var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
             Random rand = new Random();
 
-            // 🌟 [적 턴 시작] 상태이상 행동 제어 (마비, 수면, 얼음)
             if (EnemyAilment != SkillAilment.None)
             {
                 if (_enemyAilmentTurns > 0) _enemyAilmentTurns--;
@@ -524,9 +544,7 @@ namespace TamaPoke.Models
 
                 if (!canAct)
                 {
-                    // 행동 불가 시 공격 스킵 -> 턴 종료 지속 데미지(틱뎀)로 이동
                     await ProcessEnemyTurnEndAilment();
-
                     if (PlayerHp <= 0) await CheckBattleEndAsync(); else BattleMessage = "행동을 선택하세요.";
                     IsPlayerTurn = true;
                     return;
@@ -568,7 +586,6 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}{Name}(은)는 {enemyDamage} 데미지를 입었다!";
 
-                // 🌟 [적 공격 시 상태이상 부여] 적의 스킬에 상태이상 효과가 있고 플레이어가 멀쩡하다면 확률 체크
                 if (enemySkill.Ailment != SkillAilment.None && PlayerAilment == SkillAilment.None)
                 {
                     if (rand.Next(100) < enemySkill.AilmentChance)
@@ -592,7 +609,6 @@ namespace TamaPoke.Models
             else if (playerDodged) { BattleMessage = $"{Name}(은)는 공격을 멋지게 피했다!"; await Task.Delay(1500); }
             else if (!enemyHits) { BattleMessage = $"야생 {EnemyName}의 공격은 빗나갔다!"; await Task.Delay(1500); }
 
-            // 🌟 [적 턴 종료] 화상, 독, 맹독 지속 데미지(틱뎀) 처리
             await ProcessEnemyTurnEndAilment();
             await ProcessPlayerTurnEndAilment();
 
@@ -606,7 +622,6 @@ namespace TamaPoke.Models
             IsPlayerTurn = true;
         }
 
-        // 🌟 [헬퍼 메서드] 적 턴 종료 시 상태이상 지속 데미지 계산 및 적용
         private async Task ProcessEnemyTurnEndAilment()
         {
             if (EnemyAilment != SkillAilment.None && EnemyHp > 0)
@@ -780,7 +795,6 @@ namespace TamaPoke.Models
             IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
             IsGymBattle = true;
 
-            // 🌟 체육관 배틀 시작 시 상태이상 초기화
             PlayerAilment = SkillAilment.None;
             _playerAilmentTurns = 0;
             _playerBadPoisonTurnCount = 0;

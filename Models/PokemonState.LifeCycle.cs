@@ -24,20 +24,15 @@ namespace TamaPoke.Models
         private string _spriteFileName = "p0000.bin";
         public string SpriteFileName
         {
-            // 🌟 [방어 코드 추가] UI가 파일 이름을 요청할 때마다 실시간으로 파일 존재 여부를 검사합니다!
             get
             {
-                // 1. 현재 파일의 전체 경로를 조합합니다.
                 string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites", _spriteFileName);
 
-                // 2. 만약 유저가 게임 도중 파일을 지웠거나, 알 수 없는 이유로 파일이 없다면?
                 if (!File.Exists(fullPath))
                 {
-                    // 프로그램이 터지지 않도록 조용히 기본 스킨(알)을 반환합니다.
                     return "p0000.bin";
                 }
 
-                // 3. 파일이 무사히 존재한다면 원래 이름을 반환합니다.
                 return _spriteFileName;
             }
             set
@@ -46,6 +41,12 @@ namespace TamaPoke.Models
                 {
                     _animationFrames = null;
                     _currentActionId = -1;
+
+                    OnPropertyChanged(nameof(FormDescription));
+                    OnPropertyChanged(nameof(Type1));
+                    OnPropertyChanged(nameof(Type2));
+                    OnPropertyChanged(nameof(HasType2));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -79,7 +80,7 @@ namespace TamaPoke.Models
             6 => 721,
             7 => 809,
             8 => 905,
-            9 => GameConstants.MAX_POKEMON_ID, // 🌟 앞서 만든 상수를 여기에도 적용해두면 좋습니다!
+            9 => GameConstants.MAX_POKEMON_ID,
             _ => GameConstants.MAX_POKEMON_ID
         };
 
@@ -276,9 +277,6 @@ namespace TamaPoke.Models
 
             string assetFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites");
 
-            // ==========================================
-            // 🌟 [수정됨] 방어 코드: 폴더가 없으면 에러를 내지 않고 안전하게 생성합니다!
-            // ==========================================
             if (!Directory.Exists(assetFolderPath))
             {
                 Directory.CreateDirectory(assetFolderPath);
@@ -504,9 +502,6 @@ namespace TamaPoke.Models
         {
             string assetFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites");
 
-            // ==========================================
-            // 🌟 [수정됨] 진화할 때도 폴더가 없으면 에러 방지!
-            // ==========================================
             if (!Directory.Exists(assetFolderPath))
             {
                 Directory.CreateDirectory(assetFolderPath);
@@ -541,7 +536,7 @@ namespace TamaPoke.Models
             TrAtk = 0; TrDef = 0; TrSpeed = 0; Medals = 0;
             for (int i = 0; i < 4; i++) Skills[i] = 0;
 
-            OnPropertyChanged(nameof(CurrentSkills));
+            OnPropertyChanged("CurrentSkills");
             OnPropertyChanged(nameof(PoopDisplay)); OnPropertyChanged(nameof(IsEating)); OnPropertyChanged(nameof(IsPlaying));
             OnPropertyChanged(nameof(Name));
 

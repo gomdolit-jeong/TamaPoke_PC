@@ -1004,28 +1004,39 @@ namespace TamaPoke.Models
             _frameTickCounter++;
             if (_frameTickCounter >= 6) { _frameTickCounter = 0; if (_animationFrames != null && _animationFrames.Length > 0) { _currentFrameIndex = (_currentFrameIndex + 1) % _animationFrames.Length; CurrentFrame = _animationFrames[_currentFrameIndex]; } }
 
+            // 🌟 1. 걷기 중 양 끝에 도달했을 때 즉시 턴하는 로직!
             if (!IsFreeRoaming && _currentActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
             {
-                PosX += (-FlipX * 1.5);
-                if (PosX >= 80)
+                // 🌟 유저님께서 맞춰주신 완벽한 비대칭 좌표를 적용합니다.
+                double limitRight = 100;  // 오른쪽 끝
+                double limitLeft = -50;  // 왼쪽 끝 (오른쪽에 비해 덜 가게 설정)
+                double moveSpeed = 1.5;
+
+                // FlipX가 1이면 왼쪽(-), -1이면 오른쪽(+)으로 이동합니다.
+                PosX += (-FlipX * moveSpeed);
+
+                // 오른쪽 끝에 도달했을 때
+                if (PosX >= limitRight)
                 {
-                    PosX = 80;
-                    FlipX = 1;
+                    PosX = limitRight;
+                    FlipX = 1; // 대기 모션 없이 즉시 왼쪽으로 몸을 돌리고 계속 걷습니다.
                 }
-                else if (PosX <= -80)
+                // 왼쪽 끝에 도달했을 때
+                else if (PosX <= limitLeft)
                 {
-                    PosX = -80;
-                    FlipX = -1;
+                    PosX = limitLeft;
+                    FlipX = -1; // 즉시 오른쪽으로 몸을 돌리고 계속 걷습니다.
                 }
             }
 
+            // 🌟 2. 애니메이션 타이머 감소 및 상태 갱신
             if (_tempActionTimer > 0)
             {
                 _tempActionTimer--;
                 if (_tempActionTimer <= 0)
                 {
                     IsBathing = false;
-                    CheckStateAndAnimate();
+                    CheckStateAndAnimate(); // 걷기 시간이 완전히 끝나면 기본 IDLE 상태 등으로 돌아갑니다.
                 }
             }
 
@@ -1040,9 +1051,6 @@ namespace TamaPoke.Models
             if (IsCleanGameOpen) StepCleanGame();
         }
 
-        // =======================================================================
-        // 🌟 [리팩토링 핵심] 거대했던 Tick 메서드를 가독성 있게 역할별로 추출했습니다!
-        // =======================================================================
         public void Tick()
         {
             if (IsGamePaused) return;
@@ -1063,16 +1071,15 @@ namespace TamaPoke.Models
 
             if (_ageSeconds % 60 == 0)
             {
-                UpdateVitalsAndNeeds(); // 🌟 스탯 감소 로직 분리
+                UpdateVitalsAndNeeds();
             }
 
-            HandleStatusInterrupts();   // 🌟 상태 이상(똥, 더러움) 차단 로직 분리
-            ProcessIdleBehaviors();     // 🌟 무작위 행동 로직 분리
+            HandleStatusInterrupts();
+            ProcessIdleBehaviors();
 
             CheckStateAndAnimate();
         }
 
-        // 🌟 스탯, 포만감, 응가 등을 처리하는 헬퍼 메서드
         private void UpdateVitalsAndNeeds()
         {
             if (AgeMinutes % MINUTES_PER_LEVEL == 0)
@@ -1146,7 +1153,6 @@ namespace TamaPoke.Models
             CheckMedals();
         }
 
-        // 🌟 똥이 있거나 더러울 때 동작을 정지시키는 헬퍼 메서드
         private void HandleStatusInterrupts()
         {
             if (Poops > 0 || Hygiene < 30)
@@ -1159,7 +1165,6 @@ namespace TamaPoke.Models
             }
         }
 
-        // 🌟 건강할 때 가끔씩 무작위 행동을 취하게 하는 헬퍼 메서드
         private void ProcessIdleBehaviors()
         {
             if (!IsSleeping && !IsCeremony && !IsBattleOpen && _tempActionTimer <= 0)
@@ -1352,7 +1357,6 @@ namespace TamaPoke.Models
                 string targetPath = Path.Combine(spriteFolder, SpriteFileName);
                 if (!File.Exists(targetPath)) targetPath = Path.Combine(spriteFolder, $"p{SpeciesId:D4}.bin");
 
-                // 🌟 [디버깅 추가] 파일이 실제로 존재하는지 출력해 봅니다.
                 if (File.Exists(targetPath))
                 {
                     rawStrips = Utils.BinSpriteReader.LoadFramesFromBin(targetPath);
@@ -1380,6 +1384,7 @@ namespace TamaPoke.Models
 
                     if (!IsFreeRoaming)
                     {
+                        // 애니메이션을 강제하는 코드를 빼고 깔끔하게 복구!
                         directionRow = SideViewActions.Contains(actionToLoad) ? 6 : 0;
                     }
 
