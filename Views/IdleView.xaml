@@ -9,6 +9,7 @@
              mc:Ignorable="d" 
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
+             RenderOptions.BitmapScalingMode="NearestNeighbor"
              Height="320" Width="350">
 
     <UserControl.Resources>
@@ -17,19 +18,14 @@
 
         <Style TargetType="TextBlock" x:Key="DynamicTextStyle">
             <Setter Property="Foreground" Value="#2a2a36"/>
-
-            <!-- 낮 모드: 어두운 글씨를 강조하기 위해 하얀색 외곽선(그림자) 효과를 줍니다 -->
             <Setter Property="Effect">
                 <Setter.Value>
                     <DropShadowEffect Color="White" BlurRadius="5" ShadowDepth="0" Opacity="0.9"/>
                 </Setter.Value>
             </Setter>
-
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsNight}" Value="True">
                     <Setter Property="Foreground" Value="#d8dcf0"/>
-
-                    <!-- 밤 모드: 밝은 글씨를 강조하기 위해 검은색 그림자 효과를 줍니다 -->
                     <Setter Property="Effect">
                         <Setter.Value>
                             <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.9"/>
@@ -221,7 +217,6 @@
 
                     <Grid Grid.RowSpan="3">
                         <Grid Visibility="{Binding IsEgg, Converter={StaticResource BoolToVis}}">
-                            <!-- 🌟 [수정 완료] 알(Egg) 이미지: 흔들림 트리거 완전 삭제됨 -->
                             <Image Source="{Binding CurrentFrame}" Stretch="None" Cursor="Hand" MouseLeftButtonDown="PetImage_MouseLeftButtonDown" RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                                 <Image.LayoutTransform>
                                     <ScaleTransform ScaleX="5.0" ScaleY="5.0"/>
@@ -280,7 +275,6 @@
                             </Grid>
                         </Grid>
 
-                        <!-- 이벤트 프롬프트 뷰 등 생략 없이 동일하게 유지 -->
                         <Grid Visibility="{Binding CanShowEvolvePrompt, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="✨ 진화하기 ✨" FontSize="14" FontWeight="Bold" Background="#E53935" Foreground="#FFFFFF" Padding="15,8" BorderThickness="0" Cursor="Hand" Click="Evolve_Click" Margin="0,0,5,0">
@@ -352,40 +346,50 @@
                         <ProgressBar Grid.Row="1" Grid.Column="3" Value="{Binding Hygiene}" Foreground="{Binding Hygiene, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Hygiene, StringFormat={}{0} / 100}"/>
                     </Grid>
 
-                    <!-- 각종 메뉴 및 오버레이 동일 유지 -->
-                    <Border Grid.Row="2" Width="180" Height="45" CornerRadius="24" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Button Style="{StaticResource PhysicalButton}" ToolTip="빨간 열매" Click="FeedItem_Click" Tag="0">
-                                <emoji:TextBlock Text="🍒" FontSize="16" Foreground="#E53935"/>
-                            </Button>
-                            <Button Style="{StaticResource PhysicalButton}" ToolTip="파란 열매" Click="FeedItem_Click" Tag="1">
-                                <emoji:TextBlock Text="🫐" FontSize="16" Foreground="#1E88E5"/>
-                            </Button>
-                            <Button Style="{StaticResource PhysicalButton}" ToolTip="초록 열매" Click="FeedItem_Click" Tag="2">
-                                <emoji:TextBlock Text="🍏" FontSize="16" Foreground="#43A047"/>
-                            </Button>
-                            <Button Style="{StaticResource PhysicalButton}" ToolTip="사탕 (비만 주의!)" Click="FeedItem_Click" Tag="3">
-                                <emoji:TextBlock Text="🍬" FontSize="16" Foreground="#F06292"/>
-                            </Button>
-                        </StackPanel>
-                    </Border>
+                    <!-- 🌟 [수정 완료] 하단 팝업 메뉴들을 절대 위치(Canvas 또는 고정 오버레이 Grid)로 묶어 배경 흔들림을 원천 차단합니다 -->
+                    <Grid Grid.RowSpan="3" IsHitTestVisible="False">
+                        <!-- 밥 주기 메뉴 팝업 -->
+                        <Border Width="180" Height="45" CornerRadius="24" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" 
+                                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" 
+                                Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}"
+                                IsHitTestVisible="True">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="빨간 열매" Click="FeedItem_Click" Tag="0">
+                                    <emoji:TextBlock Text="🍒" FontSize="16" Foreground="#E53935"/>
+                                </Button>
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="파란 열매" Click="FeedItem_Click" Tag="1">
+                                    <emoji:TextBlock Text="🫐" FontSize="16" Foreground="#1E88E5"/>
+                                </Button>
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="초록 열매" Click="FeedItem_Click" Tag="2">
+                                    <emoji:TextBlock Text="🍏" FontSize="16" Foreground="#43A047"/>
+                                </Button>
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="사탕 (비만 주의!)" Click="FeedItem_Click" Tag="3">
+                                    <emoji:TextBlock Text="🍬" FontSize="16" Foreground="#F06292"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
 
-                    <Border Grid.Row="2" Width="180" Height="45" CornerRadius="28" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Button Style="{StaticResource PhysicalButton}" ToolTip="BALL: 공 튕기기" Click="PlayBall_Click">
-                                <emoji:TextBlock Text="⚽" FontSize="14" Foreground="#1E88E5"/>
-                            </Button>
-                            <Button Style="{StaticResource PhysicalButton}" ToolTip="CATCH: 과일 받기" Click="PlayCatch_Click">
-                                <emoji:TextBlock Text="🍎" FontSize="14" Foreground="#E53935"/>
-                            </Button>
-                            <Button Style="{StaticResource PhysicalButton}" ToolTip="MEMO: 리듬 메모리" Click="PlayMemo_Click">
-                                <emoji:TextBlock Text="🎹" FontSize="14" Foreground="#8E24AA"/>
-                            </Button>
-                            <Button Style="{StaticResource PhysicalButton}" ToolTip="CLEAN: 오염 청소" Click="PlayClean_Click">
-                                <emoji:TextBlock Text="✨" FontSize="14" Foreground="#00ACC1"/>
-                            </Button>
-                        </StackPanel>
-                    </Border>
+                        <!-- 미니게임 메뉴 팝업 -->
+                        <Border Width="180" Height="45" CornerRadius="28" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" 
+                                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" 
+                                Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}"
+                                IsHitTestVisible="True">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="BALL: 공 튕기기" Click="PlayBall_Click">
+                                    <emoji:TextBlock Text="⚽" FontSize="14" Foreground="#1E88E5"/>
+                                </Button>
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="CATCH: 과일 받기" Click="PlayCatch_Click">
+                                    <emoji:TextBlock Text="🍎" FontSize="14" Foreground="#E53935"/>
+                                </Button>
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="MEMO: 리듬 메모리" Click="PlayMemo_Click">
+                                    <emoji:TextBlock Text="🎹" FontSize="14" Foreground="#8E24AA"/>
+                                </Button>
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="CLEAN: 오염 청소" Click="PlayClean_Click">
+                                    <emoji:TextBlock Text="✨" FontSize="14" Foreground="#00ACC1"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18">
                         <StackPanel.Style>
@@ -518,7 +522,7 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Ellipse Width="14" Height="14" Fill="Blue" Stroke="White" StrokeThickness="2" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Ellipse Width="10" Height="10" Fill="Blue" Stroke="White" StrokeThickness="2" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Ellipse.Effect>
                                                     <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.4"/>
                                                 </Ellipse.Effect>

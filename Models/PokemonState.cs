@@ -755,7 +755,7 @@ namespace TamaPoke.Models
         public void UpdateFilteredPokedex()
         {
             FilteredPokedex.Clear();
-            int startId = 1, endId = 1025;
+            int startId = 1, endId = GameConstants.MAX_POKEMON_ID;
 
             switch (CurrentRegionIndex)
             {
@@ -767,8 +767,8 @@ namespace TamaPoke.Models
                 case 5: startId = 650; endId = 721; break;
                 case 6: startId = 722; endId = 809; break;
                 case 7: startId = 810; endId = 905; break;
-                case 8: startId = 906; endId = 1025; break;
-                default: startId = 1; endId = 1025; break;
+                case 8: startId = 906; endId = GameConstants.MAX_POKEMON_ID; break;
+                default: startId = 1; endId = GameConstants.MAX_POKEMON_ID; break;
             }
 
             foreach (var entry in FullPokedex.Where(p => p.Id >= startId && p.Id <= endId))

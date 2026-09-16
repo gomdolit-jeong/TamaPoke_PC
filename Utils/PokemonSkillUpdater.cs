@@ -13,47 +13,49 @@ namespace TamaPoke.Utils
     {
         private static readonly HttpClient client = new HttpClient();
 
+        // API 파싱용 내부 클래스들
         private class PokeApiResult { public List<ApiMoveSlot> moves { get; set; } = new(); }
         private class ApiMoveSlot { public ApiMove move { get; set; } = new(); public List<ApiVersionGroupDetail> version_group_details { get; set; } = new(); }
-        private class ApiMove { public string name { get; set; } = ""; }
+        private class ApiMove { public string name { get; set; } = ""; public string url { get; set; } = ""; }
         private class ApiVersionGroupDetail { public int level_learned_at { get; set; } public ApiMethod move_learn_method { get; set; } = new(); public ApiVersionGroup version_group { get; set; } = new(); }
         private class ApiMethod { public string name { get; set; } = ""; }
         private class ApiVersionGroup { public string name { get; set; } = ""; }
 
-        // 커스텀 스킬 매핑
-        private static readonly Dictionary<string, int> EnglishToCustomIdMap = new()
+        // 🌟 스킬 상세 정보 파싱용 클래스 추가
+        private class ApiMoveDetail
         {
-            { "tackle", 1 }, { "scratch", 2 }, { "pound", 3 }, { "fury-attack", 4 }, { "quick-attack", 5 },
-            { "swift", 6 }, { "body-slam", 7 }, { "double-edge", 8 }, { "hyper-beam", 9 }, { "peck", 10 },
-            { "ember", 11 }, { "fire-punch", 12 }, { "flamethrower", 13 }, { "fire-blast", 14 }, { "bubble", 15 },
-            { "water-gun", 16 }, { "waterfall", 17 }, { "surf", 18 }, { "hydro-pump", 19 }, { "spark", 20 },
-            { "thundershock", 21 }, { "thunder-punch", 22 }, { "thunderbolt", 23 }, { "thunder", 24 }, { "absorb", 25 },
-            { "vine-whip", 26 }, { "razor-leaf", 27 }, { "mega-drain", 28 }, { "solar-beam", 29 }, { "aurora-beam", 30 },
-            { "ice-punch", 31 }, { "ice-beam", 32 }, { "blizzard", 33 }, { "karate-chop", 34 }, { "seismic-toss", 35 },
-            { "submission", 36 }, { "jump-kick", 37 }, { "poison-sting", 38 }, { "acid", 39 }, { "sludge", 40 },
-            { "sludge-bomb", 41 }, { "bone-club", 42 }, { "dig", 43 }, { "earthquake", 44 }, { "wing-attack", 45 },
-            { "drill-peck", 46 }, { "fly", 47 }, { "psywave", 48 }, { "confusion", 49 }, { "psybeam", 50 },
-            { "psychic", 51 }, { "bug-bite", 52 }, { "pin-missile", 53 }, { "leech-life", 54 }, { "megahorn", 55 },
-            { "bug-buzz", 56 }, { "x-scissor", 57 }, { "rock-smash", 58 }, { "rock-throw", 59 }, { "rock-slide", 60 },
-            { "ancient-power", 61 }, { "lick", 62 }, { "night-shade", 63 }, { "shadow-ball", 64 }, { "dragon-rage", 65 },
-            { "dragon-claw", 66 }, { "outrage", 67 }, { "bite", 68 }, { "crunch", 69 }, { "iron-head", 70 },
-            { "flash-cannon", 71 }, { "dazzling-gleam", 72 }, { "play-rough", 73 }, { "moonblast", 74 }, { "swords-dance", 75 },
-            { "agility", 76 }, { "barrier", 77 }, { "amnesia", 78 }, { "nasty-plot", 79 }, { "dragon-dance", 80 },
-            { "bulk-up", 81 }, { "growl", 82 }, { "leer", 83 }, { "screech", 84 }, { "string-shot", 85 },
-            { "recover", 86 }, { "soft-boiled", 87 }, { "struggle", 88 }, { "dark-pulse", 89 }
-        };
+            public int id { get; set; }
+            public int? power { get; set; }
+            public int? accuracy { get; set; }
+            public ApiNamedResource type { get; set; } = new();
+            public ApiNamedResource damage_class { get; set; } = new();
+            public List<ApiName> names { get; set; } = new();
+
+            // 🌟 상태이상 정보가 들어있는 meta 필드 추가
+            public ApiMoveMeta? meta { get; set; }
+        }
+
+        // 🌟 meta 내부 파싱용 클래스
+        private class ApiMoveMeta
+        {
+            public ApiNamedResource ailment { get; set; } = new();
+            public int ailment_chance { get; set; }
+        }
+
+        private class ApiNamedResource { public string name { get; set; } = ""; }
+        private class ApiName { public string name { get; set; } = ""; public ApiNamedResource language { get; set; } = new(); }
 
         public static async Task GenerateOfflineSkillJsonAsync(IProgress<string>? progress = null, Action<string, string>? trayNotifier = null)
         {
             var allLearnsets = new List<PokemonLearnset>();
+            var moveDatabase = new Dictionary<int, SkillInfo>(); // 🌟 수집한 스킬 상세 정보를 담을 사전
 
-            for (int id = 1; id <= TamaPoke.Models.GameConstants.MAX_POKEMON_ID; id++)
+            for (int id = 1; id <= GameConstants.MAX_POKEMON_ID; id++)
             {
                 try
                 {
                     string url = $"https://pokeapi.co/api/v2/pokemon/{id}";
                     var response = await client.GetAsync(url);
-
                     if (!response.IsSuccessStatusCode) continue;
 
                     string json = await response.Content.ReadAsStringAsync();
@@ -65,14 +67,21 @@ namespace TamaPoke.Utils
 
                         foreach (var m in pokeData.moves)
                         {
-                            if (EnglishToCustomIdMap.TryGetValue(m.move.name, out int customId))
-                            {
-                                var svLevelUpDetail = m.version_group_details.FirstOrDefault(v => v.move_learn_method.name == "level-up" && v.version_group.name == "scarlet-violet");
-                                if (svLevelUpDetail == null) svLevelUpDetail = m.version_group_details.FirstOrDefault(v => v.move_learn_method.name == "level-up" && v.version_group.name == "sword-shield");
+                            var svLevelUpDetail = m.version_group_details.FirstOrDefault(v => v.move_learn_method.name == "level-up" && v.version_group.name == "scarlet-violet");
+                            if (svLevelUpDetail == null) svLevelUpDetail = m.version_group_details.FirstOrDefault(v => v.move_learn_method.name == "level-up" && v.version_group.name == "sword-shield");
 
-                                if (svLevelUpDetail != null)
+                            if (svLevelUpDetail != null)
+                            {
+                                // 🌟 1. 기술의 ID를 URL에서 추출합니다.
+                                int moveId = int.Parse(m.move.url.TrimEnd('/').Split('/').Last());
+                                validMoves.Add(new LearnMove { Level = svLevelUpDetail.level_learned_at, MoveId = moveId });
+
+                                // 🌟 2. 처음 보는 기술이라면 PokéAPI에서 상세 정보를 다운로드합니다!
+                                if (!moveDatabase.ContainsKey(moveId))
                                 {
-                                    validMoves.Add(new LearnMove { Level = svLevelUpDetail.level_learned_at, MoveId = customId });
+                                    progress?.Report($"새로운 스킬 발견! 상세 정보 다운로드 중... [{m.move.name}]");
+                                    var skillInfo = await FetchMoveDetailAsync(m.move.url);
+                                    if (skillInfo != null) moveDatabase[moveId] = skillInfo;
                                 }
                             }
                         }
@@ -84,8 +93,7 @@ namespace TamaPoke.Utils
                         }
                     }
 
-                    // UI 프로그레스 바에 진행 상황 알림
-                    progress?.Report($"도감 번호 {id}/1025 스킬 데이터 처리 완료...");
+                    progress?.Report($"도감 번호 {id}/{TamaPoke.Models.GameConstants.MAX_POKEMON_ID} 스킬 데이터 처리 완료...");
                 }
                 catch (Exception) { /* 무시 */ }
             }
@@ -94,13 +102,76 @@ namespace TamaPoke.Utils
             string dataFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
             if (!Directory.Exists(dataFolderPath)) Directory.CreateDirectory(dataFolderPath);
 
-            string savePath = Path.Combine(dataFolderPath, "pokemon_skills.json");
-            string finalJson = JsonSerializer.Serialize(allLearnsets, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(savePath, finalJson);
+            // 1. 레벨업 데이터 저장
+            string learnsetPath = Path.Combine(dataFolderPath, "pokemon_skills.json");
+            File.WriteAllText(learnsetPath, JsonSerializer.Serialize(allLearnsets, new JsonSerializerOptions { WriteIndented = true }));
 
-            // 메모리에 즉시 반영
+            // 2. 🌟 스킬 도감(사전) 데이터 저장
+            string movedbPath = Path.Combine(dataFolderPath, "pokemon_movedb.json");
+            File.WriteAllText(movedbPath, JsonSerializer.Serialize(moveDatabase.Values.ToList(), new JsonSerializerOptions { WriteIndented = true }));
+
             SkillDex.LoadSkillData();
-            progress?.Report("포켓몬 스킬 트리(pokemon_skills.json) 갱신 완료!");
+            progress?.Report("✨ 포켓몬 스킬 트리 및 전체 스킬 도감 DB 구축 완료!");
+        }
+
+        // PokéAPI에서 기술의 상세 정보(위력, 명중률, 한글 이름)를 가져오는 헬퍼 메서드
+        private static async Task<SkillInfo?> FetchMoveDetailAsync(string moveUrl)
+        {
+            try
+            {
+                var response = await client.GetAsync(moveUrl);
+                if (!response.IsSuccessStatusCode) return null;
+
+                string json = await response.Content.ReadAsStringAsync();
+                var detail = JsonSerializer.Deserialize<ApiMoveDetail>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (detail == null) return null;
+
+                string koName = detail.names.FirstOrDefault(n => n.language.name == "ko")?.name ?? detail.names.FirstOrDefault(n => n.language.name == "en")?.name ?? "알 수 없음";
+
+                Enum.TryParse(detail.type.name, true, out PokemonType parsedType);
+
+                SkillCategory parsedCategory = SkillCategory.Status;
+                if (detail.damage_class.name == "physical") parsedCategory = SkillCategory.Physical;
+                else if (detail.damage_class.name == "special") parsedCategory = SkillCategory.Special;
+
+                // 🌟 API의 영문 상태이상을 우리 게임의 Enum으로 완벽하게 자동 번역합니다!
+                SkillAilment parsedAilment = SkillAilment.None;
+                int parsedAilmentChance = 0;
+
+                if (detail.meta != null && !string.IsNullOrEmpty(detail.meta.ailment.name) && detail.meta.ailment.name != "none")
+                {
+                    parsedAilmentChance = detail.meta.ailment_chance;
+                    // 확률이 0으로 오면 기본 100% 효과라는 뜻입니다.
+                    if (parsedAilmentChance == 0) parsedAilmentChance = 100;
+
+                    parsedAilment = detail.meta.ailment.name switch
+                    {
+                        "paralysis" => SkillAilment.Paralysis,
+                        "sleep" => SkillAilment.Sleep,
+                        "freeze" => SkillAilment.Freeze,
+                        "burn" => SkillAilment.Burn,
+                        "poison" => SkillAilment.Poison, // API의 poison은 일반 독으로 매핑합니다.
+                        _ => SkillAilment.None
+                    };
+                }
+
+                return new SkillInfo
+                {
+                    Id = detail.id,
+                    Name = koName,
+                    Type = parsedType,
+                    Category = parsedCategory,
+                    Power = detail.power ?? 0,
+                    Accuracy = detail.accuracy ?? 0,
+                    Ailment = parsedAilment,            // 🌟 상태이상 저장!
+                    AilmentChance = parsedAilmentChance // 🌟 확률 저장!
+                };
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

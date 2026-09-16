@@ -14,7 +14,6 @@ namespace TamaPoke.Models
     public partial class PokemonState
     {
         #region 실전 전투 능력치 계산 (Combat Stats)
-
         [JsonIgnore]
         public int CombatMaxHp
         {
@@ -61,7 +60,6 @@ namespace TamaPoke.Models
         {
             return (((baseStat * 2 + gene + (effortValue / 4)) * currentLevel) / 100) + 5;
         }
-
         #endregion
 
         #region 배틀 시스템 UI 상태 (Battle System UI)
@@ -172,7 +170,6 @@ namespace TamaPoke.Models
 
             int[] score = new int[4];
 
-            // 🌟 야생 포켓몬도 2패스(레벨업 스킬 후 TM 스킬) 시스템 적용!
             for (int pass = 0; pass < 2; pass++)
             {
                 bool tmPass = (pass == 1);
@@ -180,13 +177,11 @@ namespace TamaPoke.Models
                 {
                     int at = SkillDex.GetLearnLevel(EnemySpeciesId, i);
                     if (tmPass != (at == 0)) continue;
-
-                    // 야생 포켓몬도 레벨에 맞는 기술만 배우며, 강력한 TM은 30렙 이상부터
                     if (!tmPass && at > EnemyLevel) continue;
                     if (tmPass && EnemyLevel < 30) continue;
 
                     int mv = SkillDex.GetLearnMove(EnemySpeciesId, i);
-                    if (mv == 0 || mv >= SkillDex.MoveTable.Length || EnemySkills.Contains(mv)) continue;
+                    if (mv == 0 || EnemySkills.Contains(mv)) continue;
 
                     var m = SkillDex.GetSkill(mv);
                     if (m == null) continue;
@@ -204,7 +199,6 @@ namespace TamaPoke.Models
                 }
             }
 
-            // 적 포켓몬 공격기 안전장치
             bool hasAttack = false;
             for (int i = 0; i < 4; i++)
             {
@@ -261,8 +255,6 @@ namespace TamaPoke.Models
 
                     int acc = m.Accuracy == 0 ? 100 : m.Accuracy;
                     score = score * acc / 100;
-                    if (m.Effect == SkillEffect.Recharge) score -= expectedDamage / 4;
-                    if (m.Effect == SkillEffect.Recoil) score -= expectedDamage / 6;
 
                     if (IsGymBattle)
                     {
@@ -272,286 +264,25 @@ namespace TamaPoke.Models
                     }
                 }
 
-                if (!IsGymBattle)
-                {
-                    score += rand.Next(0, 10);
-                }
-
+                if (!IsGymBattle) score += rand.Next(0, 10);
                 if (score > bestScore) { bestScore = score; bestSkill = m; }
             }
             return bestSkill;
         }
         #endregion
 
-        #region 포켓몬 스킬 시스템 (Skills)
-        private int[] _skills = new int[4] { 0, 0, 0, 0 };
-        public int[] Skills
-        {
-            get => _skills;
-            set => SetProperty(ref _skills, value);
-        }
+        #region 배틀 로직 및 상태이상 관리 (Battle Logic & Ailments)
 
-        public bool KnowsSkill(int skillId) => skillId != 0 && Array.Exists(Skills, s => s == skillId);
-        [JsonIgnore] public int SkillCount => Skills.Count(s => s != 0);
+        private SkillAilment _playerAilment = SkillAilment.None;
+        public SkillAilment PlayerAilment { get => _playerAilment; set => SetProperty(ref _playerAilment, value); }
+        private int _playerAilmentTurns = 0;
+        private int _playerBadPoisonTurnCount = 0;
 
-        // 🌟 [핵심 개선] 올바른 레벨업 디자인과 밸런스가 적용된 스킬 학습 시스템
-        public void RelearnFromLevel()
-        {
-            for (int i = 0; i < 4; i++) Skills[i] = 0;
+        private SkillAilment _enemyAilment = SkillAilment.None;
+        public SkillAilment EnemyAilment { get => _enemyAilment; set => SetProperty(ref _enemyAilment, value); }
+        private int _enemyAilmentTurns = 0;
+        private int _enemyBadPoisonTurnCount = 0;
 
-            if (IsEgg)
-            {
-                OnPropertyChanged(nameof(CurrentSkills));
-                return;
-            }
-
-            var d = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
-            if (d == null) return;
-
-            int lvl = Level;
-            int n = SkillDex.GetLearnCount(SpeciesId);
-
-            if (n == 0)
-            {
-                Skills[0] = 1; // 몸통박치기
-                int fallbackMove = SkillDex.GetFallbackMove(d.Type1);
-                if (fallbackMove != 1) Skills[1] = fallbackMove;
-
-                OnPropertyChanged(nameof(CurrentSkills));
-                return;
-            }
-
-            int[] score = new int[4] { 0, 0, 0, 0 };
-
-            // 🌟 1패스는 자력기(레벨업), 2패스는 TM(기술머신)으로 분리하여 순차적으로 채웁니다.
-            for (int pass = 0; pass < 2; pass++)
-            {
-                bool tmPass = (pass == 1);
-                for (int i = 0; i < n; i++)
-                {
-                    int at = SkillDex.GetLearnLevel(SpeciesId, i);
-
-                    // 레벨업 스킬과 TM 스킬을 패스별로 나눔
-                    if (tmPass != (at == 0)) continue;
-
-                    // 레벨업 스킬(at>0)은 현재 내 레벨 이하여야 함
-                    if (!tmPass && at > lvl) continue;
-
-                    // 🌟 [밸런스 패치] 파괴광선 등 강력한 TM/유전기(at==0)는 30레벨 이상부터 습득 가능!
-                    if (tmPass && lvl < 30) continue;
-
-                    int mv = SkillDex.GetLearnMove(SpeciesId, i);
-                    if (mv == 0 || mv >= SkillDex.MoveTable.Length || KnowsSkill(mv)) continue;
-
-                    var m = SkillDex.GetSkill(mv);
-                    if (m == null) continue;
-
-                    int sc = (m.Category == SkillCategory.Status) ? 10 : m.Power + 20;
-
-                    if (m.Category != SkillCategory.Status && (m.Type == d.Type1 || m.Type == d.Type2)) sc += 40;
-                    if (m.Effect == SkillEffect.Recharge) sc -= 35;
-                    if (m.Effect == SkillEffect.Recoil) sc -= 20;
-
-                    // 늦게 배우는 스킬일수록 기존 슬롯을 밀어내도록 레벨값을 점수에 더함 (TM은 가산점 50)
-                    sc += (at == 0 ? 50 : at);
-
-                    int slot = -1;
-                    for (int s = 0; s < 4; s++)
-                    {
-                        if (sc > score[s]) { slot = s; break; }
-                    }
-                    if (slot < 0) continue;
-
-                    for (int s = 3; s > slot; s--)
-                    {
-                        score[s] = score[s - 1];
-                        Skills[s] = Skills[s - 1];
-                    }
-                    score[slot] = sc;
-                    Skills[slot] = mv;
-                }
-            }
-
-            // 🌟 [안전장치] 만약 위 로직을 다 돌았는데 공격 스킬이 하나도 없다면?
-            bool hasAttack = false;
-            for (int i = 0; i < 4; i++)
-            {
-                if (Skills[i] != 0)
-                {
-                    var m = SkillDex.GetSkill(Skills[i]);
-                    if (m != null && m.Category != SkillCategory.Status)
-                    {
-                        hasAttack = true;
-                        break;
-                    }
-                }
-            }
-
-            // 빈칸을 찾아 강제로 '몸통박치기'나 '속성 기본기'를 쥐어줍니다.
-            if (!hasAttack)
-            {
-                int slotToFill = 0;
-                for (int i = 0; i < 4; i++)
-                {
-                    if (Skills[i] == 0) { slotToFill = i; break; }
-                }
-
-                int fallback = SkillDex.GetFallbackMove(d.Type1);
-                Skills[slotToFill] = fallback > 0 ? fallback : 1;
-
-                // 혹시 빈칸이 남았다면 몸통박치기(1)도 무조건 하나 챙겨줍니다.
-                if (slotToFill < 3 && !KnowsSkill(1))
-                {
-                    Skills[slotToFill + 1] = 1;
-                }
-            }
-
-            OnPropertyChanged(nameof(CurrentSkills));
-        }
-
-        [JsonIgnore]
-        public ObservableCollection<SkillInfo> CurrentSkills
-        {
-            get
-            {
-                var list = new ObservableCollection<SkillInfo>();
-                foreach (int skillId in Skills)
-                {
-                    if (skillId != 0)
-                    {
-                        var skill = SkillDex.GetSkill(skillId);
-                        if (skill != null) list.Add(skill);
-                    }
-                }
-                return list;
-            }
-        }
-        #endregion
-
-        #region 스킬 학습 및 교체 시스템 로직 (Skill Learning Logic)
-        private bool _isSkillLearnMenuOpen = false;
-        public bool IsSkillLearnMenuOpen { get => _isSkillLearnMenuOpen; set => SetProperty(ref _isSkillLearnMenuOpen, value); }
-
-        private bool _isSkillReplaceMenuOpen = false;
-        public bool IsSkillReplaceMenuOpen { get => _isSkillReplaceMenuOpen; set => SetProperty(ref _isSkillReplaceMenuOpen, value); }
-
-        private SkillInfo? _recommendedSkill1;
-        public SkillInfo? RecommendedSkill1 { get => _recommendedSkill1; set { SetProperty(ref _recommendedSkill1, value); OnPropertyChanged(nameof(HasRecommendedSkill1)); } }
-        public bool HasRecommendedSkill1 => RecommendedSkill1 != null;
-
-        private SkillInfo? _recommendedSkill2;
-        public SkillInfo? RecommendedSkill2 { get => _recommendedSkill2; set { SetProperty(ref _recommendedSkill2, value); OnPropertyChanged(nameof(HasRecommendedSkill2)); } }
-        public bool HasRecommendedSkill2 => RecommendedSkill2 != null;
-
-        private SkillInfo? _skillToLearn;
-
-        public void OnBattleWon()
-        {
-            int n = SkillDex.GetLearnCount(SpeciesId);
-            List<SkillInfo> availableSkills = new List<SkillInfo>();
-
-            for (int i = 0; i < n; i++)
-            {
-                int at = SkillDex.GetLearnLevel(SpeciesId, i);
-                if (at > Level) continue;
-
-                int mv = SkillDex.GetLearnMove(SpeciesId, i);
-                if (mv == 0 || KnowsSkill(mv)) continue;
-
-                var skill = SkillDex.GetSkill(mv);
-                if (skill != null) availableSkills.Add(skill);
-            }
-
-            if (availableSkills.Count > 0)
-            {
-                var rand = new Random();
-                var picked = availableSkills.OrderBy(x => rand.Next()).Take(2).ToList();
-
-                RecommendedSkill1 = picked.Count > 0 ? picked[0] : null;
-                RecommendedSkill2 = picked.Count > 1 ? picked[1] : null;
-
-                IsSkillLearnMenuOpen = true;
-                BattleMessage = "실전 경험을 통해 새로운 스킬을 떠올렸다!\n어떤 스킬을 배울까?";
-            }
-            else
-            {
-                if (IsGymBattle)
-                {
-                    IsGymBattle = false;
-                    CloseBattle();
-                }
-                else
-                {
-                    IsCatchOffered = true;
-                }
-            }
-        }
-
-        public void SelectRecommendedSkill(int optionNumber)
-        {
-            _skillToLearn = (optionNumber == 1) ? RecommendedSkill1 : RecommendedSkill2;
-            if (_skillToLearn == null) return;
-
-            if (SkillCount < 4)
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    if (Skills[i] == 0)
-                    {
-                        Skills[i] = _skillToLearn.Id;
-                        break;
-                    }
-                }
-                OnPropertyChanged(nameof(CurrentSkills));
-                FinishSkillLearning($"{_skillToLearn.Name}을(를) 깨우쳤다!");
-            }
-            else
-            {
-                IsSkillLearnMenuOpen = false;
-                IsSkillReplaceMenuOpen = true;
-                BattleMessage = $"기술이 4개라 꽉 찼다!\n{_skillToLearn.Name}을(를) 위해 어떤 기술을 지울까?";
-            }
-        }
-
-        public void ReplaceExistingSkill(int slotIndex)
-        {
-            if (slotIndex < 0 || slotIndex > 3 || _skillToLearn == null) return;
-
-            var oldSkill = SkillDex.GetSkill(Skills[slotIndex]);
-            string oldSkillName = oldSkill?.Name ?? "기술";
-
-            Skills[slotIndex] = _skillToLearn.Id;
-            OnPropertyChanged(nameof(CurrentSkills));
-
-            FinishSkillLearning($"1, 2, 3... 짠!\n{oldSkillName}을(를) 잊고\n{_skillToLearn.Name}을(를) 배웠다!");
-        }
-
-        public void SkipSkillLearning()
-        {
-            FinishSkillLearning("새로운 스킬을 배우는 것을 포기했다.");
-        }
-
-        private async void FinishSkillLearning(string finalMessage)
-        {
-            IsSkillLearnMenuOpen = false;
-            IsSkillReplaceMenuOpen = false;
-
-            _ = ShowEventMessageAsync(finalMessage);
-            await Task.Delay(2000);
-
-            if (IsGymBattle)
-            {
-                IsGymBattle = false;
-                CloseBattle();
-            }
-            else
-            {
-                IsCatchOffered = true;
-            }
-        }
-        #endregion
-
-        #region 배틀 로직 (Battle Logic)
         public async void StartWildBattle()
         {
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
@@ -560,6 +291,15 @@ namespace TamaPoke.Models
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
             IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
             IsGymBattle = false;
+
+            // 🌟 배틀 시작 시 상태이상 초기화
+            PlayerAilment = SkillAilment.None;
+            _playerAilmentTurns = 0;
+            _playerBadPoisonTurnCount = 0;
+
+            EnemyAilment = SkillAilment.None;
+            _enemyAilmentTurns = 0;
+            _enemyBadPoisonTurnCount = 0;
 
             Random rand = new Random();
             if (rand.Next(100) < 1) { EnemySpeciesId = LegendaryIds[rand.Next(LegendaryIds.Length)]; }
@@ -580,8 +320,7 @@ namespace TamaPoke.Models
             IsPlayerTurn = false;
             BattleMessage = $"앗! 야생 {EnemyName}이(가) 나타났다!";
 
-            if (Settings.UseTrayNotifications)
-                TrayNotificationRequested?.Invoke("야생 포켓몬 출현!", "⚔️");
+            if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke("야생 포켓몬 출현!", "⚔️");
 
             await Task.Delay(1500);
 
@@ -595,6 +334,7 @@ namespace TamaPoke.Models
             IsGymBattle = false;
             BattleMessage = "";
         }
+
         public async void LeaveWildBattle()
         {
             IsCatchOffered = false;
@@ -673,10 +413,7 @@ namespace TamaPoke.Models
                     myCombatAtk = (((myInfo?.BaseSpA ?? 50) * 2 + (Genes.AtkGene - 80)) * Level / 100) + 5 + TrAtk;
                 }
 
-                if (IsGymBattle)
-                {
-                    enemyCombatDef = (int)(enemyCombatDef * 1.1);
-                }
+                if (IsGymBattle) enemyCombatDef = (int)(enemyCombatDef * 1.1);
 
                 int baseDamage = Math.Max(2, myCombatAtk - (enemyCombatDef / 2));
                 int damage = (int)(baseDamage * typeMultiplier * stabMultiplier * (playerSkill.Power / 50.0));
@@ -690,18 +427,25 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}적에게 {damage} 데미지를 입혔다!";
 
-                if (playerSkill.Category == SkillCategory.Physical)
+                // 🌟 [상태이상 부여] 플레이어 스킬 명중 시 적에게 상태이상 적용 체크
+                if (playerSkill.Ailment != SkillAilment.None && EnemyAilment == SkillAilment.None)
                 {
-                    _tempActionId = 1;
+                    if (rand.Next(100) < playerSkill.AilmentChance)
+                    {
+                        EnemyAilment = playerSkill.Ailment;
+                        _enemyAilmentTurns = AilmentHelper.GetInitialTurns(EnemyAilment);
+                        _enemyBadPoisonTurnCount = 1;
+
+                        await Task.Delay(1000);
+                        string ailmentIcon = AilmentHelper.GetAilmentIcon(EnemyAilment);
+                        BattleMessage = $"야생 {EnemyName}은(는) {ailmentIcon} 상태가 되었다!";
+                        await Task.Delay(1500);
+                    }
                 }
-                else if (playerSkill.Category == SkillCategory.Special)
-                {
-                    _tempActionId = 21;
-                }
-                else
-                {
-                    _tempActionId = 17;
-                }
+
+                if (playerSkill.Category == SkillCategory.Physical) _tempActionId = 1;
+                else if (playerSkill.Category == SkillCategory.Special) _tempActionId = 21;
+                else _tempActionId = 17;
 
                 _tempActionTimer = 15;
                 UpdateAnimation(_tempActionId);
@@ -732,20 +476,31 @@ namespace TamaPoke.Models
             if (selectedItem.Type == ItemType.Potion)
             {
                 int healAmount = (int)(PlayerMaxHp * (selectedItem.EffectValue / 100.0));
-
                 if (healAmount < 1) healAmount = 1;
-
                 PlayerHp = Math.Min(PlayerMaxHp, PlayerHp + healAmount);
 
                 BattleMessage = $"{Name}에게 {selectedItem.Name}을(를) 사용했다!\n체력이 {healAmount} 회복되었다!";
 
-                _tempActionId = 10;
-                _tempActionTimer = 30;
-                CheckStateAndAnimate();
-
+                _tempActionId = 10; _tempActionTimer = 30; CheckStateAndAnimate();
                 await Task.Delay(1500);
 
                 await EnemyTurnAction(false);
+            }
+        }
+
+        private async Task ProcessPlayerTurnEndAilment()
+        {
+            if (PlayerAilment != SkillAilment.None && PlayerHp > 0)
+            {
+                if (PlayerAilment == SkillAilment.BadPoison) _playerBadPoisonTurnCount++;
+
+                int tickDamage = AilmentHelper.GetTurnEndDamage(PlayerAilment, PlayerMaxHp, _playerBadPoisonTurnCount, out string ailmentMsg);
+                if (tickDamage > 0)
+                {
+                    PlayerHp = Math.Max(0, PlayerHp - tickDamage);
+                    BattleMessage = $"{Name}(은)는 {ailmentMsg} ({tickDamage} 데미지)";
+                    await Task.Delay(1500);
+                }
             }
         }
 
@@ -754,6 +509,29 @@ namespace TamaPoke.Models
             var myInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
             var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
             Random rand = new Random();
+
+            // 🌟 [적 턴 시작] 상태이상 행동 제어 (마비, 수면, 얼음)
+            if (EnemyAilment != SkillAilment.None)
+            {
+                if (_enemyAilmentTurns > 0) _enemyAilmentTurns--;
+
+                bool canAct = AilmentHelper.CanActThisTurn(EnemyAilment, ref _enemyAilmentTurns, $"야생 {EnemyName}", out string statusMsg);
+                if (!string.IsNullOrEmpty(statusMsg))
+                {
+                    BattleMessage = statusMsg;
+                    await Task.Delay(1500);
+                }
+
+                if (!canAct)
+                {
+                    // 행동 불가 시 공격 스킵 -> 턴 종료 지속 데미지(틱뎀)로 이동
+                    await ProcessEnemyTurnEndAilment();
+
+                    if (PlayerHp <= 0) await CheckBattleEndAsync(); else BattleMessage = "행동을 선택하세요.";
+                    IsPlayerTurn = true;
+                    return;
+                }
+            }
 
             SkillInfo enemySkill = ChooseEnemySkill();
             BattleMessage = $"야생 {EnemyName}의 {enemySkill.Name}!";
@@ -778,10 +556,7 @@ namespace TamaPoke.Models
                     myCombatDef = (((myInfo?.BaseSpD ?? 50) * 2 + (Genes.DefGene - 80)) * Level / 100) + 5 + (TrDef / 2);
                 }
 
-                if (IsGymBattle)
-                {
-                    enemyCombatAtk = (int)(enemyCombatAtk * 1.1);
-                }
+                if (IsGymBattle) enemyCombatAtk = (int)(enemyCombatAtk * 1.1);
 
                 int baseEnemyDamage = Math.Max(2, enemyCombatAtk - (myCombatDef / 2));
                 int enemyDamage = (int)(baseEnemyDamage * typeMultiplier * stabMultiplier * (enemySkill.Power / 50.0));
@@ -793,6 +568,22 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}{Name}(은)는 {enemyDamage} 데미지를 입었다!";
 
+                // 🌟 [적 공격 시 상태이상 부여] 적의 스킬에 상태이상 효과가 있고 플레이어가 멀쩡하다면 확률 체크
+                if (enemySkill.Ailment != SkillAilment.None && PlayerAilment == SkillAilment.None)
+                {
+                    if (rand.Next(100) < enemySkill.AilmentChance)
+                    {
+                        PlayerAilment = enemySkill.Ailment;
+                        _playerAilmentTurns = AilmentHelper.GetInitialTurns(PlayerAilment);
+                        _playerBadPoisonTurnCount = 1;
+
+                        await Task.Delay(1000);
+                        string ailmentIcon = AilmentHelper.GetAilmentIcon(PlayerAilment);
+                        BattleMessage = $"{Name}(은)는 {ailmentIcon} 상태가 되었다!";
+                        await Task.Delay(1500);
+                    }
+                }
+
                 _enemyTempActionId = 1; _enemyTempActionTimer = 15; UpdateEnemyAnimation(1);
                 _tempActionId = 6; _tempActionTimer = 15; UpdateAnimation(6);
 
@@ -801,8 +592,35 @@ namespace TamaPoke.Models
             else if (playerDodged) { BattleMessage = $"{Name}(은)는 공격을 멋지게 피했다!"; await Task.Delay(1500); }
             else if (!enemyHits) { BattleMessage = $"야생 {EnemyName}의 공격은 빗나갔다!"; await Task.Delay(1500); }
 
-            if (PlayerHp <= 0) await CheckBattleEndAsync(); else BattleMessage = "행동을 선택하세요.";
+            // 🌟 [적 턴 종료] 화상, 독, 맹독 지속 데미지(틱뎀) 처리
+            await ProcessEnemyTurnEndAilment();
+            await ProcessPlayerTurnEndAilment();
+
+            if (PlayerHp <= 0 || EnemyHp <= 0)
+            {
+                await CheckBattleEndAsync();
+                return;
+            }
+
+            BattleMessage = "행동을 선택하세요.";
             IsPlayerTurn = true;
+        }
+
+        // 🌟 [헬퍼 메서드] 적 턴 종료 시 상태이상 지속 데미지 계산 및 적용
+        private async Task ProcessEnemyTurnEndAilment()
+        {
+            if (EnemyAilment != SkillAilment.None && EnemyHp > 0)
+            {
+                if (EnemyAilment == SkillAilment.BadPoison) _enemyBadPoisonTurnCount++;
+
+                int tickDamage = AilmentHelper.GetTurnEndDamage(EnemyAilment, EnemyMaxHp, _enemyBadPoisonTurnCount, out string ailmentMsg);
+                if (tickDamage > 0)
+                {
+                    EnemyHp = Math.Max(0, EnemyHp - tickDamage);
+                    BattleMessage = $"야생 {EnemyName}은(는) {ailmentMsg} ({tickDamage} 데미지)";
+                    await Task.Delay(1500);
+                }
+            }
         }
 
         private async Task CheckBattleEndAsync()
@@ -815,7 +633,6 @@ namespace TamaPoke.Models
                 Energy = Math.Max(0, Energy - 20);
 
                 IsDefeatedFadeOut = true;
-
                 await Task.Delay(3000);
 
                 IsDefeatedFadeOut = false;
@@ -831,16 +648,12 @@ namespace TamaPoke.Models
                 if (IsGymBattle)
                 {
                     var leader = GymManager.GetLeader(GymBadges);
-
                     if (leader != null)
                     {
-                        GymBadges++;
-                        Save();
-
+                        GymBadges++; Save();
                         BattleMessage = $"대단한 승부였다!\n{leader.LeaderName}에게서\n[{leader.BadgeName}]을(를) 얻었다!";
                         await Task.Delay(3000);
                     }
-
                     OnBattleWon();
                 }
                 else
@@ -856,15 +669,8 @@ namespace TamaPoke.Models
         {
             double hpPercent = (double)EnemyHp / EnemyMaxHp;
             int catchRate = 10;
-
-            if (hpPercent <= 0.2)
-            {
-                catchRate = 70;
-            }
-            else if (hpPercent <= 0.5)
-            {
-                catchRate = 35;
-            }
+            if (hpPercent <= 0.2) catchRate = 70;
+            else if (hpPercent <= 0.5) catchRate = 35;
 
             Random rand = new Random();
             bool isCaught = rand.Next(100) < catchRate;
@@ -872,26 +678,12 @@ namespace TamaPoke.Models
             if (isCaught)
             {
                 UnlockPokemonInPokedex(EnemySpeciesId);
-
-                var newMember = new PartyMember
-                {
-                    SpeciesId = EnemySpeciesId,
-                    Name = EnemyName,
-                    Level = EnemyLevel,
-                    AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL,
-                    IsShiny = false,
-                    TrAtk = 0,
-                    TrDef = 0,
-                    TrSpeed = 0,
-                    Skills = (int[])EnemySkills.Clone(),
-                    Genes = new PokemonGene()
-                };
+                var newMember = new PartyMember { SpeciesId = EnemySpeciesId, Name = EnemyName, Level = EnemyLevel, AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL, IsShiny = false, TrAtk = 0, TrDef = 0, TrSpeed = 0, Skills = (int[])EnemySkills.Clone(), Genes = new PokemonGene() };
 
                 if (Party != null && Party.Count >= 6)
                 {
                     _pendingRetiree = newMember;
                     IsSwapMode = true;
-
                     SyncMainToLeader();
                     UpdatePartyFirstFlags();
                     IsPartyOpen = true;
@@ -905,7 +697,6 @@ namespace TamaPoke.Models
                     BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다.";
                     await Task.Delay(2000);
                 }
-
                 await ProcessWildBattleRewardsAsync();
             }
             else
@@ -927,31 +718,13 @@ namespace TamaPoke.Models
             if (rand.Next(100) < 50)
             {
                 int itemRoll = rand.Next(100);
-
-                if (itemRoll < 50)
-                {
-                    AddItemToInventory("몬스터볼", "야생 포켓몬을 잡을 때 쓴다.", ItemType.monsterball, 1, 1);
-                    dropMessage = "몬스터볼 1개를 얻었다!";
-                }
+                if (itemRoll < 50) { AddItemToInventory("몬스터볼", "야생 포켓몬을 잡을 때 쓴다.", ItemType.monsterball, 1, 1); dropMessage = "몬스터볼 1개를 얻었다!"; }
                 else
                 {
                     int potionRoll = rand.Next(100);
-
-                    if (potionRoll < 60)
-                    {
-                        AddItemToInventory("상처약", "포켓몬의 체력을 15% 회복한다.", ItemType.Potion, 15, 1);
-                        dropMessage = "상처약 1개를 얻었다!";
-                    }
-                    else if (potionRoll < 90)
-                    {
-                        AddItemToInventory("좋은상처약", "포켓몬의 체력을 30% 회복한다.", ItemType.Potion, 30, 1);
-                        dropMessage = "좋은상처약 1개를 얻었다!";
-                    }
-                    else
-                    {
-                        AddItemToInventory("고급상처약", "포켓몬의 체력을 50% 회복한다.", ItemType.Potion, 50, 1);
-                        dropMessage = "앗! 고급상처약 1개를 얻었다!";
-                    }
+                    if (potionRoll < 60) { AddItemToInventory("상처약", "포켓몬의 체력을 15% 회복한다.", ItemType.Potion, 15, 1); dropMessage = "상처약 1개를 얻었다!"; }
+                    else if (potionRoll < 90) { AddItemToInventory("좋은상처약", "포켓몬의 체력을 30% 회복한다.", ItemType.Potion, 30, 1); dropMessage = "좋은상처약 1개를 얻었다!"; }
+                    else { AddItemToInventory("고급상처약", "포켓몬의 체력을 50% 회복한다.", ItemType.Potion, 50, 1); dropMessage = "앗! 고급상처약 1개를 얻었다!"; }
                 }
             }
 
@@ -966,7 +739,6 @@ namespace TamaPoke.Models
         #endregion
 
         #region 체육관 시스템 (Gym System)
-
         private int _gymBadges = 0;
         public int GymBadges { get => _gymBadges; set => SetProperty(ref _gymBadges, value); }
 
@@ -974,18 +746,10 @@ namespace TamaPoke.Models
         public bool IsGymBattle { get => _isGymBattle; set => SetProperty(ref _isGymBattle, value); }
 
         private bool _isGymConfirmOpen;
-        public bool IsGymConfirmOpen
-        {
-            get => _isGymConfirmOpen;
-            set => SetProperty(ref _isGymConfirmOpen, value);
-        }
+        public bool IsGymConfirmOpen { get => _isGymConfirmOpen; set => SetProperty(ref _isGymConfirmOpen, value); }
 
         private GymLeaderInfo? _selectedGymLeader;
-        public GymLeaderInfo? SelectedGymLeader
-        {
-            get => _selectedGymLeader;
-            set => SetProperty(ref _selectedGymLeader, value);
-        }
+        public GymLeaderInfo? SelectedGymLeader { get => _selectedGymLeader; set => SetProperty(ref _selectedGymLeader, value); }
 
         private int _selectedGymIndex;
 
@@ -994,28 +758,15 @@ namespace TamaPoke.Models
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
 
             var leader = GymManager.GetLeader(gymIndex);
-            if (leader == null) return;
-
-            if (gymIndex > GymBadges)
-            {
-                return;
-            }
+            if (leader == null || gymIndex > GymBadges) return;
 
             _selectedGymIndex = gymIndex;
             SelectedGymLeader = leader;
             IsGymConfirmOpen = true;
         }
 
-        public void ConfirmGymChallenge()
-        {
-            IsGymConfirmOpen = false;
-            StartSpecificGymBattle(_selectedGymIndex);
-        }
-
-        public void CancelGymChallenge()
-        {
-            IsGymConfirmOpen = false;
-        }
+        public void ConfirmGymChallenge() { IsGymConfirmOpen = false; StartSpecificGymBattle(_selectedGymIndex); }
+        public void CancelGymChallenge() { IsGymConfirmOpen = false; }
 
         public async void StartSpecificGymBattle(int gymIndex)
         {
@@ -1027,12 +778,19 @@ namespace TamaPoke.Models
             IsProfileOpen = false; _isCounterReady = false;
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
             IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
-
             IsGymBattle = true;
+
+            // 🌟 체육관 배틀 시작 시 상태이상 초기화
+            PlayerAilment = SkillAilment.None;
+            _playerAilmentTurns = 0;
+            _playerBadPoisonTurnCount = 0;
+
+            EnemyAilment = SkillAilment.None;
+            _enemyAilmentTurns = 0;
+            _enemyBadPoisonTurnCount = 0;
 
             EnemySpeciesId = leader.PokemonSpeciesId;
             EnemyLevel = leader.Level;
-
             PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;
 
             var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
@@ -1045,12 +803,10 @@ namespace TamaPoke.Models
             EnemySkills = (int[])(leader.SpecificSkills?.Clone() ?? new int[4]);
             UpdateEnemyAnimation(0);
 
-            IsBattleOpen = true;
-            IsPlayerTurn = false;
+            IsBattleOpen = true; IsPlayerTurn = false;
             BattleMessage = $"체육관 관장 {leader.LeaderName}이(가)\n승부를 걸어왔다!";
 
             await Task.Delay(2000);
-
             BattleMessage = "행동을 선택하세요.";
             IsPlayerTurn = true;
         }

@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using TamaPoke.Models;
 
 namespace TamaPoke.Utils
 {
@@ -63,7 +64,7 @@ namespace TamaPoke.Utils
                 progress?.Report("스프라이트 누락 번호를 검사 중입니다...");
                 List<int> missingIds = new List<int>();
 
-                for (int i = 1; i <= 1025; i++)
+                for (int i = 1; i <= GameConstants.MAX_POKEMON_ID; i++)
                 {
                     string folderName = i.ToString("D4"); // 예: "0001"
                     string checkPath = Path.Combine(sourceSpriteFolder, folderName);
