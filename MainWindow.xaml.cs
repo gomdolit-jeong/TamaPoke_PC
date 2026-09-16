@@ -140,30 +140,18 @@ namespace TamaPoke
             // =========================================================================
             // 🌟 [통합 업데이트 메뉴] 하나의 버튼으로 두 기능을 순차적으로 실행합니다!
             // =========================================================================
-            var updateAllMenuItem = new System.Windows.Forms.ToolStripMenuItem("포켓몬 전체 데이터 업데이트");
-            updateAllMenuItem.Click += async (s, e) =>
+            var updateMenuItem = new System.Windows.Forms.ToolStripMenuItem("다마포케 통합 업데이트");
+            updateMenuItem.Click += (s, e) =>
             {
-                updateAllMenuItem.Enabled = false; // 중복 실행 방지
-                Action<string, string> trayNotifier = (title, msg) => ShowTrayNotification(title, msg);
-
-                try
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
-                    // 1. 기본 데이터(스탯, 이름 등) 업데이트 실행
-                    await PokemonDataUpdater.GenerateOfflineDataJsonAsync(null, trayNotifier);
-
-                    // 2. 스킬 데이터 업데이트 이어서 실행
-                    await PokemonSkillUpdater.GenerateOfflineSkillJsonAsync(null, trayNotifier);
-
-                    trayNotifier("통합 업데이트 완료", "포켓몬 기본 데이터와 스킬 데이터가 모두 최신 버전으로 갱신되었습니다!");
-                }
-                catch (Exception ex)
-                {
-                    trayNotifier("업데이트 오류", $"데이터를 갱신하는 중 문제가 발생했습니다: {ex.Message}");
-                }
-                finally
-                {
-                    updateAllMenuItem.Enabled = true; // 에러가 나든 성공하든 메뉴는 다시 활성화
-                }
+                    var updateWindow = new UpdateProgressWindow();
+                    if (System.Windows.Application.Current.MainWindow != null && System.Windows.Application.Current.MainWindow.IsVisible)
+                    {
+                        updateWindow.Owner = System.Windows.Application.Current.MainWindow;
+                    }
+                    updateWindow.ShowDialog();
+                });
             };
             // =========================================================================
 
@@ -188,7 +176,7 @@ namespace TamaPoke
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(settingsMenuItem);
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-            contextMenu.Items.Add(updateAllMenuItem); // 🌟 깔끔하게 통합된 하나의 메뉴!
+            contextMenu.Items.Add(updateMenuItem);
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(exitMenuItem);
 

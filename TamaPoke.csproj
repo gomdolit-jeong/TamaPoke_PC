@@ -75,14 +75,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\pokemon_data.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="Assets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Assets\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Folder Include="Data\" />
   </ItemGroup>
 </Project>

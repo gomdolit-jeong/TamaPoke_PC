@@ -83,6 +83,8 @@ namespace TamaPoke.Models
         [JsonIgnore]
         public ObservableCollection<BadgeRegionGroup> BadgeGroups { get; set; } = new ObservableCollection<BadgeRegionGroup>();
 
+        public static bool IsGamePaused { get; set; } = false;
+
         public void InitializeBadgesList()
         {
             BadgeGroups.Clear();
@@ -1043,6 +1045,8 @@ namespace TamaPoke.Models
         // =======================================================================
         public void Tick()
         {
+            if (IsGamePaused) return;
+
             if (IsFreeRoaming || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
 
             _ageSeconds++;
@@ -1347,7 +1351,16 @@ namespace TamaPoke.Models
             {
                 string targetPath = Path.Combine(spriteFolder, SpriteFileName);
                 if (!File.Exists(targetPath)) targetPath = Path.Combine(spriteFolder, $"p{SpeciesId:D4}.bin");
-                if (File.Exists(targetPath)) rawStrips = Utils.BinSpriteReader.LoadFramesFromBin(targetPath);
+
+                // 🌟 [디버깅 추가] 파일이 실제로 존재하는지 출력해 봅니다.
+                if (File.Exists(targetPath))
+                {
+                    rawStrips = Utils.BinSpriteReader.LoadFramesFromBin(targetPath);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[에러] 스프라이트 파일을 찾을 수 없습니다: {targetPath}");
+                }
             }
 
             if (rawStrips != null && rawStrips.Count > 0)
@@ -1357,11 +1370,7 @@ namespace TamaPoke.Models
                 if (stripIndex >= rawStrips.Count)
                 {
                     stripIndex = ANIM_IDLE;
-
-                    if (stripIndex >= rawStrips.Count)
-                    {
-                        stripIndex = 0;
-                    }
+                    if (stripIndex >= rawStrips.Count) { stripIndex = 0; }
                 }
 
                 var targetData = rawStrips[stripIndex];

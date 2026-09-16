@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
@@ -11,19 +12,34 @@ namespace TamaPoke.Models
     {
         #region 생애 주기 (Life Cycle)
 
-        // 🌟 [리팩토링 핵심 1] 부화 및 성비 계산에 쓰이는 고정 데이터들을 static으로 분리하여 메모리를 획기적으로 최적화했습니다!
         private static readonly HashSet<int> AlwaysFemaleIds = new() { 29, 30, 31, 113, 115, 124, 238, 241, 242, 314, 380, 412, 416, 440, 478, 488, 548, 549, 629, 630, 669, 670, 671, 761, 762, 763, 856, 857, 858, 868, 869, 905, 957, 958, 959, 1017 };
         private static readonly HashSet<int> AlwaysMaleIds = new() { 32, 33, 34, 106, 107, 128, 236, 237, 313, 381, 414, 475, 538, 539, 627, 628, 641, 642, 645, 859, 860, 861, 1014, 1015, 1016 };
         private static readonly HashSet<int> Female12_5Ids = new() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 152, 153, 154, 155, 156, 157, 158, 159, 160, 252, 253, 254, 255, 256, 257, 258, 259, 260, 387, 388, 389, 390, 391, 392, 393, 394, 395, 495, 496, 497, 498, 499, 500, 501, 502, 503, 650, 651, 652, 653, 654, 655, 656, 657, 658, 722, 723, 724, 725, 726, 727, 728, 729, 730, 810, 811, 812, 813, 814, 815, 816, 817, 818, 906, 907, 908, 909, 910, 911, 912, 913, 914, 133, 134, 135, 136, 196, 197, 470, 471, 700, 138, 139, 140, 141, 345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567, 696, 697, 698, 699, 142, 143, 446, 175, 176, 468, 447, 448, 415, 757, 891, 892 };
         private static readonly HashSet<int> Female75Ids = new() { 35, 36, 37, 38, 39, 40, 174, 222, 298, 572, 573, 574, 575, 576, 667, 668, 682, 683, 955, 956 };
         private static readonly HashSet<int> Female25Ids = new() { 58, 59, 63, 64, 65, 66, 67, 68, 125, 126, 239, 240, 296, 297, 466, 467, 532, 533, 534 };
         private static readonly HashSet<int> GenderlessIds = new() { 81, 82, 100, 101, 120, 121, 132, 137, 201, 233, 292, 337, 338, 343, 344, 374, 375, 376, 436, 437, 462, 474, 479, 599, 600, 601, 615, 622, 623, 703, 774, 781, 854, 855, 870, 924, 925, 999, 1000 };
-        private static readonly HashSet<int> MissingSpriteIds = new() { 514, 516, 520, 522, 523, 538, 558, 564, 565, 591, 592, 616, 626, 732, 735, 756, 765, 837, 838, 839, 847, 866, 878, 893, 896, 931, 942, 943, 944, 947, 949, 950, 954, 956, 962, 973, 986, 993, 1001, 1002, 1014, 1022, 1023 };
+
+        private static HashSet<int> MissingSpriteIds = new();
 
         private string _spriteFileName = "p0000.bin";
         public string SpriteFileName
         {
-            get => _spriteFileName;
+            // 🌟 [방어 코드 추가] UI가 파일 이름을 요청할 때마다 실시간으로 파일 존재 여부를 검사합니다!
+            get
+            {
+                // 1. 현재 파일의 전체 경로를 조합합니다.
+                string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites", _spriteFileName);
+
+                // 2. 만약 유저가 게임 도중 파일을 지웠거나, 알 수 없는 이유로 파일이 없다면?
+                if (!File.Exists(fullPath))
+                {
+                    // 프로그램이 터지지 않도록 조용히 기본 스킨(알)을 반환합니다.
+                    return "p0000.bin";
+                }
+
+                // 3. 파일이 무사히 존재한다면 원래 이름을 반환합니다.
+                return _spriteFileName;
+            }
             set
             {
                 if (SetProperty(ref _spriteFileName, value))
@@ -63,8 +79,8 @@ namespace TamaPoke.Models
             6 => 721,
             7 => 809,
             8 => 905,
-            9 => 1025,
-            _ => 1025
+            9 => GameConstants.MAX_POKEMON_ID, // 🌟 앞서 만든 상수를 여기에도 적용해두면 좋습니다!
+            _ => GameConstants.MAX_POKEMON_ID
         };
 
         public static void InitializeEvolutionTable()
@@ -150,7 +166,6 @@ namespace TamaPoke.Models
         {
             IsGenderless = false;
 
-            // 🌟 메모리 최적화된 static readonly 컬렉션을 사용합니다!
             bool isLegendaryWithGender = AlwaysFemaleIds.Contains(speciesId) || AlwaysMaleIds.Contains(speciesId) || Female12_5Ids.Contains(speciesId) || speciesId == 485;
 
             if (GenderlessIds.Contains(speciesId) || (LegendaryIds.Contains(speciesId) && !isLegendaryWithGender))
@@ -166,7 +181,6 @@ namespace TamaPoke.Models
             if (Female75Ids.Contains(speciesId)) { IsFemale = rand.Next(100) < 75; return; }
             if (Female25Ids.Contains(speciesId)) { IsFemale = rand.Next(100) < 25; return; }
 
-            // 그 외 모든 포켓몬은 기본 50:50
             IsFemale = rand.Next(2) == 0;
         }
 
@@ -193,9 +207,31 @@ namespace TamaPoke.Models
 
         #region Hatch() 헬퍼 메서드 모음
 
+        private void ReloadMissingSprites()
+        {
+            try
+            {
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "missing_sprites.json");
+                if (File.Exists(path))
+                {
+                    string json = File.ReadAllText(path);
+                    var ids = JsonSerializer.Deserialize<List<int>>(json);
+                    if (ids != null)
+                    {
+                        MissingSpriteIds = new HashSet<int>(ids);
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
         private int DetermineHatchSpecies(Random rand)
         {
             if (DexTable.Count == 0) InitializeEvolutionTable();
+
+            ReloadMissingSprites();
 
             var allEvolvedIds = new HashSet<int>();
 
@@ -212,7 +248,6 @@ namespace TamaPoke.Models
 
             foreach (var rootId in DexTable.Keys) CollectEvolutions(rootId);
 
-            // 🌟 메모리 최적화된 MissingSpriteIds를 사용하여 누락 이미지를 거릅니다!
             var baseSpeciesIds = PokemonDex.AllPokemons
                 .Where(p => Settings.SelectedGenerations.Any(gen => p.Id >= GetGenStartId(gen) && p.Id <= GetGenEndId(gen))
                             && !allEvolvedIds.Contains(p.Id)
@@ -240,6 +275,15 @@ namespace TamaPoke.Models
             IsShiny = (rand.Next(shinyBase) == 0);
 
             string assetFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites");
+
+            // ==========================================
+            // 🌟 [수정됨] 방어 코드: 폴더가 없으면 에러를 내지 않고 안전하게 생성합니다!
+            // ==========================================
+            if (!Directory.Exists(assetFolderPath))
+            {
+                Directory.CreateDirectory(assetFolderPath);
+            }
+
             string searchPattern = $"p{SpeciesId:D4}*.bin";
             string[] allForms = Directory.GetFiles(assetFolderPath, searchPattern);
 
@@ -459,6 +503,15 @@ namespace TamaPoke.Models
         public void RefreshSpriteFileName()
         {
             string assetFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites");
+
+            // ==========================================
+            // 🌟 [수정됨] 진화할 때도 폴더가 없으면 에러 방지!
+            // ==========================================
+            if (!Directory.Exists(assetFolderPath))
+            {
+                Directory.CreateDirectory(assetFolderPath);
+            }
+
             string[] allForms = Directory.GetFiles(assetFolderPath, $"p{SpeciesId:D4}*.bin");
 
             SpriteFileName = ResolveComplexSpriteName(allForms, $"p{SpeciesId:D4}.bin");

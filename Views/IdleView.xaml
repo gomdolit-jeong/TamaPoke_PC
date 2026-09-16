@@ -353,7 +353,7 @@
                     </Grid>
 
                     <!-- 각종 메뉴 및 오버레이 동일 유지 -->
-                    <Border Grid.Row="2" Width="180" Height="48" CornerRadius="24" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}">
+                    <Border Grid.Row="2" Width="180" Height="45" CornerRadius="24" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Button Style="{StaticResource PhysicalButton}" ToolTip="빨간 열매" Click="FeedItem_Click" Tag="0">
                                 <emoji:TextBlock Text="🍒" FontSize="16" Foreground="#E53935"/>
@@ -370,7 +370,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="2" Width="220" Height="55" CornerRadius="28" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}">
+                    <Border Grid.Row="2" Width="180" Height="45" CornerRadius="28" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Button Style="{StaticResource PhysicalButton}" ToolTip="BALL: 공 튕기기" Click="PlayBall_Click">
                                 <emoji:TextBlock Text="⚽" FontSize="14" Foreground="#1E88E5"/>

@@ -5,44 +5,61 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using TamaPoke.Models; // PokemonInfo 및 PokemonType을 사용하기 위함
+using TamaPoke.Models;
 
 namespace TamaPoke.Utils
 {
     public class PokemonDataUpdater
     {
-        // 네트워크 연결을 효율적으로 재사용하기 위해 HttpClient를 static으로 하나만 둡니다.
         private static readonly HttpClient client = new HttpClient();
 
-        // PokéAPI 응답 파싱용 내부 클래스들
         private class ApiPokemon { public List<ApiStat> stats { get; set; } = new(); public List<ApiTypeSlot> types { get; set; } = new(); }
         private class ApiStat { public int base_stat { get; set; } public ApiNamedResource stat { get; set; } = new(); }
         private class ApiTypeSlot { public int slot { get; set; } public ApiNamedResource type { get; set; } = new(); }
-        private class ApiNamedResource { public string name { get; set; } = ""; }
+        private class ApiNamedResource { public string name { get; set; } = ""; public string url { get; set; } = ""; }
 
-        private class ApiSpecies { public List<ApiName> names { get; set; } = new(); }
+        private class ApiSpecies
+        {
+            public List<ApiName> names { get; set; } = new();
+            public ApiNamedResource evolution_chain { get; set; } = new();
+        }
         private class ApiName { public string name { get; set; } = ""; public ApiNamedResource language { get; set; } = new(); }
 
-        // ====================================================================
-        // 🌟 1. 메인 오케스트레이션 함수 (전체 흐름 제어)
-        // ====================================================================
+        private class ApiEvolutionChainResponse { public ApiChainLink chain { get; set; } = new(); }
+        private class ApiChainLink
+        {
+            public ApiNamedResource species { get; set; } = new();
+            public List<ApiEvolutionDetail> evolution_details { get; set; } = new();
+            public List<ApiChainLink> evolves_to { get; set; } = new();
+        }
+        private class ApiEvolutionDetail { public int? min_level { get; set; } }
+
         public static async Task GenerateOfflineDataJsonAsync(IProgress<string>? progress = null, Action<string, string>? trayNotifier = null)
         {
             var allPokemonData = new List<PokemonInfo>();
 
-            trayNotifier?.Invoke("포켓몬 데이터 업데이트 시작", "서버에서 최신 기본 정보와 스탯을 가져오는 중입니다...");
-            progress?.Report("🚀 API에서 최신 포켓몬 데이터를 가져오기 시작합니다...");
+            // 🌟 진화 정보 수집 시작을 알리고 프로그레스를 전달합니다.
+            progress?.Report("진화 체인 데이터를 수집하는 중입니다... 잠시만 기다려주세요!");
+            Dictionary<int, (int EvolveTo, int EvolveLevel)> evolutionMap = await FetchAllEvolutionMappingsAsync(progress);
 
-            for (int id = 1; id <= 1025; id++)
+            for (int id = 1; id <= GameConstants.MAX_POKEMON_ID; id++)
             {
                 try
                 {
-                    // 🌟 기능별로 분리된 헬퍼 함수들을 호출합니다.
                     var basicInfo = await FetchPokemonBasicInfoAsync(id);
                     var speciesInfo = await FetchPokemonSpeciesInfoAsync(id);
 
                     if (basicInfo != null && speciesInfo != null)
                     {
+                        int evolveTo = 0;
+                        int evolveLevel = 0;
+
+                        if (evolutionMap.TryGetValue(id, out var evoInfo))
+                        {
+                            evolveTo = evoInfo.EvolveTo;
+                            evolveLevel = evoInfo.EvolveLevel;
+                        }
+
                         var newPokemon = new PokemonInfo
                         {
                             Id = id,
@@ -52,74 +69,113 @@ namespace TamaPoke.Utils
                             BaseHp = GetStat(basicInfo, "hp"),
                             BaseAtk = GetStat(basicInfo, "attack"),
                             BaseDef = GetStat(basicInfo, "defense"),
+                            BaseSpeed = GetStat(basicInfo, "speed"),
                             BaseSpA = GetStat(basicInfo, "special-attack"),
                             BaseSpD = GetStat(basicInfo, "special-defense"),
-                            BaseSpeed = GetStat(basicInfo, "speed"),
-
-                            // 진화 정보는 기존 PokemonState.DexTable을 사용하므로 기본값 0으로 유지합니다.
-                            EvolveTo = 0,
-                            EvolveLevel = 0
+                            EvolveTo = evolveTo,
+                            EvolveLevel = evolveLevel
                         };
 
                         allPokemonData.Add(newPokemon);
                     }
 
-                    if (id % 100 == 0)
-                    {
-                        progress?.Report($"[업데이트 중] 도감 번호 {id}/1025 포켓몬 스탯 파싱 완료...");
-                    }
+                    progress?.Report($"도감 번호 {id}/{GameConstants.MAX_POKEMON_ID} 기본 데이터 처리 완료...");
                 }
-                catch (Exception ex)
-                {
-                    progress?.Report($"[에러] ID {id} 파싱 실패: {ex.Message}");
-                }
+                catch (Exception) { }
             }
 
-            // 🌟 파일 저장 헬퍼 함수 호출
-            SaveToJson(allPokemonData);
+            string dataFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+            if (!Directory.Exists(dataFolderPath)) Directory.CreateDirectory(dataFolderPath);
 
-            progress?.Report("✨ 완료! pokemon_data.json 파일이 성공적으로 생성/업데이트되었습니다.");
-            trayNotifier?.Invoke("포켓몬 데이터 업데이트 완료", "모든 포켓몬의 최신 기본 스탯이 Data 폴더에 적용되었습니다!");
+            string savePath = Path.Combine(dataFolderPath, "pokemon_data.json");
+            string finalJson = JsonSerializer.Serialize(allPokemonData, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(savePath, finalJson);
 
-            // 메모리에 즉시 새 데이터 로드
             PokemonDex.LoadPokemonData();
+            progress?.Report("포켓몬 기본 데이터(pokemon_data.json) 진화 정보 포함 갱신 완료!");
         }
 
-        // ====================================================================
-        // 🌟 2. 기능별 헬퍼 함수들 (데이터 파싱 및 저장)
-        // ====================================================================
+        // 🌟 [수정됨] progress를 받아 실시간으로 로그를 띄웁니다.
+        private static async Task<Dictionary<int, (int, int)>> FetchAllEvolutionMappingsAsync(IProgress<string>? progress)
+        {
+            var map = new Dictionary<int, (int, int)>();
 
-        // 스탯과 타입 정보 가져오기
+            for (int chainId = 1; chainId <= GameConstants.MAX_EVOLUTION_CHAIN_ID; chainId++)
+            {
+                try
+                {
+                    // 10단위 혹은 매번 너무 많은 로그가 뜨면 지저분할 수 있으니 20개 단위나 전체를 부드럽게 띄워줍니다.
+                    if (chainId % 20 == 0 || chainId == 1)
+                    {
+                        progress?.Report($"[진화 수집 중] 진화 체인 분석 중... ({chainId}/{GameConstants.MAX_EVOLUTION_CHAIN_ID})");
+                    }
+
+                    var response = await client.GetAsync($"https://pokeapi.co/api/v2/evolution-chain/{chainId}");
+                    if (!response.IsSuccessStatusCode) continue;
+
+                    string json = await response.Content.ReadAsStringAsync();
+                    var chainData = JsonSerializer.Deserialize<ApiEvolutionChainResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (chainData?.chain != null)
+                    {
+                        ParseChainRecursively(chainData.chain, map);
+                    }
+                }
+                catch { }
+            }
+
+            return map;
+        }
+
+        private static void ParseChainRecursively(ApiChainLink link, Dictionary<int, (int, int)> map)
+        {
+            int currentId = ExtractIdFromUrl(link.species.url);
+
+            if (link.evolves_to != null && link.evolves_to.Count > 0)
+            {
+                var nextLink = link.evolves_to[0];
+                int nextId = ExtractIdFromUrl(nextLink.species.url);
+
+                int level = 36;
+                if (nextLink.evolution_details != null && nextLink.evolution_details.Count > 0)
+                {
+                    level = nextLink.evolution_details[0].min_level ?? 36;
+                }
+
+                map[currentId] = (nextId, level);
+
+                foreach (var next in link.evolves_to)
+                {
+                    ParseChainRecursively(next, map);
+                }
+            }
+        }
+
+        private static int ExtractIdFromUrl(string url)
+        {
+            var segments = url.TrimEnd('/').Split('/');
+            if (int.TryParse(segments.Last(), out int id)) return id;
+            return 0;
+        }
+
         private static async Task<ApiPokemon?> FetchPokemonBasicInfoAsync(int id)
         {
             var response = await client.GetAsync($"https://pokeapi.co/api/v2/pokemon/{id}");
             if (!response.IsSuccessStatusCode) return null;
-            string json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<ApiPokemon>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return JsonSerializer.Deserialize<ApiPokemon>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
 
-        // 한국어 이름 정보 가져오기
         private static async Task<ApiSpecies?> FetchPokemonSpeciesInfoAsync(int id)
         {
             var response = await client.GetAsync($"https://pokeapi.co/api/v2/pokemon-species/{id}");
             if (!response.IsSuccessStatusCode) return null;
-            string json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<ApiSpecies>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return JsonSerializer.Deserialize<ApiSpecies>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
 
-        // 한국어 이름 추출
-        private static string? GetKoreanName(ApiSpecies species)
-        {
-            return species.names.FirstOrDefault(n => n.language.name == "ko")?.name;
-        }
+        private static string? GetKoreanName(ApiSpecies species) => species.names.FirstOrDefault(n => n.language.name == "ko")?.name;
 
-        // 특정 스탯 수치 추출
-        private static int GetStat(ApiPokemon pokemon, string statName)
-        {
-            return pokemon.stats.FirstOrDefault(s => s.stat.name == statName)?.base_stat ?? 50;
-        }
+        private static int GetStat(ApiPokemon pokemon, string statName) => pokemon.stats.FirstOrDefault(s => s.stat.name == statName)?.base_stat ?? 50;
 
-        // API의 문자열 타입을 PokemonType Enum으로 완벽 변환
         private static PokemonType MapTypeToEnum(string? typeName)
         {
             return typeName?.ToLower() switch
@@ -144,21 +200,6 @@ namespace TamaPoke.Utils
                 "fairy" => PokemonType.Fairy,
                 _ => PokemonType.None
             };
-        }
-
-        // Data 폴더에 JSON으로 안전하게 저장
-        private static void SaveToJson(List<PokemonInfo> data)
-        {
-            // 실행 경로 내의 Data 폴더를 지정합니다.
-            string dataFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
-            if (!Directory.Exists(dataFolderPath))
-            {
-                Directory.CreateDirectory(dataFolderPath);
-            }
-
-            string savePath = Path.Combine(dataFolderPath, "pokemon_data.json");
-            string finalJson = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(savePath, finalJson);
         }
     }
 }
