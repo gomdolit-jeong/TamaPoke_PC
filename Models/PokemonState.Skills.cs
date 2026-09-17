@@ -154,18 +154,18 @@ namespace TamaPoke.Models
         public bool HasRecommendedSkill2 => RecommendedSkill2 != null;
 
         private SkillInfo? _skillToLearn;
-
         public void OnBattleWon()
         {
-            if (!SkillDex.PokemonLearnsets.ContainsKey(SpeciesId))
+            // 🌟 이전의 단일 리스트 방식 대신, 똑똑한 세대 탐색기(GetActiveLearnset)를 사용합니다!
+            var activeMoves = SkillDex.GetActiveLearnset(SpeciesId);
+
+            if (activeMoves.Count == 0)
             {
                 FinishBattleNormally();
                 return;
             }
 
-            var learnset = SkillDex.PokemonLearnsets[SpeciesId];
-
-            var availableSkills = learnset
+            var availableSkills = activeMoves
                 .Where(m => m.Level <= Level && !KnowsSkill(m.MoveId))
                 .Select(m => new { m.Level, Skill = SkillDex.GetSkill(m.MoveId) })
                 .Where(x => x.Skill != null)

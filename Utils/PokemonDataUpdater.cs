@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Text.Encodings.Web; // 🌟 한글 저장을 위한 네임스페이스
 using TamaPoke.Models;
 
 namespace TamaPoke.Utils
@@ -38,7 +39,6 @@ namespace TamaPoke.Utils
         {
             var allPokemonData = new List<PokemonInfo>();
 
-            // 🌟 진화 정보 수집 시작을 알리고 프로그레스를 전달합니다.
             progress?.Report("진화 체인 데이터를 수집하는 중입니다... 잠시만 기다려주세요!");
             Dictionary<int, (int EvolveTo, int EvolveLevel)> evolutionMap = await FetchAllEvolutionMappingsAsync(progress);
 
@@ -87,15 +87,22 @@ namespace TamaPoke.Utils
             string dataFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
             if (!Directory.Exists(dataFolderPath)) Directory.CreateDirectory(dataFolderPath);
 
+            // 🌟 한글이 깨지지 않고 예쁘게 저장되도록 옵션을 설정합니다!
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                // 전체 경로를 직접 명시하여 컴파일러가 절대 헷갈리지 않게 만듭니다.
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All)
+            };
+
             string savePath = Path.Combine(dataFolderPath, "pokemon_data.json");
-            string finalJson = JsonSerializer.Serialize(allPokemonData, new JsonSerializerOptions { WriteIndented = true });
+            string finalJson = JsonSerializer.Serialize(allPokemonData, jsonOptions);
             File.WriteAllText(savePath, finalJson);
 
             PokemonDex.LoadPokemonData();
             progress?.Report("포켓몬 기본 데이터(pokemon_data.json) 진화 정보 포함 갱신 완료!");
         }
 
-        // 🌟 [수정됨] progress를 받아 실시간으로 로그를 띄웁니다.
         private static async Task<Dictionary<int, (int, int)>> FetchAllEvolutionMappingsAsync(IProgress<string>? progress)
         {
             var map = new Dictionary<int, (int, int)>();
@@ -104,7 +111,6 @@ namespace TamaPoke.Utils
             {
                 try
                 {
-                    // 10단위 혹은 매번 너무 많은 로그가 뜨면 지저분할 수 있으니 20개 단위나 전체를 부드럽게 띄워줍니다.
                     if (chainId % 20 == 0 || chainId == 1)
                     {
                         progress?.Report($"[진화 수집 중] 진화 체인 분석 중... ({chainId}/{GameConstants.MAX_EVOLUTION_CHAIN_ID})");

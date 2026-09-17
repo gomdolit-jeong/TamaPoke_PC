@@ -5,7 +5,7 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="ToolWindow"
         ResizeMode="NoResize"
-        Topmost="True">
+        Topmost="False">
 
     <Grid Margin="15">
         <Grid.RowDefinitions>
@@ -36,8 +36,17 @@
         <ProgressBar x:Name="pbStatus" Grid.Row="3" Height="20" Minimum="0" Maximum="100" Margin="0,0,0,10"/>
 
         <!-- 🌟 실시간 로그 리스트 박스 -->
-        <ListBox x:Name="lbLogs" Grid.Row="4" Background="#F5F5F5" FontFamily="Consolas" FontSize="12" Margin="0,0,0,15"/>
-
+        <ListBox x:Name="lbLogs" Grid.Row="4" Background="#F5F5F5" FontFamily="Consolas" FontSize="12" Margin="0,0,0,15"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <!-- 가로 스크롤을 꺼서 줄바꿈이 일어날 공간을 만듭니다. -->
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <!-- TextWrapping="Wrap" 속성이 긴 텍스트를 자동으로 아래로 줄바꿈해 줍니다. -->
+                    <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        
         <!-- 🌟 닫기 버튼 -->
         <Button x:Name="btnClose" Grid.Row="5" Content="닫기" Height="35" 
                 FontWeight="Bold" IsEnabled="True" Click="btnClose_Click"/>

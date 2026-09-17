@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Text.Encodings.Web;
+using System.Text.Encodings.Web; // 🌟 한글 저장을 위한 네임스페이스
 using TamaPoke.Models;
 
 namespace TamaPoke.Utils
@@ -22,7 +22,6 @@ namespace TamaPoke.Utils
         private class ApiMethod { public string name { get; set; } = ""; }
         private class ApiVersionGroup { public string name { get; set; } = ""; }
 
-        // 🌟 스킬 상세 정보 파싱용 클래스 추가
         private class ApiMoveDetail
         {
             public int id { get; set; }
@@ -31,12 +30,9 @@ namespace TamaPoke.Utils
             public ApiNamedResource type { get; set; } = new();
             public ApiNamedResource damage_class { get; set; } = new();
             public List<ApiName> names { get; set; } = new();
-
-            // 🌟 상태이상 정보가 들어있는 meta 필드 추가
             public ApiMoveMeta? meta { get; set; }
         }
 
-        // 🌟 meta 내부 파싱용 클래스
         private class ApiMoveMeta
         {
             public ApiNamedResource ailment { get; set; } = new();
@@ -64,44 +60,55 @@ namespace TamaPoke.Utils
 
                     if (pokeData?.moves != null)
                     {
-                        var validMoves = new List<LearnMove>();
+                        var movesByVersion = new Dictionary<string, List<LearnMove>>();
+
+                        string[] targetVersions = {
+                            "scarlet-violet",
+                            "sword-shield",
+                            "brilliant-diamond-and-shining-pearl",
+                            "ultra-sun-ultra-moon",
+                            "sun-moon"
+                        };
 
                         foreach (var m in pokeData.moves)
                         {
                             var levelUpDetails = m.version_group_details
-                                .Where(v => v.move_learn_method.name == "level-up")
-                                .ToList();
+                                .Where(v => v.move_learn_method.name == "level-up");
 
-                            if (levelUpDetails.Count == 0) continue;
-
-                            // 🌟 9세대(스칼렛·바이올렛) 데이터가 있다면 무조건 9세대 데이터만 채택하여 세대 섞임 현상을 원천 차단합니다!
-                            var targetDetail = levelUpDetails.FirstOrDefault(v => v.version_group.name == "scarlet-violet")
-                                            ?? levelUpDetails.FirstOrDefault(v => v.version_group.name == "sword-shield")
-                                            ?? levelUpDetails.FirstOrDefault();
-
-                            if (targetDetail != null)
+                            foreach (var detail in levelUpDetails)
                             {
-                                int moveId = int.Parse(m.move.url.TrimEnd('/').Split('/').Last());
+                                string vgName = detail.version_group.name;
 
-                                // 레벨이 1이거나 '최초'인 경우의 중복 방지 처리
-                                if (!validMoves.Any(vm => vm.MoveId == moveId))
+                                if (targetVersions.Contains(vgName))
                                 {
-                                    validMoves.Add(new LearnMove { Level = targetDetail.level_learned_at, MoveId = moveId });
+                                    if (!movesByVersion.ContainsKey(vgName))
+                                        movesByVersion[vgName] = new List<LearnMove>();
 
-                                    if (!moveDatabase.ContainsKey(moveId))
+                                    int moveId = int.Parse(m.move.url.TrimEnd('/').Split('/').Last());
+
+                                    if (!movesByVersion[vgName].Any(x => x.MoveId == moveId))
                                     {
-                                        progress?.Report($"새로운 스킬 발견! 상세 정보 다운로드 중... [{m.move.name}]");
-                                        var skillInfo = await FetchMoveDetailAsync(m.move.url);
-                                        if (skillInfo != null) moveDatabase[moveId] = skillInfo;
+                                        movesByVersion[vgName].Add(new LearnMove { Level = detail.level_learned_at, MoveId = moveId });
+
+                                        if (!moveDatabase.ContainsKey(moveId))
+                                        {
+                                            progress?.Report($"새로운 스킬 발견! 상세 정보 다운로드 중... [{m.move.name}]");
+                                            var skillInfo = await FetchMoveDetailAsync(m.move.url);
+                                            if (skillInfo != null) moveDatabase[moveId] = skillInfo;
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        if (validMoves.Count > 0)
+                        if (movesByVersion.Count > 0)
                         {
-                            validMoves = validMoves.OrderBy(v => v.Level).ToList();
-                            allLearnsets.Add(new PokemonLearnset { SpeciesId = id, Moves = validMoves });
+                            foreach (var key in movesByVersion.Keys.ToList())
+                            {
+                                movesByVersion[key] = movesByVersion[key].OrderBy(v => v.Level).ToList();
+                            }
+
+                            allLearnsets.Add(new PokemonLearnset { SpeciesId = id, MovesByVersion = movesByVersion });
                         }
                     }
 
@@ -113,11 +120,19 @@ namespace TamaPoke.Utils
             string dataFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
             if (!Directory.Exists(dataFolderPath)) Directory.CreateDirectory(dataFolderPath);
 
+            // 🌟 한글이 깨지지 않고 예쁘게 저장되도록 옵션을 설정합니다!
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                // 전체 경로를 직접 명시하여 컴파일러가 절대 헷갈리지 않게 만듭니다.
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All)
+            };
+
             string learnsetPath = Path.Combine(dataFolderPath, "pokemon_skills.json");
-            File.WriteAllText(learnsetPath, JsonSerializer.Serialize(allLearnsets, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(learnsetPath, JsonSerializer.Serialize(allLearnsets, jsonOptions));
 
             string movedbPath = Path.Combine(dataFolderPath, "pokemon_movedb.json");
-            File.WriteAllText(movedbPath, JsonSerializer.Serialize(moveDatabase.Values.ToList(), new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(movedbPath, JsonSerializer.Serialize(moveDatabase.Values.ToList(), jsonOptions));
 
             SkillDex.LoadSkillData();
             progress?.Report("✨ 포켓몬 스킬 트리 및 전체 스킬 도감 DB 구축 완료!");

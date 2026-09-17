@@ -273,7 +273,6 @@ namespace TamaPoke.Models
 
         #region 배틀 로직 및 상태이상 관리 (Battle Logic & Ailments)
 
-        // 🌟 플레이어 상태이상 관리 및 UI 바인딩
         private SkillAilment _playerAilment = SkillAilment.None;
         public SkillAilment PlayerAilment
         {
@@ -289,7 +288,6 @@ namespace TamaPoke.Models
         private int _playerAilmentTurns = 0;
         private int _playerBadPoisonTurnCount = 0;
 
-        // 🌟 적 상태이상 관리 및 UI 바인딩
         private SkillAilment _enemyAilment = SkillAilment.None;
         public SkillAilment EnemyAilment
         {
@@ -314,7 +312,6 @@ namespace TamaPoke.Models
             IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
             IsGymBattle = false;
 
-            // 🌟 배틀 시작 시 상태이상 초기화
             PlayerAilment = SkillAilment.None;
             _playerAilmentTurns = 0;
             _playerBadPoisonTurnCount = 0;
@@ -366,6 +363,25 @@ namespace TamaPoke.Models
             await ProcessWildBattleRewardsAsync();
         }
 
+        // 🌟 [추가됨] 플레이어가 턴을 진행할 수 있는지(행동 불가 상태이상 체크) 확인하는 헬퍼 메서드
+        private async Task<bool> PlayerCanActThisTurnAsync()
+        {
+            if (PlayerAilment != SkillAilment.None)
+            {
+                if (_playerAilmentTurns > 0) _playerAilmentTurns--;
+
+                bool canAct = AilmentHelper.CanActThisTurn(PlayerAilment, ref _playerAilmentTurns, Name, out string statusMsg);
+
+                if (!string.IsNullOrEmpty(statusMsg))
+                {
+                    BattleMessage = statusMsg;
+                    await Task.Delay(1500);
+                }
+                return canAct;
+            }
+            return true;
+        }
+
         public async Task ExecuteTurnAsync(BattleAction playerAction)
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
@@ -383,6 +399,15 @@ namespace TamaPoke.Models
             bool playerDodged = false;
             if (playerAction == BattleAction.Dodge)
             {
+                // 🌟 회피 전에도 행동 가능한지 검사합니다.
+                if (!await PlayerCanActThisTurnAsync())
+                {
+                    await ProcessPlayerTurnEndAilment();
+                    if (PlayerHp <= 0) { await CheckBattleEndAsync(); return; }
+                    await EnemyTurnAction(false);
+                    return;
+                }
+
                 if (rand.Next(100) < 70)
                 {
                     playerDodged = true;
@@ -407,6 +432,17 @@ namespace TamaPoke.Models
             IsPlayerTurn = false;
             IsAttackMenuOpen = false;
             Random rand = new Random();
+
+            // 🌟 [수정됨] 스킬을 쓰기 전에 마비/수면/얼음 상태인지 먼저 검사합니다.
+            if (!await PlayerCanActThisTurnAsync())
+            {
+                // 행동 불가라면 턴 종료(독/화상) 처리 후 바로 적의 턴으로 넘어갑니다.
+                await ProcessPlayerTurnEndAilment();
+                if (PlayerHp <= 0) { await CheckBattleEndAsync(); return; }
+
+                await EnemyTurnAction(false);
+                return;
+            }
 
             var myInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
             var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
@@ -492,6 +528,7 @@ namespace TamaPoke.Models
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
 
+            // 포켓몬 본가 게임 규칙처럼 아이템은 잠들어있어도 사용이 가능하므로 그대로 유지합니다!
             IsPlayerTurn = false;
 
             if (selectedItem.Type == ItemType.Potion)
@@ -545,7 +582,17 @@ namespace TamaPoke.Models
                 if (!canAct)
                 {
                     await ProcessEnemyTurnEndAilment();
-                    if (PlayerHp <= 0) await CheckBattleEndAsync(); else BattleMessage = "행동을 선택하세요.";
+
+                    // 🌟 [수정됨] 적이 행동을 쉬더라도, 턴이 끝났으므로 플레이어도 지속 데미지(화상/독)를 받아야 합니다!
+                    await ProcessPlayerTurnEndAilment();
+
+                    if (PlayerHp <= 0 || EnemyHp <= 0)
+                    {
+                        await CheckBattleEndAsync();
+                        return;
+                    }
+
+                    BattleMessage = "행동을 선택하세요.";
                     IsPlayerTurn = true;
                     return;
                 }
