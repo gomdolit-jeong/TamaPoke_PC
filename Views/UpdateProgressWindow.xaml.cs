@@ -11,6 +11,8 @@ namespace TamaPoke.Views
         private bool _requiresRestart = false;
         private bool _isUpdating = false;
 
+        private bool _needsProgramUpdate = false;
+
         private int _currentTaskIndex = 0;
         private double _progressPerTask = 0;
 
@@ -57,7 +59,7 @@ namespace TamaPoke.Views
 
             _progressPerTask = 100.0 / totalTasks;
 
-            var progress = new Progress<string>(message =>
+            IProgress<string> progress = new Progress<string>(message =>
             {
                 lbLogs.Items.Add(message);
                 lbLogs.ScrollIntoView(lbLogs.Items[lbLogs.Items.Count - 1]);
@@ -87,9 +89,29 @@ namespace TamaPoke.Views
                 {
                     lbLogs.Items.Add("======================================");
                     lbLogs.Items.Add("[1] 다마포케 프로그램 최신 버전 확인 중...");
-                    bool needRestart = await AppVersionUpdater.CheckAndUpdateProgramAsync(progress);
 
-                    if (needRestart) _requiresRestart = true;
+                    string localVersion = AppVersionUpdater.GetLocalVersion();
+                    progress?.Report($"- 현재 프로그램 버전: v{localVersion}");
+                    progress?.Report("- 서버에서 최신 버전을 확인하고 있습니다...");
+
+                    var updateInfo = await AppVersionUpdater.CheckForUpdatesAsync();
+
+                    if (updateInfo != null)
+                    {
+                        progress?.Report($"✨ 새로운 업데이트가 발견되었습니다! (v{updateInfo.Version})");
+
+                        // 🌟 복잡한 다운로드/압축해제 로직은 일꾼에게 전부 위임합니다!
+                        bool success = await AppVersionUpdater.DownloadAndPrepareUpdateAsync(updateInfo, progress);
+                        if (success)
+                        {
+                            _requiresRestart = true;
+                            _needsProgramUpdate = true;
+                        }
+                    }
+                    else
+                    {
+                        progress?.Report("✅ 현재 최신 버전을 사용 중입니다. 업데이트가 필요하지 않습니다.");
+                    }
 
                     _currentTaskIndex++;
                     pbStatus.Value = _currentTaskIndex * _progressPerTask;
@@ -166,7 +188,12 @@ namespace TamaPoke.Views
         {
             this.Close();
 
-            if (_requiresRestart)
+            if (_needsProgramUpdate)
+            {
+                // 🌟 배치 파일 실행 및 종료 마법도 일꾼에게 시킵니다!
+                AppVersionUpdater.ExecutePostUpdateBatch();
+            }
+            else if (_requiresRestart)
             {
                 System.Windows.Application.Current.Shutdown();
             }

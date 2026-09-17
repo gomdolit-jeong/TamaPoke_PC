@@ -1,124 +1,132 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression; // 🌟 압축 해제를 위해 추가된 네임스페이스
+using System.IO.Compression;
 using System.Net.Http;
-using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace TamaPoke.Utils
 {
+    public class AppVersionInfo
+    {
+        public string Version { get; set; } = "1.0.0.0";
+        public string DownloadUrl { get; set; } = string.Empty;
+    }
+
     public class AppVersionUpdater
     {
-        private static readonly HttpClient client = new HttpClient();
+        private static readonly HttpClient _httpClient = new HttpClient();
+        private const string SERVER_VERSION_URL = "https://raw.githubusercontent.com/gomdolit-jeong/TamaPoke_PC/main/version.json";
 
-        // 🌟 유저님의 실제 GitHub 저장소 Raw 주소
-        private const string VersionCheckUrl = "https://raw.githubusercontent.com/gomdolit-jeong/TamaPoke_PC/main/version.json";
-
-        // 서버에서 받아올 버전 정보 클래스
-        private class VersionInfo
+        public static string GetLocalVersion()
         {
-            public string Version { get; set; } = "1.0.0.0";
-            public string DownloadUrl { get; set; } = "";
+            try
+            {
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "version.json");
+                if (File.Exists(path))
+                {
+                    string json = File.ReadAllText(path);
+                    var versionInfo = JsonSerializer.Deserialize<AppVersionInfo>(json);
+                    return versionInfo?.Version ?? "1.0.0.0";
+                }
+            }
+            catch { }
+            return "1.0.0.0";
         }
 
-        // 🌟 업데이트가 필요하여 재시작을 해야 한다면 true를 반환합니다.
-        public static async Task<bool> CheckAndUpdateProgramAsync(IProgress<string>? progress = null)
+        public static async Task<AppVersionInfo?> CheckForUpdatesAsync()
         {
-            progress?.Report("🚀 [3단계] 프로그램 최신 버전을 확인합니다...");
+            try
+            {
+                string localVersionString = GetLocalVersion();
+                Version localVersion = new Version(localVersionString);
+
+                var response = await _httpClient.GetAsync(SERVER_VERSION_URL);
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    var serverInfo = JsonSerializer.Deserialize<AppVersionInfo>(json);
+
+                    if (serverInfo != null && !string.IsNullOrEmpty(serverInfo.Version))
+                    {
+                        Version serverVersion = new Version(serverInfo.Version);
+                        if (serverVersion > localVersion) return serverInfo;
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        // ==========================================
+        // 🌟 싹 가져온 다운로드 및 배치 파일 생성 로직 (백그라운드 전담)
+        // ==========================================
+        public static async Task<bool> DownloadAndPrepareUpdateAsync(AppVersionInfo updateInfo, IProgress<string>? progress)
+        {
+            if (string.IsNullOrEmpty(updateInfo.DownloadUrl)) return false;
+
+            string tempZipPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.zip");
+            string extractPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "_UpdateTemp");
 
             try
             {
-                // 1. 현재 내 프로그램의 버전 확인
-                Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0, 0);
+                progress?.Report("- 업데이트 파일을 다운로드하는 중입니다... 잠시만 기다려주세요.");
 
-                // 2. 서버에서 최신 버전 정보 가져오기
-                var response = await client.GetAsync(VersionCheckUrl);
-                if (!response.IsSuccessStatusCode)
+                using (var response = await _httpClient.GetAsync(updateInfo.DownloadUrl))
                 {
-                    progress?.Report("안내: 버전 서버를 찾을 수 없어 프로그램 업데이트를 건너뜁니다.");
-                    return false;
-                }
-
-                string json = await response.Content.ReadAsStringAsync();
-                var latestInfo = JsonSerializer.Deserialize<VersionInfo>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (latestInfo == null || string.IsNullOrEmpty(latestInfo.DownloadUrl)) return false;
-
-                Version latestVersion = new Version(latestInfo.Version);
-
-                // 3. 최신 버전이 더 높다면 업데이트 진행!
-                if (latestVersion > currentVersion)
-                {
-                    progress?.Report($"🎉 새로운 버전({latestVersion})이 발견되었습니다! 압축 파일 다운로드를 시작합니다...");
-
-                    string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                    string zipFilePath = Path.Combine(baseDir, "TamaPoke_Update.zip");
-                    string extractPath = Path.Combine(baseDir, "UpdateTemp");
-
-                    // 기존에 남아있을지 모르는 찌꺼기 파일/폴더 정리
-                    if (File.Exists(zipFilePath)) File.Delete(zipFilePath);
-                    if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
-
-                    // 🌟 [변경점 1] ZIP 파일 다운로드
-                    byte[] fileBytes = await client.GetByteArrayAsync(latestInfo.DownloadUrl);
-                    await File.WriteAllBytesAsync(zipFilePath, fileBytes);
-                    progress?.Report("다운로드 완료! 압축을 해제하는 중입니다...");
-
-                    // 🌟 [변경점 2] 다운로드한 ZIP 파일 압축 해제
-                    Directory.CreateDirectory(extractPath);
-                    ZipFile.ExtractToDirectory(zipFilePath, extractPath, true); // true: 덮어쓰기 허용
-
-                    progress?.Report("압축 해제 완료! 업데이트를 적용하기 위해 프로그램을 재시작합니다.");
-
-                    // 🌟 [변경점 3] 폴더 전체 복사 및 정리를 위한 배치 파일(.bat) 생성
-                    string batPath = Path.Combine(baseDir, "update_apply.bat");
-
-                    string batScript = $@"
-@echo off
-:: 프로그램이 완전히 종료될 시간을 벌어줍니다 (2초)
-timeout /t 2 /nobreak >nul
-
-:: UpdateTemp 폴더 안의 모든 파일과 하위 폴더를 현재 디렉토리로 덮어쓰기 복사합니다.
-xcopy ""UpdateTemp\*"" "".\*"" /s /e /y /q
-
-:: 복사가 끝났으니 임시 폴더와 ZIP 파일을 삭제하여 깔끔하게 청소합니다.
-rmdir /s /q ""UpdateTemp""
-del ""TamaPoke_Update.zip""
-
-:: 다마포케를 다시 실행합니다.
-start """" ""TamaPoke.exe""
-
-:: 마지막으로 이 배치 파일 자신을 삭제합니다.
-del ""%~f0""
-";
-                    File.WriteAllText(batPath, batScript);
-
-                    // 5. 배치 파일 실행
-                    ProcessStartInfo psi = new ProcessStartInfo
+                    response.EnsureSuccessStatusCode();
+                    using (var fs = new FileStream(tempZipPath, FileMode.Create))
                     {
-                        FileName = batPath,
-                        UseShellExecute = true,
-                        CreateNoWindow = true,
-                        WindowStyle = ProcessWindowStyle.Hidden
-                    };
-                    Process.Start(psi);
+                        await response.Content.CopyToAsync(fs);
+                    }
+                }
 
-                    // 덮어쓰기를 위해 현재 프로그램 강제 종료 알림
-                    return true;
-                }
-                else
-                {
-                    progress?.Report($"현재 최신 버전(v{currentVersion})의 다마포케를 사용 중입니다.");
-                }
+                progress?.Report("- 다운로드 완료! 압축을 풀고 적용을 준비합니다...");
+
+                if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
+                ZipFile.ExtractToDirectory(tempZipPath, extractPath);
+
+                if (File.Exists(tempZipPath)) File.Delete(tempZipPath);
+
+                progress?.Report("- 업데이트 준비 완료! 창을 닫으면 자동으로 버전이 교체됩니다.");
+                return true;
             }
             catch (Exception ex)
             {
-                progress?.Report($"[안내] 프로그램 버전 확인을 건너뜁니다: {ex.Message}");
+                progress?.Report($"❌ 다운로드 또는 압축 해제 중 오류 발생: {ex.Message}");
+                return false;
             }
+        }
 
-            return false;
+        // ==========================================
+        // 🌟 프로그램 종료 시 덮어쓰기를 실행하는 배치 파일 마법 실행 메서드
+        // ==========================================
+        public static void ExecutePostUpdateBatch()
+        {
+            string batPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.bat");
+            string exeName = Path.GetFileName(Process.GetCurrentProcess().MainModule?.FileName ?? "TamaPoke.exe");
+
+            string batContent = $@"
+@echo off
+timeout /t 2 /nobreak > nul
+xcopy /s /y /e ""_UpdateTemp\*"" "".\""
+rmdir /s /q ""_UpdateTemp""
+start """" ""{exeName}""
+del ""%~f0""
+";
+            File.WriteAllText(batPath, batContent, Encoding.Default);
+
+            Process.Start(new ProcessStartInfo()
+            {
+                FileName = batPath,
+                UseShellExecute = true,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            });
+
+            System.Windows.Application.Current.Shutdown();
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+  
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
@@ -9,6 +9,7 @@
     <ApplicationIcon>Assets\Resource\monsterball.ico</ApplicationIcon>
     <UseWindowsForms>True</UseWindowsForms>
     <DisableWinFormsImplicitUsings>true</DisableWinFormsImplicitUsings>
+    <FileVersion>4.8.6.1</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,6 +19,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Data\**" />
+    <EmbeddedResource Remove="Data\**" />
+    <None Remove="Data\**" />
+    <Page Remove="Data\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Converters\SpriteConverter.cs" />
@@ -57,7 +65,6 @@
     <None Remove="Assets\Resource\Badges\Badge_8.png" />
     <None Remove="Assets\Resource\Badges\Badge_9.png" />
     <None Remove="Assets\Resource\PokemonSprites.zip" />
-    <None Remove="Data\pokemon_data - 복사본.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -81,6 +88,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
+    <None Update="version.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
+
+  <Target Name="GenerateVersionJson" AfterTargets="Build">
+    <PropertyGroup>
+      <!-- Visual Studio 속성에 입력한 파일 버전(FileVersion)을 가져옵니다 -->
+      <AppVersion>$(FileVersion)</AppVersion>
+      <!-- 버전이 비어있을 경우의 안전장치 -->
+      <AppVersion Condition="'$(AppVersion)' == ''">1.0.0.0</AppVersion>
+      
+      <!-- version.json에 들어갈 텍스트 포맷 (GitHub 다운로드 URL 자동 조합) -->
+      <JsonContent>{
+  "Version": "$(AppVersion)",
+  "DownloadUrl": "https://github.com/gomdolit-jeong/TamaPoke_PC/releases/download/v$(AppVersion)/TamaPoke_v$(AppVersion).zip"
+}</JsonContent>
+    </PropertyGroup>
+
+    <!-- 출력 폴더(bin/Debug 등)에 version.json 파일을 자동으로 기록합니다 -->
+    <WriteLinesToFile File="$(OutDir)version.json" Lines="$(JsonContent)" Overwrite="true" Encoding="UTF-8" />
+  </Target>
+
+
 </Project>
