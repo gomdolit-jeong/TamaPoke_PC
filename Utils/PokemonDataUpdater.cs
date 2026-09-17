@@ -21,6 +21,7 @@ namespace TamaPoke.Utils
 
         private class ApiSpecies
         {
+            public int gender_rate { get; set; }
             public List<ApiName> names { get; set; } = new();
             public ApiNamedResource evolution_chain { get; set; } = new();
         }
@@ -73,7 +74,8 @@ namespace TamaPoke.Utils
                             BaseSpA = GetStat(basicInfo, "special-attack"),
                             BaseSpD = GetStat(basicInfo, "special-defense"),
                             EvolveTo = evolveTo,
-                            EvolveLevel = evolveLevel
+                            EvolveLevel = evolveLevel,
+                            GenderRate = speciesInfo != null ? speciesInfo.gender_rate : -1
                         };
 
                         allPokemonData.Add(newPokemon);

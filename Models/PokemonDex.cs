@@ -28,6 +28,7 @@ namespace TamaPoke.Models
         public int BaseSpD { get; set; }
         public int EvolveTo { get; set; }
         public int EvolveLevel { get; set; }
+        public int GenderRate { get; set; }
     }
 
     public static class PokemonDex

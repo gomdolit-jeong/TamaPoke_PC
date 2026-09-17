@@ -12,13 +12,6 @@ namespace TamaPoke.Models
     {
         #region 생애 주기 (Life Cycle)
 
-        private static readonly HashSet<int> AlwaysFemaleIds = new() { 29, 30, 31, 113, 115, 124, 238, 241, 242, 314, 380, 412, 416, 440, 478, 488, 548, 549, 629, 630, 669, 670, 671, 761, 762, 763, 856, 857, 858, 868, 869, 905, 957, 958, 959, 1017 };
-        private static readonly HashSet<int> AlwaysMaleIds = new() { 32, 33, 34, 106, 107, 128, 236, 237, 313, 381, 414, 475, 538, 539, 627, 628, 641, 642, 645, 859, 860, 861, 1014, 1015, 1016 };
-        private static readonly HashSet<int> Female12_5Ids = new() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 152, 153, 154, 155, 156, 157, 158, 159, 160, 252, 253, 254, 255, 256, 257, 258, 259, 260, 387, 388, 389, 390, 391, 392, 393, 394, 395, 495, 496, 497, 498, 499, 500, 501, 502, 503, 650, 651, 652, 653, 654, 655, 656, 657, 658, 722, 723, 724, 725, 726, 727, 728, 729, 730, 810, 811, 812, 813, 814, 815, 816, 817, 818, 906, 907, 908, 909, 910, 911, 912, 913, 914, 133, 134, 135, 136, 196, 197, 470, 471, 700, 138, 139, 140, 141, 345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567, 696, 697, 698, 699, 142, 143, 446, 175, 176, 468, 447, 448, 415, 757, 891, 892 };
-        private static readonly HashSet<int> Female75Ids = new() { 35, 36, 37, 38, 39, 40, 174, 222, 298, 572, 573, 574, 575, 576, 667, 668, 682, 683, 955, 956 };
-        private static readonly HashSet<int> Female25Ids = new() { 58, 59, 63, 64, 65, 66, 67, 68, 125, 126, 239, 240, 296, 297, 466, 467, 532, 533, 534 };
-        private static readonly HashSet<int> GenderlessIds = new() { 81, 82, 100, 101, 120, 121, 132, 137, 201, 233, 292, 337, 338, 343, 344, 374, 375, 376, 436, 437, 462, 474, 479, 599, 600, 601, 615, 622, 623, 703, 774, 781, 854, 855, 870, 924, 925, 999, 1000 };
-
         private static HashSet<int> MissingSpriteIds = new();
 
         private string _spriteFileName = "p0000.bin";
@@ -165,24 +158,24 @@ namespace TamaPoke.Models
 
         private void ApplyGenderRatio(int speciesId, Random rand)
         {
-            IsGenderless = false;
+            var pInfo = PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == speciesId);
+            int rate = pInfo != null ? pInfo.GenderRate : -1;
 
-            bool isLegendaryWithGender = AlwaysFemaleIds.Contains(speciesId) || AlwaysMaleIds.Contains(speciesId) || Female12_5Ids.Contains(speciesId) || speciesId == 485;
+            IsGenderless = (rate == -1);
 
-            if (GenderlessIds.Contains(speciesId) || (LegendaryIds.Contains(speciesId) && !isLegendaryWithGender))
+            if (rate == -1 || rate == 0)
             {
-                IsGenderless = true;
-                IsFemale = false;
-                return;
+                IsFemale = false; // 무성이거나 100% 수컷
             }
-
-            if (AlwaysFemaleIds.Contains(speciesId)) { IsFemale = true; return; }
-            if (AlwaysMaleIds.Contains(speciesId)) { IsFemale = false; return; }
-            if (Female12_5Ids.Contains(speciesId)) { IsFemale = rand.Next(1000) >= 875; return; }
-            if (Female75Ids.Contains(speciesId)) { IsFemale = rand.Next(100) < 75; return; }
-            if (Female25Ids.Contains(speciesId)) { IsFemale = rand.Next(100) < 25; return; }
-
-            IsFemale = rand.Next(2) == 0;
+            else if (rate == 8)
+            {
+                IsFemale = true; // 100% 암컷
+            }
+            else
+            {
+                // 8분율 기반 깔끔한 확률 계산
+                IsFemale = rand.Next(8) < rate;
+            }
         }
 
         public void Hatch()
