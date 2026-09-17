@@ -154,59 +154,6 @@ namespace TamaPoke.Models
         public bool HasRecommendedSkill2 => RecommendedSkill2 != null;
 
         private SkillInfo? _skillToLearn;
-        public void OnBattleWon()
-        {
-            // 🌟 이전의 단일 리스트 방식 대신, 똑똑한 세대 탐색기(GetActiveLearnset)를 사용합니다!
-            var activeMoves = SkillDex.GetActiveLearnset(SpeciesId);
-
-            if (activeMoves.Count == 0)
-            {
-                FinishBattleNormally();
-                return;
-            }
-
-            var availableSkills = activeMoves
-                .Where(m => m.Level <= Level && !KnowsSkill(m.MoveId))
-                .Select(m => new { m.Level, Skill = SkillDex.GetSkill(m.MoveId) })
-                .Where(x => x.Skill != null)
-                .ToList();
-
-            if (availableSkills.Count > 0)
-            {
-                Random rand = new Random();
-
-                var picked = availableSkills
-                    .OrderByDescending(x => x.Level)
-                    .ThenBy(x => rand.Next())
-                    .Take(2)
-                    .Select(x => x.Skill!)
-                    .ToList();
-
-                RecommendedSkill1 = picked.Count > 0 ? picked[0] : null;
-                RecommendedSkill2 = picked.Count > 1 ? picked[1] : null;
-
-                IsSkillLearnMenuOpen = true;
-                BattleMessage = "실전 경험을 통해 새로운 스킬을 떠올렸다!\n어떤 스킬을 배울까?";
-            }
-            else
-            {
-                FinishBattleNormally();
-            }
-        }
-
-        private void FinishBattleNormally()
-        {
-            if (IsGymBattle)
-            {
-                IsGymBattle = false;
-                CloseBattle();
-            }
-            else
-            {
-                IsCatchOffered = true;
-            }
-        }
-
         public void SelectRecommendedSkill(int optionNumber)
         {
             _skillToLearn = (optionNumber == 1) ? RecommendedSkill1 : RecommendedSkill2;
@@ -255,8 +202,9 @@ namespace TamaPoke.Models
             _ = ShowEventMessageAsync(finalMessage);
             await Task.Delay(2000);
 
-            FinishBattleNormally();
+            ProceedToCatchOrEnd();
         }
+
         #endregion
     }
 }

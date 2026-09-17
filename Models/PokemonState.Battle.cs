@@ -271,7 +271,195 @@ namespace TamaPoke.Models
         }
         #endregion
 
-        #region 배틀 로직 및 상태이상 관리 (Battle Logic & Ailments)
+        #region 승리 및 포획 시퀀스 (Victory & Catch Sequence)
+
+        private async Task CheckBattleEndAsync()
+        {
+            // 배틀이 종료되었으므로 플레이어와 적의 턴을 완전히 잠급니다.
+            IsPlayerTurn = false;
+
+            if (PlayerHp <= 0)
+            {
+                IsBattleResolved = true;
+                BattleMessage = IsGymBattle ? "관장에게 패배했습니다...\n수행이 더 필요합니다." : "눈앞이 깜깜해졌다...\n배틀에서 패배했습니다.";
+                Joy = Math.Max(0, Joy - 10);
+                Energy = Math.Max(0, Energy - 20);
+
+                IsDefeatedFadeOut = true;
+                await Task.Delay(3000);
+
+                IsDefeatedFadeOut = false;
+                IsGymBattle = false;
+                CloseBattle();
+            }
+            else if (EnemyHp <= 0)
+            {
+                // [시퀀스 1] 적 HP가 0이 됨 (승리 판정 고정)
+                IsBattleResolved = true;
+                TrAtk = Math.Min(100, TrAtk + 5);
+                Bond = Math.Min(100, Bond + 5);
+
+                if (IsGymBattle)
+                {
+                    var leader = GymManager.GetLeader(GymBadges);
+                    if (leader != null)
+                    {
+                        GymBadges++; Save();
+                        BattleMessage = $"대단한 승부였다!\n{leader.LeaderName}에게서\n[{leader.BadgeName}]을(를) 얻었다!";
+                        await Task.Delay(3000);
+                    }
+                }
+                else
+                {
+                    BattleMessage = "배틀에서 승리했다!";
+                    await Task.Delay(2000);
+                }
+
+                // [시퀀스 2] 스킬 배울 것이 있는지 확인하는 단계로 넘어감
+                CheckAndLearnSkillAfterVictory();
+            }
+        }
+
+        // 스킬 학습 체크 단계 (기존 Skills.cs에 있던 기능을 통합)
+        public void CheckAndLearnSkillAfterVictory()
+        {
+            var activeMoves = SkillDex.GetActiveLearnset(SpeciesId);
+
+            if (activeMoves.Count == 0)
+            {
+                ProceedToCatchOrEnd();
+                return;
+            }
+
+            var availableSkills = activeMoves
+                .Where(m => m.Level <= Level && !KnowsSkill(m.MoveId))
+                .Select(m => new { m.Level, Skill = SkillDex.GetSkill(m.MoveId) })
+                .Where(x => x.Skill != null)
+                .ToList();
+
+            if (availableSkills.Count > 0)
+            {
+                Random rand = new Random();
+                var picked = availableSkills.OrderByDescending(x => x.Level).ThenBy(x => rand.Next()).Take(2).Select(x => x.Skill!).ToList();
+
+                RecommendedSkill1 = picked.Count > 0 ? picked[0] : null;
+                RecommendedSkill2 = picked.Count > 1 ? picked[1] : null;
+
+                // [시퀀스 2] 스킬 배울 것이 있으면 스킬 배우는 거 띄우기
+                IsSkillLearnMenuOpen = true;
+                BattleMessage = "실전 경험을 통해 새로운 스킬을 떠올렸다!\n어떤 스킬을 배울까?";
+            }
+            else
+            {
+                ProceedToCatchOrEnd();
+            }
+        }
+
+        // [시퀀스 3] 스킬 학습이 끝났거나 배울게 없으면 포획/종료 분기
+        public void ProceedToCatchOrEnd()
+        {
+            if (IsGymBattle)
+            {
+                IsGymBattle = false;
+                CloseBattle();
+            }
+            else
+            {
+                BattleMessage = "야생 포켓몬을 포획하시겠습니까?";
+                IsCatchOffered = true; // 포획/그냥가기 UI를 띄움
+            }
+        }
+
+        // 포획 애니메이션 후 실제 포획 확률을 계산하는 로직
+        public async Task ExecuteCatchResultAsync()
+        {
+            double hpPercent = (double)EnemyHp / EnemyMaxHp;
+            int catchRate = 10;
+            if (hpPercent <= 0.2) catchRate = 70;
+            else if (hpPercent <= 0.5) catchRate = 35;
+
+            Random rand = new Random();
+            bool isCaught = rand.Next(100) < catchRate;
+
+            if (isCaught)
+            {
+                UnlockPokemonInPokedex(EnemySpeciesId);
+                var newMember = new PartyMember { SpeciesId = EnemySpeciesId, Name = EnemyName, Level = EnemyLevel, AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL, IsShiny = false, TrAtk = 0, TrDef = 0, TrSpeed = 0, Skills = (int[])EnemySkills.Clone(), Genes = new PokemonGene() };
+
+                if (Party != null && Party.Count >= 6)
+                {
+                    _pendingRetiree = newMember;
+                    IsSwapMode = true;
+                    SyncMainToLeader();
+                    UpdatePartyFirstFlags();
+                    IsPartyOpen = true;
+
+                    BattleMessage = $"{EnemyName}을(를) 잡았지만 파티가 꽉 찼다!\n바꿀 포켓몬을 선택해 주세요.";
+                    await Task.Delay(2500);
+                }
+                else if (Party != null)
+                {
+                    Party.Add(newMember);
+                    BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다.";
+                    await Task.Delay(2000);
+                }
+
+                // [시퀀스 6] 포획 성공 시 배틀 보상 후 종료
+                await ProcessWildBattleRewardsAsync();
+            }
+            else
+            {
+                IsEnemyVisible = true;
+                BattleMessage = $"아아! {EnemyName}이(가) 볼에서 빠져나왔다!";
+                await Task.Delay(2000);
+
+                // [시퀀스 5] 포획 실패 시 적 턴으로 넘기지 않고 다시 포획/그냥가기 선택 창 띄우기!
+                BattleMessage = "포켓볼을 더 던지겠습니까?";
+                IsCatchOffered = true;
+            }
+        }
+
+        // 그냥 가기 버튼 눌렀을 때
+        public async void LeaveWildBattle()
+        {
+            IsCatchOffered = false;
+            BattleMessage = $"{EnemyName}을(를) 뒤로하고 길을 떠납니다...";
+            await Task.Delay(1500);
+
+            // [시퀀스 6] 그냥 가면 배틀 보상 후 종료
+            await ProcessWildBattleRewardsAsync();
+        }
+
+        private async Task ProcessWildBattleRewardsAsync()
+        {
+            Random rand = new Random();
+            string dropMessage = "";
+
+            if (rand.Next(100) < 50)
+            {
+                int itemRoll = rand.Next(100);
+                if (itemRoll < 50) { AddItemToInventory("몬스터볼", "야생 포켓몬을 잡을 때 쓴다.", ItemType.monsterball, 1, 1); dropMessage = "몬스터볼 1개를 얻었다!"; }
+                else
+                {
+                    int potionRoll = rand.Next(100);
+                    if (potionRoll < 60) { AddItemToInventory("상처약", "포켓몬의 체력을 15% 회복한다.", ItemType.Potion, 15, 1); dropMessage = "상처약 1개를 얻었다!"; }
+                    else if (potionRoll < 90) { AddItemToInventory("좋은상처약", "포켓몬의 체력을 30% 회복한다.", ItemType.Potion, 30, 1); dropMessage = "좋은상처약 1개를 얻었다!"; }
+                    else { AddItemToInventory("고급상처약", "포켓몬의 체력을 50% 회복한다.", ItemType.Potion, 50, 1); dropMessage = "앗! 고급상처약 1개를 얻었다!"; }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(dropMessage))
+            {
+                BattleMessage = dropMessage;
+                await Task.Delay(2000);
+            }
+
+            CloseBattle();
+        }
+
+        #endregion
+
+        #region 상태이상 관리 (Battle Logic & Ailments)
 
         private SkillAilment _playerAilment = SkillAilment.None;
         public SkillAilment PlayerAilment
@@ -352,15 +540,6 @@ namespace TamaPoke.Models
             IsBattleOpen = false;
             IsGymBattle = false;
             BattleMessage = "";
-        }
-
-        public async void LeaveWildBattle()
-        {
-            IsCatchOffered = false;
-            BattleMessage = $"{EnemyName}을(를) 뒤로하고 길을 떠납니다...";
-            await Task.Delay(1500);
-
-            await ProcessWildBattleRewardsAsync();
         }
 
         // 🌟 [추가됨] 플레이어가 턴을 진행할 수 있는지(행동 불가 상태이상 체크) 확인하는 헬퍼 메서드
@@ -564,6 +743,8 @@ namespace TamaPoke.Models
 
         private async Task EnemyTurnAction(bool playerDodged)
         {
+            if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || IsBattleResolved) return;
+
             var myInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
             var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
             Random rand = new Random();
@@ -685,119 +866,8 @@ namespace TamaPoke.Models
             }
         }
 
-        private async Task CheckBattleEndAsync()
-        {
-            if (PlayerHp <= 0)
-            {
-                IsBattleResolved = true;
-                BattleMessage = IsGymBattle ? "관장에게 패배했습니다...\n수행이 더 필요합니다." : "눈앞이 깜깜해졌다...\n배틀에서 패배했습니다.";
-                Joy = Math.Max(0, Joy - 10);
-                Energy = Math.Max(0, Energy - 20);
+        
 
-                IsDefeatedFadeOut = true;
-                await Task.Delay(3000);
-
-                IsDefeatedFadeOut = false;
-                IsGymBattle = false;
-                CloseBattle();
-            }
-            else if (EnemyHp <= 0)
-            {
-                IsBattleResolved = true;
-                TrAtk = Math.Min(100, TrAtk + 5);
-                Bond = Math.Min(100, Bond + 5);
-
-                if (IsGymBattle)
-                {
-                    var leader = GymManager.GetLeader(GymBadges);
-                    if (leader != null)
-                    {
-                        GymBadges++; Save();
-                        BattleMessage = $"대단한 승부였다!\n{leader.LeaderName}에게서\n[{leader.BadgeName}]을(를) 얻었다!";
-                        await Task.Delay(3000);
-                    }
-                    OnBattleWon();
-                }
-                else
-                {
-                    BattleMessage = "배틀에서 승리했다!";
-                    await Task.Delay(2000);
-                    OnBattleWon();
-                }
-            }
-        }
-
-        public async Task ExecuteCatchResultAsync()
-        {
-            double hpPercent = (double)EnemyHp / EnemyMaxHp;
-            int catchRate = 10;
-            if (hpPercent <= 0.2) catchRate = 70;
-            else if (hpPercent <= 0.5) catchRate = 35;
-
-            Random rand = new Random();
-            bool isCaught = rand.Next(100) < catchRate;
-
-            if (isCaught)
-            {
-                UnlockPokemonInPokedex(EnemySpeciesId);
-                var newMember = new PartyMember { SpeciesId = EnemySpeciesId, Name = EnemyName, Level = EnemyLevel, AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL, IsShiny = false, TrAtk = 0, TrDef = 0, TrSpeed = 0, Skills = (int[])EnemySkills.Clone(), Genes = new PokemonGene() };
-
-                if (Party != null && Party.Count >= 6)
-                {
-                    _pendingRetiree = newMember;
-                    IsSwapMode = true;
-                    SyncMainToLeader();
-                    UpdatePartyFirstFlags();
-                    IsPartyOpen = true;
-
-                    BattleMessage = $"{EnemyName}을(를) 잡았지만 파티가 꽉 찼다!\n바꿀 포켓몬을 선택해 주세요.";
-                    await Task.Delay(2500);
-                }
-                else if (Party != null)
-                {
-                    Party.Add(newMember);
-                    BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다.";
-                    await Task.Delay(2000);
-                }
-                await ProcessWildBattleRewardsAsync();
-            }
-            else
-            {
-                IsEnemyVisible = true;
-                BattleMessage = $"아아! {EnemyName}이(가) 볼에서 빠져나왔다!";
-                await Task.Delay(2000);
-
-                IsCatchOffered = false;
-                await EnemyTurnAction(false);
-            }
-        }
-
-        private async Task ProcessWildBattleRewardsAsync()
-        {
-            Random rand = new Random();
-            string dropMessage = "";
-
-            if (rand.Next(100) < 50)
-            {
-                int itemRoll = rand.Next(100);
-                if (itemRoll < 50) { AddItemToInventory("몬스터볼", "야생 포켓몬을 잡을 때 쓴다.", ItemType.monsterball, 1, 1); dropMessage = "몬스터볼 1개를 얻었다!"; }
-                else
-                {
-                    int potionRoll = rand.Next(100);
-                    if (potionRoll < 60) { AddItemToInventory("상처약", "포켓몬의 체력을 15% 회복한다.", ItemType.Potion, 15, 1); dropMessage = "상처약 1개를 얻었다!"; }
-                    else if (potionRoll < 90) { AddItemToInventory("좋은상처약", "포켓몬의 체력을 30% 회복한다.", ItemType.Potion, 30, 1); dropMessage = "좋은상처약 1개를 얻었다!"; }
-                    else { AddItemToInventory("고급상처약", "포켓몬의 체력을 50% 회복한다.", ItemType.Potion, 50, 1); dropMessage = "앗! 고급상처약 1개를 얻었다!"; }
-                }
-            }
-
-            if (!string.IsNullOrEmpty(dropMessage))
-            {
-                BattleMessage = dropMessage;
-                await Task.Delay(2000);
-            }
-
-            CloseBattle();
-        }
         #endregion
 
         #region 체육관 시스템 (Gym System)

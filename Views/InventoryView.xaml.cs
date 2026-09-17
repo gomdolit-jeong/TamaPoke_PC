@@ -41,11 +41,8 @@ namespace TamaPoke.Views
                             return;
                         }
                         pet.IsInventoryOpen = false;
-                        clickedItem.Quantity--;
 
-                        if (clickedItem.Quantity <= 0) pet.Inventory.Remove(clickedItem);
-                        pet.OnPropertyChanged(nameof(pet.MonsterBalls));
-
+                        // 🌟 수동 차감 로직 삭제 (애니메이션 호출을 통해 Catch_Click에서 알아서 차감합니다)
                         pet.RequestCatchAnimation?.Invoke();
                     }
                     // 2. 상처약(Potion) 처리 로직

@@ -9,7 +9,7 @@
         WindowStyle="None" 
         AllowsTransparency="True" 
         Background="Transparent"
-        Topmost="True"
+        Topmost="False" 
         Icon="/Assets/Resource/monsterball.ico">
 
     <!-- 🌟 메인 창 전체 Grid에 마우스 클릭 이벤트를 다시 연결합니다! -->
@@ -24,7 +24,8 @@
             <Button x:Name="PinButton" Width="24" Height="24" Margin="0,0,8,0" Foreground="White" FontWeight="Bold" Click="PinButton_Click" ToolTip="항상 위 고정 토글">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="PinBorder" Background="#802196F3" CornerRadius="12">
+                        <!-- 🌟 2. 처음 시작할 때 풀려 있는 상태이므로 어두운 색상(#80000000)으로 시작합니다 -->
+                        <Border x:Name="PinBorder" Background="#80000000" CornerRadius="12">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>

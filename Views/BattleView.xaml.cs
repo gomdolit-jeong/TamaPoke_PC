@@ -113,9 +113,7 @@ namespace TamaPoke.Views
                     }
                     pet.IsBattleInventoryOpen = false;
 
-                    clickedItem.Quantity--;
-                    if (clickedItem.Quantity <= 0) pet.Inventory.Remove(clickedItem);
-
+                    // 🌟 수동 차감 로직 삭제 (Catch_Click에서 알아서 차감합니다)
                     Catch_Click(sender, e);
                 }
                 else if (clickedItem.Type == ItemType.Potion)
@@ -147,6 +145,21 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet == null) return;
 
+            // 🌟 [시퀀스 4] 애니메이션을 시작하기 전에 몬스터볼 개수를 검사합니다!
+            if (pet.MonsterBalls <= 0)
+            {
+                pet.BattleMessage = "몬스터볼이 부족하다! 포획할 수 없다!";
+                await Task.Delay(2000);
+
+                // [시퀀스 5] 다시 포획/그냥가기 선택 창 띄우기
+                pet.BattleMessage = "야생 포켓몬을 포획하시겠습니까?";
+                pet.IsCatchOffered = true;
+                return;
+            }
+
+            // 🌟 몬스터볼이 있다면 1개를 차감하고 UI 메뉴를 닫습니다.
+            pet.MonsterBalls--;
+            pet.Save();
             pet.IsPlayerTurn = false;
             pet.IsCatchOffered = false;
 

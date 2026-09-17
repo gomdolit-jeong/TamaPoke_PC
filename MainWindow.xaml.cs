@@ -48,6 +48,8 @@ namespace TamaPoke
             try { InitializeComponent(); } catch (Exception ex) { System.Windows.MessageBox.Show($"XAML 로드 에러: {ex.InnerException?.Message ?? ex.Message}", "에러 추적기"); }
             try { SetupSystemTray(); } catch (Exception ex) { System.Windows.MessageBox.Show($"트레이 설정 에러: {ex.Message}", "에러 추적기"); }
 
+            this.Topmost = false;
+
             this.Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
         }
@@ -185,6 +187,8 @@ namespace TamaPoke
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            SkillDex.LoadSkillData();
+            PokemonDex.LoadPokemonData();
             MyPet = PokemonState.Load();
             if (MyPet != null) MyPet.TrayNotificationRequested += ShowTrayNotification;
 
