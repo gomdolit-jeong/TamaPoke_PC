@@ -384,7 +384,22 @@ namespace TamaPoke.Models
             if (isCaught)
             {
                 UnlockPokemonInPokedex(EnemySpeciesId);
-                var newMember = new PartyMember { SpeciesId = EnemySpeciesId, Name = EnemyName, Level = EnemyLevel, AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL, IsShiny = false, TrAtk = 0, TrDef = 0, TrSpeed = 0, Skills = (int[])EnemySkills.Clone(), Genes = new PokemonGene() };
+                
+                var newMember = new PartyMember
+                {
+                    SpeciesId = EnemySpeciesId,
+                    Name = EnemyName,
+                    Level = EnemyLevel,
+                    AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL,
+                    IsShiny = false,
+                    TrAtk = 0,
+                    TrDef = 0,
+                    TrSpeed = 0,
+                    Skills = (int[])EnemySkills.Clone(),
+                    Genes = new PokemonGene(),
+                    // 🌟 에러 수정: PokemonDex에서 찾지 않고, 도감 번호를 이용해 'p0000.bin' 포맷으로 직접 만들어 줍니다.
+                    SpriteFileName = $"p{EnemySpeciesId:D4}.bin"
+                };
 
                 if (Party != null && Party.Count >= 6)
                 {
