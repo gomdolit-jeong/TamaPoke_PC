@@ -808,6 +808,7 @@ namespace TamaPoke.Models
         }
 
         // [시퀀스 4-B] 야생 포획 연출
+        // [시퀀스 4-B] 야생 포획 연출 및 확률 계산
         public async Task ExecuteCatchResultAsync()
         {
             double hpPercent = (double)EnemyHp / EnemyMaxHp;
@@ -855,7 +856,7 @@ namespace TamaPoke.Models
                     await Task.Delay(2000);
                 }
 
-                // 포획 완료 후 야생 보상으로 이동
+                // 포획 성공 시 보상 획득 후 종료
                 await ProcessWildBattleRewardsAsync();
             }
             else
@@ -864,8 +865,18 @@ namespace TamaPoke.Models
                 BattleMessage = $"아아! {EnemyName}이(가) 볼에서 빠져나왔다!";
                 await Task.Delay(2000);
 
-                BattleMessage = "포켓볼을 더 던지겠습니까?";
-                IsCatchOffered = true;
+                // 🌟 핵심 분기: 적의 체력에 따라 전투 중인지, 승리 후인지 판단합니다.
+                if (EnemyHp <= 0)
+                {
+                    // [승리 후 포획 실패] 다시 포획/그냥가기 선택 창을 띄웁니다.
+                    BattleMessage = "포켓볼을 더 던지겠습니까?";
+                    IsCatchOffered = true;
+                }
+                else
+                {
+                    // [전투 중 포획 실패] 배틀이 안 끝났으므로 팝업 없이 적의 턴으로 넘깁니다!
+                    await EnemyTurnAction(false);
+                }
             }
         }
 

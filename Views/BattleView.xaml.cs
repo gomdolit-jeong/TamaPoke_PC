@@ -148,6 +148,7 @@ namespace TamaPoke.Views
             // 🌟 [시퀀스 4] 애니메이션을 시작하기 전에 몬스터볼 개수를 검사합니다!
             if (pet.MonsterBalls <= 0)
             {
+                pet.IsCatchOffered = false;
                 pet.BattleMessage = "몬스터볼이 부족하다! 포획할 수 없다!";
                 await Task.Delay(2000);
 
