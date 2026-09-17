@@ -109,6 +109,9 @@
 
     <!-- 출력 폴더(bin/Debug 등)에 version.json 파일을 자동으로 기록합니다 -->
     <WriteLinesToFile File="$(OutDir)version.json" Lines="$(JsonContent)" Overwrite="true" Encoding="UTF-8" />
+	
+	<!-- 유저님이 Git 커밋을 하시는 원본 소스 폴더에도 version.json을 똑같이 갱신합니다! -->
+	<WriteLinesToFile File="$(MSBuildProjectDirectory)\version.json" Lines="$(JsonContent)" Overwrite="true" Encoding="UTF-8" />
   </Target>
 
 
