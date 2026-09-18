@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.ComponentModel; // 🌟 상태 변화 알림을 받기 위해 추가
 using TamaPoke.Models;
 using TamaPoke.Utils.Service;
 
@@ -24,34 +25,56 @@ namespace TamaPoke.Views
         public CleanGameView()
         {
             InitializeComponent();
+
+            // 🌟 화면 로드/언로드 시 이벤트 연결
+            this.Loaded += CleanGameView_Loaded;
+            this.Unloaded += CleanGameView_Unloaded;
+        }
+
+        private void CleanGameView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is PokemonState pet) pet.PropertyChanged += Pet_PropertyChanged;
+        }
+
+        private void CleanGameView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is PokemonState pet) pet.PropertyChanged -= Pet_PropertyChanged;
+        }
+
+        // 🌟 청소 게임 상태 변화 감지
+        private async void Pet_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PokemonState.IsCleanGameOpen))
+            {
+                var pet = GetPet();
+                if (pet != null && !pet.IsCleanGameOpen)
+                {
+                    await System.Threading.Tasks.Task.Delay(2000);
+                    ReturnToIdle(pet);
+                }
+            }
         }
 
         private PokemonState? GetPet() => DataContext as PokemonState;
 
-        // 마우스를 따라 포켓몬 이동
         private void GameArea_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var pet = GetPet();
             if (pet != null && pet.IsCleanGameOpen)
             {
                 System.Windows.Point pos = e.GetPosition((UIElement)sender);
-
-                // 마우스의 X, Y 좌표를 모두 구해서 모델에 전달합니다.
                 double targetX = pos.X - 160;
                 double targetY = pos.Y - 160;
-
                 pet.TargetPosX = Math.Max(-100, Math.Min(100, targetX));
-                pet.TargetPosY = Math.Max(-100, Math.Min(100, targetY)); // 🌟 Y좌표 전달 추가
+                pet.TargetPosY = Math.Max(-100, Math.Min(100, targetY));
             }
         }
 
-        // 🌟 세균을 클릭(터치)했을 때 처리
         private void Dirt_Click(object sender, MouseButtonEventArgs e)
         {
             var pet = GetPet();
             if (pet != null && pet.IsCleanGameOpen)
             {
-                // 클릭된 버튼의 Tag 속성에서 세균의 Id를 가져옵니다.
                 if (sender is System.Windows.Controls.Button btn && btn.Tag is int dirtId)
                 {
                     pet.TapDirt(dirtId);
@@ -66,8 +89,6 @@ namespace TamaPoke.Views
             if (pet != null && pet.IsCleanGameOpen)
             {
                 pet.TriggerAttackMotion();
-
-                // 이벤트 핸들됨 처리 (포켓몬을 눌렀는데 그 뒤에 있는 세균까지 같이 눌리는 현상 방지)
                 e.Handled = true;
             }
         }
@@ -77,14 +98,20 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null)
             {
+                // 수동 종료 시 상태값만 변경하여 자동 전환 유도
                 pet.IsCleanGameOpen = false;
-                Window parentWindow = Window.GetWindow(this);
-                if (parentWindow is MainWindow mainWindow)
-                {
-                    IdleView idleView = new IdleView();
-                    idleView.DataContext = pet;
-                    mainWindow.NavigateTo(idleView);
-                }
+            }
+        }
+
+        // 🌟 메인 화면 복귀 로직
+        private void ReturnToIdle(PokemonState pet)
+        {
+            Window parentWindow = Window.GetWindow(this);
+            if (parentWindow is MainWindow mainWindow)
+            {
+                IdleView idleView = new IdleView();
+                idleView.DataContext = pet;
+                mainWindow.NavigateTo(idleView);
             }
         }
     }

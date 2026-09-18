@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.ComponentModel; // 🌟 상태 변화 알림을 받기 위해 필수적인 네임스페이스입니다.
 using TamaPoke.Models;
 using TamaPoke.Utils.Service;
 
@@ -9,7 +10,6 @@ namespace TamaPoke.Views
 {
     public partial class BallGameView : System.Windows.Controls.UserControl
     {
-        // 🌟 뷰를 매번 새로 만들지 않고 캐싱하여 재사용하기 위한 정적 인스턴스
         private static BallGameView? _cachedInstance;
 
         public static BallGameView GetInstance(PokemonState pet)
@@ -25,11 +25,45 @@ namespace TamaPoke.Views
         public BallGameView()
         {
             InitializeComponent();
+
+            // 🌟 화면 로드 및 언로드 시 이벤트를 연결/해제합니다.
+            this.Loaded += BallGameView_Loaded;
+            this.Unloaded += BallGameView_Unloaded;
+        }
+
+        private void BallGameView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is PokemonState pet)
+            {
+                pet.PropertyChanged += Pet_PropertyChanged;
+            }
+        }
+
+        private void BallGameView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is PokemonState pet)
+            {
+                pet.PropertyChanged -= Pet_PropertyChanged;
+            }
+        }
+
+        // 🌟 포켓몬의 상태 변화를 실시간으로 감지합니다.
+        private async void Pet_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PokemonState.IsBallGameOpen))
+            {
+                var pet = GetPet();
+                // 3번 연속으로 공을 떨어뜨려 내부 로직에서 IsBallGameOpen이 false가 되면 자동 실행됩니다.
+                if (pet != null && !pet.IsBallGameOpen)
+                {
+                    await System.Threading.Tasks.Task.Delay(2000);
+                    ReturnToIdle(pet);
+                }
+            }
         }
 
         private PokemonState? GetPet() => DataContext as PokemonState;
 
-        // 마우스 이동 시 포켓몬 이동 처리
         private void GameArea_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var pet = GetPet();
@@ -41,7 +75,6 @@ namespace TamaPoke.Views
             }
         }
 
-        // 🌟 즉발형 터치 이벤트 처리
         private void TapBall_Click(object sender, MouseButtonEventArgs e)
         {
             var pet = GetPet();
@@ -49,8 +82,6 @@ namespace TamaPoke.Views
             {
                 if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
                 pet.TapBall();
-
-                // 마우스 클릭 이벤트가 부모 UI로 전달되지 않고 여기서 완료되도록 처리
                 e.Handled = true;
             }
         }
@@ -60,8 +91,8 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null)
             {
+                // 사용자가 수동으로 그만두기를 누를 때에도 상태값만 변경하여 자동 전환 이벤트를 유도합니다.
                 pet.IsBallGameOpen = false;
-                ReturnToIdle(pet);
             }
         }
 

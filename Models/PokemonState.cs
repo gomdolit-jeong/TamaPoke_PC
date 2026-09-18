@@ -129,41 +129,42 @@ namespace TamaPoke.Models
         }
 
         #region 상수 및 열거형 (Constants)
-        public const int ANIM_WALK = 0;
-        public const int ANIM_ATTACK = 1;
-        public const int ANIM_STRIKE = 2;
-        public const int ANIM_SHOOT = 3;
-        public const int ANIM_SHAKE = 4;
-        public const int ANIM_SLEEP = 5;
-        public const int ANIM_HURT = 6;
-        public const int ANIM_IDLE = 7;
-        public const int ANIM_SWING = 8;
-        public const int ANIM_DOUBLE = 9;
-        public const int ANIM_HOP = 10;
-        public const int ANIM_CHARGE = 11;
-        public const int ANIM_ROTATE = 12;
-        public const int ANIM_EVENTSLEEP = 13;
-        public const int ANIM_WAKE = 14;
-        public const int ANIM_EAT = 15;
-        public const int ANIM_TUMBLE = 16;
-        public const int ANIM_POSE = 17;
-        public const int ANIM_PULL = 18;
-        public const int ANIM_PAIN = 19;
-        public const int ANIM_FLOAT = 20;
-        public const int ANIM_DEEPBREATH = 21;
-        public const int ANIM_NOD = 22;
-        public const int ANIM_SIT = 23;
-        public const int ANIM_LOOKUP = 24;
-        public const int ANIM_SINK = 25;
-        public const int ANIM_TRIP = 26;
-        public const int ANIM_LAYING = 27;
-        public const int ANIM_LEAPFORTH = 28;
-        public const int ANIM_HEAD = 29;
-        public const int ANIM_CRINGE = 30;
-        public const int ANIM_LOSTBALANCE = 31;
-        public const int ANIM_TUMBLEBACK = 32;
-        public const int ANIM_FAINT = 33;
-        public const int ANIM_HITGROUND = 34;
+        // 포켓몬의 다양한 행동과 감정 표현을 담당하는 애니메이션 상수입니다.
+        public const int ANIM_WALK = 0;         // 걷기 (이동할 때 기본 동작)
+        public const int ANIM_ATTACK = 1;       // 공격 (물리적인 기본 타격)
+        public const int ANIM_STRIKE = 2;       // 강하게 치기 (연속 치기나 강한 타격)
+        public const int ANIM_SHOOT = 3;        // 발사 (광선이나 특수 공격 발사)
+        public const int ANIM_SHAKE = 4;        // 몸 털기 (목욕 후 물기를 털어내는 동작 등)
+        public const int ANIM_SLEEP = 5;        // 잠자기 (바닥에 웅크리거나 엎드려 쿨쿨 잠듦)
+        public const int ANIM_HURT = 6;         // 맞아서 아파하기 (가벼운 데미지를 입었을 때)
+        public const int ANIM_IDLE = 7;         // 대기 상태 (가만히 서서 숨만 쉬는 기본 동작)
+        public const int ANIM_SWING = 8;        // 크게 휘두르기 (꼬리나 팔을 넓게 휘두름)
+        public const int ANIM_DOUBLE = 9;       // 연속 공격 / 두 번 공격
+        public const int ANIM_HOP = 10;         // 제자리 점프 (기분 좋을 때 깡총깡총 뜀)
+        public const int ANIM_CHARGE = 11;      // 기 모으기 / 돌진 준비
+        public const int ANIM_ROTATE = 12;      // 제자리에서 빙글빙글 돌기
+        public const int ANIM_EVENTSLEEP = 13;  // 특수 수면 (이벤트 중 기절하듯 잠듦)
+        public const int ANIM_WAKE = 14;        // 잠에서 깨어나기 (기지개를 켜거나 일어남)
+        public const int ANIM_EAT = 15;         // 먹방 (입을 오물거리며 먹이를 먹는 동작)
+        public const int ANIM_TUMBLE = 16;      // 앞으로 구르기 / 덤블링
+        public const int ANIM_POSE = 17;        // 포즈 취하기 (승리하거나 기분 좋을 때 폼 잡기)
+        public const int ANIM_PULL = 18;        // 무언가를 힘껏 당기기
+        public const int ANIM_PAIN = 19;        // 고통스러워하기 (응가가 쌓였거나 많이 아플 때)
+        public const int ANIM_FLOAT = 20;       // 공중에 둥둥 떠있기 (진화할 때나 초능력 사용 시)
+        public const int ANIM_DEEPBREATH = 21;  // 심호흡 / 크게 포효하기
+        public const int ANIM_NOD = 22;         // 고개 끄덕이기 (긍정적인 반응이나 호응)
+        public const int ANIM_SIT = 23;         // 자리에 얌전히 앉기
+        public const int ANIM_LOOKUP = 24;      // 하늘 위 쳐다보기
+        public const int ANIM_SINK = 25;        // 풀썩 주저앉기 (기운이 다 빠졌거나 크게 실망함)
+        public const int ANIM_TRIP = 26;        // 발에 걸려 넘어질 뻔하기 (비틀거림)
+        public const int ANIM_LAYING = 27;      // 바닥에 완전 납작하게 엎드리기
+        public const int ANIM_LEAPFORTH = 28;   // 앞으로 펄쩍 뛰어들기 (강력한 돌진)
+        public const int ANIM_HEAD = 29;        // 머리 쓰기 / 박치기
+        public const int ANIM_CRINGE = 30;      // 몸을 잔뜩 움츠리기 (무섭거나 심하게 배고플 때)
+        public const int ANIM_LOSTBALANCE = 31; // 중심 잃기 (어지러워서 비틀거림)
+        public const int ANIM_TUMBLEBACK = 32;  // 뒤로 튕겨져 나가기 / 뒤로 구르기
+        public const int ANIM_FAINT = 33;       // 기절 (체력이 0이 되어 완전히 쓰러짐)
+        public const int ANIM_HITGROUND = 34;   // 땅에 강하게 부딪히기 / 거친 착지
 
         public static int GetTotalFramesForMotion(int animIndex)
         {
@@ -1204,21 +1205,44 @@ namespace TamaPoke.Models
                 await Task.Delay(50);
             }
 
-            switch (foodType) { case 0: CurrentFoodIcon = "🍒"; CurrentFoodColor = "#E53935"; break; case 1: CurrentFoodIcon = "🫐"; CurrentFoodColor = "#1E88E5"; break; case 2: CurrentFoodIcon = "🍏"; CurrentFoodColor = "#43A047"; break; case 3: CurrentFoodIcon = "🍬"; CurrentFoodColor = "#F06292"; break; }
-            if (foodType == 3) { Fullness = Clamp100(Fullness + 10); Joy = Clamp100(Joy + 12); Weight = Clamp100(Weight + 12); }
-            else { if (foodType == FavoriteBerry) { Fullness = Clamp100(Fullness + 35); Joy = Clamp100(Joy + 10); Bond = Clamp100(Bond + 2); BerryKnown = true; } else { Fullness = Clamp100(Fullness + 25); } }
+            switch (foodType)
+            {
+                case 0: CurrentFoodIcon = "🍒"; CurrentFoodColor = "#E53935"; break;
+                case 1: CurrentFoodIcon = "🫐"; CurrentFoodColor = "#1E88E5"; break;
+                case 2: CurrentFoodIcon = "🍏"; CurrentFoodColor = "#43A047"; break;
+                case 3: CurrentFoodIcon = "🍬"; CurrentFoodColor = "#F06292"; break;
+            }
+
+            if (foodType == 3)
+            {
+                Fullness = Clamp100(Fullness + 10); Joy = Clamp100(Joy + 12); Weight = Clamp100(Weight + 12);
+            }
+            else
+            {
+                if (foodType == FavoriteBerry)
+                {
+                    Fullness = Clamp100(Fullness + 35); Joy = Clamp100(Joy + 10); Bond = Clamp100(Bond + 2); BerryKnown = true;
+                }
+                else
+                {
+                    Fullness = Clamp100(Fullness + 25);
+                }
+            }
+
             NeglectTicks = 0; IsFeedMenuOpen = false;
 
             ResetPosition();
+
             _tempActionId = ANIM_EAT;
-            _tempActionTimer = 90;
+            _tempActionTimer = 65;
 
             OnPropertyChanged(nameof(CurrentFoodIcon));
             OnPropertyChanged(nameof(CurrentFoodColor));
             OnPropertyChanged(nameof(IsEating));
             CheckStateAndAnimate();
 
-            await Task.Delay(3000);
+            // 🌟 수정됨: 열매가 사라지는 시간과 동일하게 2.1초(2100ms)만 대기합니다.
+            await Task.Delay(2100);
 
             if (!IsAnyMiniGameOpen && !IsBattleOpen)
             {
@@ -1245,13 +1269,35 @@ namespace TamaPoke.Models
 
             if (!IsAnyMiniGameOpen && !IsBattleOpen)
             {
-                _tempActionId = ANIM_HOP;
+                _tempActionId = ANIM_SHAKE;
                 _tempActionTimer = 30;
                 CheckStateAndAnimate();
             }
         }
+        public void ToggleSleep()
+        {
+            // 미니게임 중이거나 알 상태일 때는 수면 불가능
+            if (IsEgg || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
 
-        public void ToggleSleep() { if (IsEgg || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return; IsSleeping = !IsSleeping; _tempActionTimer = 0; CheckStateAndAnimate(); }
+            // 수면 상태 반전 (자고 있으면 깨우고, 깨어있으면 재웁니다)
+            IsSleeping = !IsSleeping;
+
+            if (!IsSleeping)
+            {
+                // 🌟 잠에서 막 깼을 때: 14번(ANIM_WAKE) 모션을 60틱(약 2초) 동안 재생합니다!
+                _tempActionId = ANIM_WAKE;
+                _tempActionTimer = 60;
+            }
+            else
+            {
+                // 🌟 잠들었을 때: 진행 중이던 다른 임시 모션을 즉시 취소합니다.
+                _tempActionTimer = 0;
+            }
+
+            // 상태를 즉시 화면에 반영합니다.
+            CheckStateAndAnimate();
+        }
+
         public void ToggleMute() => IsMuted = !IsMuted;
 
         public async void Pet()
@@ -1314,6 +1360,7 @@ namespace TamaPoke.Models
             if (Fullness < 30) return ANIM_CRINGE;
             if (Joy < 30) return ANIM_SINK;
 
+            if (Energy < 30) return ANIM_EVENTSLEEP;
             return ANIM_IDLE;
         }
 

@@ -107,30 +107,37 @@
             </Style.Triggers>
         </Style>
 
-        <!-- 밥 먹기 애니메이션 -->
+        <!-- 🌟 밥 먹기 애니메이션: 반쪽씩 베어 먹는(Cropping) 연출로 완벽 변경 -->
         <Style TargetType="emoji:TextBlock" x:Key="FoodAnimStyle">
             <Setter Property="Visibility" Value="Collapsed"/>
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-            <Setter Property="RenderTransform">
+            <Setter Property="Clip">
                 <Setter.Value>
-                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                    <RectangleGeometry Rect="0,0,50,50"/>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsEating}" Value="True">
                     <Setter Property="Visibility" Value="Visible"/>
                     <DataTrigger.EnterActions>
-                        <BeginStoryboard Name="eatAnim">
+                        <!-- 🌟 이름(Name)을 부여하지 않고 바로 실행시켜 버그를 방지합니다. -->
+                        <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="1.2" To="0" Duration="0:0:2.5" />
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="1.2" To="0" Duration="0:0:2.5" />
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:2.5" />
+                                <RectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Clip).(RectangleGeometry.Rect)">
+                                    <DiscreteRectKeyFrame KeyTime="0:0:0.0" Value="0,0,50,50" />
+                                    <DiscreteRectKeyFrame KeyTime="0:0:0.7" Value="0,0,25,50" />
+                                    <DiscreteRectKeyFrame KeyTime="0:0:1.4" Value="0,0,12,50" />
+                                    <DiscreteRectKeyFrame KeyTime="0:0:2.1" Value="0,0,0,50" />
+                                </RectAnimationUsingKeyFrames>
+
+                                <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                    <LinearDoubleKeyFrame KeyTime="0:0:0.0" Value="1.0" />
+                                    <LinearDoubleKeyFrame KeyTime="0:0:1.8" Value="1.0" />
+                                    <LinearDoubleKeyFrame KeyTime="0:0:2.1" Value="0.0" />
+                                </DoubleAnimationUsingKeyFrames>
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.EnterActions>
-                    <DataTrigger.ExitActions>
-                        <StopStoryboard BeginStoryboardName="eatAnim"/>
-                    </DataTrigger.ExitActions>
+                    <!-- 🌟 말썽을 일으키던 ExitActions (StopStoryboard) 구간을 완전히 삭제했습니다. -->
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -188,8 +195,8 @@
                                     </Style.Triggers>
                                 </Style>
                             </Grid.Style>
-                            <Ellipse Width="35" Height="35" Fill="#FFE082" Margin="30,5,0,0"/>
-                            <emoji:TextBlock Text="☁️" FontSize="45" Foreground="White" Opacity="0.95" Margin="0,-15,20,0"/>
+                            <emoji:TextBlock Text="☀️" FontSize="40" Foreground="White" Opacity="0.95" Margin="0,-15,20,0"/>
+                            <emoji:TextBlock Text="☁️" FontSize="40" Foreground="White" Opacity="0.95" Margin="-15,0,20,0"/>
                         </Grid>
                         <Grid>
                             <Grid.Style>
@@ -351,12 +358,12 @@
                         <ProgressBar Grid.Row="1" Grid.Column="3" Value="{Binding Hygiene}" Foreground="{Binding Hygiene, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Hygiene, StringFormat={}{0} / 100}"/>
                     </Grid>
 
-                    <Grid Grid.RowSpan="3" IsHitTestVisible="False">
+                    <Grid Grid.RowSpan="3" Panel.ZIndex="50">
+
                         <!-- 밥 주기 메뉴 팝업 -->
                         <Border Width="180" Height="45" CornerRadius="24" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" 
                                 HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" 
-                                Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}"
-                                IsHitTestVisible="True">
+                                Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="빨간 열매" Click="FeedItem_Click" Tag="0">
                                     <emoji:TextBlock Text="🍒" FontSize="16" Foreground="#E53935"/>
@@ -376,8 +383,7 @@
                         <!-- 미니게임 메뉴 팝업 -->
                         <Border Width="180" Height="45" CornerRadius="28" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" 
                                 HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" 
-                                Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}"
-                                IsHitTestVisible="True">
+                                Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="BALL: 공 튕기기" Click="PlayBall_Click">
                                     <emoji:TextBlock Text="⚽" FontSize="14" Foreground="#1E88E5"/>
