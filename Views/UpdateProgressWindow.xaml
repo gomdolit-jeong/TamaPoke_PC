@@ -22,10 +22,10 @@
 
         <!-- 🌟 선택형 체크박스 패널 -->
         <StackPanel Grid.Row="1" Margin="0,0,0,15" Background="#F0F0F0">
-            <CheckBox x:Name="chkProgram" Content="1. 다마포케 프로그램 최신 버전 확인 및 적용" IsChecked="True" Margin="10,5,10,5" FontWeight="Bold"/>
-            <CheckBox x:Name="chkData" Content="2. 포켓몬 기본 정보 업데이트 (이름, 종족값 등)" IsChecked="True" Margin="10,5,10,5" FontWeight="Bold"/>
-            <CheckBox x:Name="chkSkill" Content="3. 포켓몬 스킬 트리 업데이트 (레벨업 스킬)" IsChecked="True" Margin="10,5,10,5" FontWeight="Bold"/>
-            <CheckBox x:Name="chkSprite" Content="4. 누락된 포켓몬 스프라이트(이미지) 검사 및 다운로드" IsChecked="True" Margin="10,5,10,10" FontWeight="Bold"/>
+            <CheckBox x:Name="chkData" Content="1. 포켓몬 기본 정보 업데이트 (이름, 종족값 등)" IsChecked="True" Margin="10,5,10,5" FontWeight="Bold"/>
+            <CheckBox x:Name="chkSkill" Content="2. 포켓몬 스킬 트리 업데이트 (레벨업 스킬)" IsChecked="True" Margin="10,5,10,5" FontWeight="Bold"/>
+            <CheckBox x:Name="chkSprite" Content="3. 누락된 포켓몬 스프라이트(이미지) 검사 및 다운로드" IsChecked="True" Margin="10,5,10,5" FontWeight="Bold"/>
+            <CheckBox x:Name="chkProgram" Content="4. 다마포케 프로그램 최신 버전 확인 및 적용" IsChecked="True" Margin="10,5,10,10" FontWeight="Bold"/>
         </StackPanel>
 
         <!-- 🌟 업데이트 시작 버튼 -->

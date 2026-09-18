@@ -35,7 +35,7 @@ namespace TamaPoke.Views
             }
 
             // ==========================================
-            // 🌟 [수정됨] 업데이트 중 조작 방지를 위해 모든 UI를 완벽하게 잠급니다!
+            // 🌟 업데이트 중 조작 방지를 위해 모든 UI를 완벽하게 잠급니다!
             // ==========================================
             _isUpdating = true;
             btnStartUpdate.IsEnabled = false;
@@ -43,7 +43,7 @@ namespace TamaPoke.Views
 
             chkData.IsEnabled = false;
             chkSkill.IsEnabled = false;
-            chkSprite.IsEnabled = false; // 🌟 이 부분이 추가되었습니다!
+            chkSprite.IsEnabled = false; 
             chkProgram.IsEnabled = false;
             // ==========================================
 
@@ -52,10 +52,10 @@ namespace TamaPoke.Views
             _currentTaskIndex = 0;
 
             int totalTasks = 0;
-            if (chkProgram.IsChecked == true) totalTasks++;
             if (chkData.IsChecked == true) totalTasks++;
             if (chkSkill.IsChecked == true) totalTasks++;
             if (chkSprite.IsChecked == true) totalTasks++;
+            if (chkProgram.IsChecked == true) totalTasks++;
 
             _progressPerTask = 100.0 / totalTasks;
 
@@ -85,10 +85,42 @@ namespace TamaPoke.Views
 
             try
             {
+                
+
+                if (chkData.IsChecked == true)
+                {
+                    lbLogs.Items.Add("======================================");
+                    lbLogs.Items.Add("[1] 포켓몬 기본 데이터 동기화 시작...");
+                    await PokemonDataUpdater.GenerateOfflineDataJsonAsync(progress, null);
+
+                    _currentTaskIndex++;
+                    pbStatus.Value = _currentTaskIndex * _progressPerTask;
+                }
+
+                if (chkSkill.IsChecked == true)
+                {
+                    lbLogs.Items.Add("======================================");
+                    lbLogs.Items.Add("[2] 포켓몬 스킬 트리 동기화 시작...");
+                    await PokemonSkillUpdater.GenerateOfflineSkillJsonAsync(progress, null);
+
+                    _currentTaskIndex++;
+                    pbStatus.Value = _currentTaskIndex * _progressPerTask;
+                }
+
+                if (chkSprite.IsChecked == true)
+                {
+                    lbLogs.Items.Add("======================================");
+                    lbLogs.Items.Add("[3] 누락된 포켓몬 스프라이트 다운로드 및 압축 변환 시작...");
+                    await PokemonSpriteUpdater.DownloadAndConvertSpritesAsync(progress);
+
+                    _currentTaskIndex++;
+                    pbStatus.Value = _currentTaskIndex * _progressPerTask;
+                }
+
                 if (chkProgram.IsChecked == true)
                 {
                     lbLogs.Items.Add("======================================");
-                    lbLogs.Items.Add("[1] 다마포케 프로그램 최신 버전 확인 중...");
+                    lbLogs.Items.Add("[4] 다마포케 프로그램 최신 버전 확인 중...");
 
                     string localVersion = AppVersionUpdater.GetLocalVersion();
                     progress?.Report($"- 현재 프로그램 버전: v{localVersion}");
@@ -112,36 +144,6 @@ namespace TamaPoke.Views
                     {
                         progress?.Report("✅ 현재 최신 버전을 사용 중입니다. 업데이트가 필요하지 않습니다.");
                     }
-
-                    _currentTaskIndex++;
-                    pbStatus.Value = _currentTaskIndex * _progressPerTask;
-                }
-
-                if (chkData.IsChecked == true)
-                {
-                    lbLogs.Items.Add("======================================");
-                    lbLogs.Items.Add("[2] 포켓몬 기본 데이터 동기화 시작...");
-                    await PokemonDataUpdater.GenerateOfflineDataJsonAsync(progress, null);
-
-                    _currentTaskIndex++;
-                    pbStatus.Value = _currentTaskIndex * _progressPerTask;
-                }
-
-                if (chkSkill.IsChecked == true)
-                {
-                    lbLogs.Items.Add("======================================");
-                    lbLogs.Items.Add("[3] 포켓몬 스킬 트리 동기화 시작...");
-                    await PokemonSkillUpdater.GenerateOfflineSkillJsonAsync(progress, null);
-
-                    _currentTaskIndex++;
-                    pbStatus.Value = _currentTaskIndex * _progressPerTask;
-                }
-
-                if (chkSprite.IsChecked == true)
-                {
-                    lbLogs.Items.Add("======================================");
-                    lbLogs.Items.Add("[4] 누락된 포켓몬 스프라이트 다운로드 및 압축 변환 시작...");
-                    await PokemonSpriteUpdater.DownloadAndConvertSpritesAsync(progress);
 
                     _currentTaskIndex++;
                     pbStatus.Value = _currentTaskIndex * _progressPerTask;
@@ -176,10 +178,10 @@ namespace TamaPoke.Views
                 if (!_requiresRestart)
                 {
                     btnStartUpdate.IsEnabled = true;
-                    chkProgram.IsEnabled = true;
                     chkData.IsEnabled = true;
                     chkSkill.IsEnabled = true;
                     chkSprite.IsEnabled = true;
+                    chkProgram.IsEnabled = true;
                 }
             }
         }
