@@ -159,6 +159,7 @@ namespace TamaPoke.Views
                 else
                 {
                     lbLogs.Items.Add("✨ 선택한 모든 업데이트가 성공적으로 완료되었습니다!");
+                    lbLogs.Items.Add("✨ 처음 시작인 경우 공장 초기화가 필요 할 수 있습니다!");
                     btnClose.Content = "업데이트 완료 (닫기)";
                 }
             }
