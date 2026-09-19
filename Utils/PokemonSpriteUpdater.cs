@@ -11,7 +11,10 @@ namespace TamaPoke.Utils
 {
     public class PokemonSpriteUpdater
     {
-        private static readonly HttpClient client = new HttpClient();
+        private static readonly HttpClient client = new HttpClient()
+        {
+            Timeout = Timeout.InfiniteTimeSpan
+        };
 
         // PMDCollab 전체를 한 번에 받을 수 있는 GitHub 공식 ZIP 다운로드 주소입니다.
         private const string RepoZipUrl = "https://github.com/PMDCollab/SpriteCollab/archive/refs/heads/master.zip";
@@ -35,8 +38,19 @@ namespace TamaPoke.Utils
                 progress?.Report("안내: 원본 파일이 커서 네트워크 환경에 따라 1~5분 정도 소요될 수 있습니다.");
 
                 // 1. 안전하게 원본 ZIP 통째로 다운로드
-                byte[] zipBytes = await client.GetByteArrayAsync(RepoZipUrl);
-                await File.WriteAllBytesAsync(tempZipPath, zipBytes);
+                using HttpResponseMessage response = await client.GetAsync(RepoZipUrl, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode(); // 주소가 틀렸거나 서버 에러(404 등)가 나면 즉시 예외를 발생시킵니다.
+
+                // 연결이 성공했음을 UI에 즉시 알립니다.
+                progress?.Report("✅ 서버 연결 성공! 대용량 파일을 디스크에 내려받고 있습니다...");
+
+                // 메모리에 한 번에 올리지 않고, 조금씩 디스크(파일)로 바로 씁니다.
+                using (Stream contentStream = await response.Content.ReadAsStreamAsync())
+                using (FileStream fileStream = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                {
+                    await contentStream.CopyToAsync(fileStream);
+                }
+
                 progress?.Report("다운로드 완료! 압축을 해제합니다. 잠시만 기다려주세요...");
 
                 // 2. 압축 해제 전 찌꺼기 폴더 초기화

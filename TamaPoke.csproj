@@ -9,7 +9,7 @@
     <ApplicationIcon>Assets\Resource\monsterball.ico</ApplicationIcon>
     <UseWindowsForms>True</UseWindowsForms>
     <DisableWinFormsImplicitUsings>true</DisableWinFormsImplicitUsings>
-    <FileVersion>4.8.6.3</FileVersion>
+    <FileVersion>4.8.6.4</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
