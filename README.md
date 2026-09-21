@@ -1,95 +1,98 @@
-# TamaPoke (다마포케 - Desktop Version)
+# 🐾 TamaPoke (Desktop Version)
 
-> C# WPF와 MVVM 패턴을 기반으로 재해석한 레트로 감성 포켓몬 다마포케 데스크톱 위젯 게임입니다. 바탕화면 위에서 나만의 포켓몬을 키우고, 진화시키며, 파티 관리와 배틀·포획 시스템을 즐길 수 있습니다.
+🌐 **[한국어로 읽기 (Korean) 🇰🇷](./README.ko.md)**
 
----
+> A retro-style Pokemon Tamagotchi desktop widget game reimagined using C# WPF and the MVVM pattern. Raise your own Pokemon on your desktop, evolve them, manage your party, and enjoy battle and capture systems[cite: 6].
 
-## 🎮 사용 설명서 (User Manual)
-
-TamaPoke는 바탕화면 위에 둥둥 떠 있는(Floating) 반투명 위젯 형태로 동작합니다. 포켓몬을 마우스 좌클릭하여 바탕화면 어디로든 자유롭게 이동시킬 수 있습니다.
-
-### 🔘 하단 액션 버튼 (Action Buttons)
-메인 화면 하단의 4가지 버튼을 통해 포켓몬의 핵심 상태(컨디션)를 관리합니다.
-* 🍎 **먹이 주기 (Feed)**: 맛있는 열매를 주어 '포만감'을 채워줍니다.
-* 🎮 **놀아주기 (Play)**: 포켓몬과 놀아주며 '행복도'를 높이거나 다양한 미니게임 및 야생 배틀을 진행합니다.
-* 🌙 **재우기 (Sleep)**: 쿨쿨 재워서 '기력'을 회복시킵니다.
-* 🫧 **씻겨주기 (Clean)**: 깨끗하게 목욕시켜 '청결도'를 유지합니다.
-
-### 🖱️ 우클릭 메뉴 (Context Menu)
-포켓몬을 마우스 오른쪽 버튼으로 클릭하면, 다음과 같은 다양한 시스템에 접근할 수 있습니다.
-* 📖 **포켓몬 도감 열기**: 지금까지 만났거나 포획한 포켓몬의 수집 기록을 확인합니다.
-* 📋 **상세 프로필 열기**: 포켓몬의 레벨과 전투 능력치, 획득한 체육관 뱃지 및 메달을 확인합니다.
-* 📁 **파티 보기**: 최대 6마리로 구성된 파티 멤버를 관리하고 메인 화면에 나올 포켓몬을 교체합니다.
-* 🎒 **가방 열기**: 야생 포켓몬을 잡을 수 있는 몬스터볼과 체력을 회복하는 상처약 등 아이템 인벤토리를 확인합니다.
-* 🍃 **자연으로 놔주기**: 정든 포켓몬을 자연으로 방생하여 이별합니다.
-
-### 💻 시스템 트레이 메뉴 (System Tray Menu)
-윈도우 작업 표시줄 우측 하단의 시스템 트레이 아이콘을 우클릭하여 다마포케의 핵심 기능과 설정에 빠르게 접근할 수 있습니다.
-* **다마포케 화면에 띄우기**: 바탕화면에서 숨겨진 다마포케 위젯을 다시 화면 최상단으로 불러옵니다.
-* **산책 모드**: 포켓몬이 바탕화면을 자유롭게 돌아다니며 활동하는 산책 모드를 활성화하거나 종료합니다.
-* **설정**: 게임의 전반적인 환경을 플레이어의 취향에 맞게 세밀하게 조절합니다.
-  * **시스템 트레이 알림 사용**: 포켓몬의 상태 변화를 윈도우 알림으로 받아봅니다.
-  * **이별 기준일 (일)**: 포켓몬과 이별하게 되는 기준 수명(일수)을 조절합니다.
-  * **바탕화면 포켓몬 수**: 산책 모드 시 바탕화면에 동시에 등장할 파티 포켓몬의 수를 지정합니다.
-  * **포켓몬 크기 (배율)**: 산책 모드에서 포켓몬의 도트 픽셀 크기를 화면에 맞게 조절합니다.
-  * **작업표시줄 위에서만 놀기**: 포켓몬이 작업표시줄 아래로 가려지지 않도록 이동 반경을 제한합니다.
-  * **부화 대상 세대 선택 (지방별)**: 알에서 부화할 포켓몬의 세대(1세대 관동 ~ 9세대 팔데아)를 자유롭게 체크하여 원하는 세대의 포켓몬만 만나볼 수 있습니다.
-* **다마포케 통합 업데이트**: 다마포케의 최신 버전 배포 여부를 확인하고 클라이언트를 업데이트합니다.
-* **완전히 종료하기**: 현재까지의 모든 진행 상황(도감, 파티, 포켓몬 상태 등)을 세이브 파일에 안전하게 저장하고 프로그램을 완전히 종료합니다.
----
-
-## 🌟 주요 기능 (Key Features)
-
-* **데스크톱 플로팅 위젯**: 윈도우 바탕화면에서 항상 귀여운 포켓몬과 함께하며 실시간으로 상태를 관리할 수 있습니다. 반투명 창 및 마우스 오버 투명도 조절 기능을 지원합니다.
-* **생애 주기 및 육성 시스템**: 
-  * 알에서 부화하여 밥 주기, 놀아주기, 재우기, 씻기 등을 통해 4가지 핵심 상태(포만감, 행복, 기력, 청결)를 관리합니다.
-  * 시간에 따른 성장과 다중 분기 진화 시스템을 지원합니다. (컨디션 조건 및 진화 보류 기능 포함)
-  * 수명(나이) 도달 시 감동적인 작별(이별), 방생, 그리고 가출 메커니즘이 안전하게 작동합니다.
-* **파티 및 배틀/포획 시스템**: 
-  * 최대 6마리의 포켓몬을 파티에 보관하고 대표(메인) 포켓몬과 자유롭게 교체할 수 있습니다.
-  * 파티가 꽉 찬 상태에서 새로운 포켓몬을 포획할 경우, 직관적인 인게임 오버레이 팝업을 통해 기존 멤버를 교체하거나 방생할 수 있습니다.
-  * 1마리만 남은 상태에서의 방생·가출 시 데이터 꼬임(복제 버그)을 방지하는 안전한 동기화 로직을 탑재했습니다.
-* **미니게임 시스템**: 공 튕기기, 과일 받기, 리듬 메모리, 오염 청소 등 상호작용 가능한 미니게임을 통해 포켓몬의 스탯을 관리할 수 있습니다.
-* **JSON 기반 데이터 영속성**: 진행 상황, 도감, 파티원 정보가 세이브 파일로 안전하게 저장 및 로드됩니다.
-
----
-<!-- 🌟 다마포케 스크린샷 갤러리 (2열 표 형태) -->
-| 메인 플레이 화면 | 다양한 동작 대기 |
+<!-- 🌟 TamaPoke Screenshot Gallery (10 Images) -->
+| Main Play Screen | Various Idle Animations |
 |:---:|:---:|
-| <img src="./ScreenShot/Idle.jpg" width="300"/> | <img src="./ScreenShot/Idle2.jpg" width="300"/> |
-| **먹이 주기 및 상호작용** | **바탕화면 산책 모드** |
-| <img src="./ScreenShot/eat.jpg" width="300"/> | <img src="./ScreenShot/walking.jpg" width="300"/> |
-| **야생 포켓몬 배틀** | **체육관 도전** |
-| <img src="./ScreenShot/battle.jpg" width="300"/> | <img src="./ScreenShot/gym.jpg" width="300"/> |
-| **포켓몬 도감 수집** | **파티 멤버 관리** |
-| <img src="./ScreenShot/dex.jpg" width="300"/> | <img src="./ScreenShot/party.jpg" width="300"/> |
-| **상세 설정 화면** | **통합 업데이트 시스템** |
-| <img src="./ScreenShot/setting.jpg" width="300"/> | <img src="./ScreenShot/update.jpg" width="300"/> |
-
----
-## 🛠️ 기술 스택 (Tech Stack)
-
-* **Language**: C#, C++
-* **Framework**: WPF (Windows Presentation Foundation), .NET
-* **Architecture**: MVVM 패턴
-* **Data Storage**: JSON
+| <img src="./ScreenShot/Idle.jpg" width="400"/> | <img src="./ScreenShot/Idle2.jpg" width="400"/> |
+| **Feeding & Interaction** | **Desktop Walking Mode** |
+| <img src="./ScreenShot/eat.jpg" width="400"/> | <img src="./ScreenShot/walking.jpg" width="400"/> |
+| **Wild Pokemon Battle** | **Gym Challenge** |
+| <img src="./ScreenShot/battle.jpg" width="400"/> | <img src="./ScreenShot/gym.jpg" width="400"/> |
+| **Pokedex Collection** | **Party Management** |
+| <img src="./ScreenShot/dex.jpg" width="400"/> | <img src="./ScreenShot/party.jpg" width="400"/> |
+| **Detailed Settings** | **Integrated Update System** |
+| <img src="./ScreenShot/setting.jpg" width="400"/> | <img src="./ScreenShot/update.jpg" width="400"/> |
 
 ---
 
-## 🔗 참고 오픈소스 및 원작 리포지토리 (References)
+## 🎮 User Manual
 
-본 데스크톱 프로젝트는 아래의 임베디드/웹 기반 원작 `TamaPoke` 프로젝트들의 게임 루프, 기획 및 아이디어를 참고하여 데스크톱 환경에 맞게 재구성되었습니다:
+TamaPoke operates as a floating, semi-transparent widget on your desktop[cite: 6]. Left-click your Pokemon to freely move it anywhere on the screen[cite: 6].
 
-* [socquique/TamaPoke](https://github.com/socquique/TamaPoke) — 원작 펌웨어 및 기본 다마고치 메커니즘
-* [ShadowEnemyx/TamaPoke (Expanded Update)](https://github.com/ShadowEnemyx/TamaPoke/tree/tamapoke-expanded-update) — 확장 기능 및 콘텐츠 레퍼런스
-* [DylanPDao/TamaPoke](https://github.com/DylanPDao/TamaPoke) — 배틀 및 추가 시스템 확장 아이디어
+### 🔘 Bottom Action Buttons
+Manage your Pokemon's core conditions using the four buttons at the bottom of the main screen[cite: 6].
+* 🍎 **Feed**: Give delicious berries to increase 'Fullness'[cite: 6].
+* 🎮 **Play**: Play with your Pokemon to increase 'Joy', or engage in mini-games and wild battles[cite: 6].
+* 🌙 **Sleep**: Put them to sleep to recover 'Energy'[cite: 6].
+* 🫧 **Clean**: Bathe them to maintain 'Hygiene'[cite: 6].
+
+### 🖱️ Context Menu (Right-Click)
+Right-click your Pokemon to access various systems[cite: 6]:
+* 📖 **Open Pokedex**: Check the collection records of Pokemon you've met or caught[cite: 6].
+* 📋 **Open Profile**: View your Pokemon's level, combat stats, gym badges, and medals[cite: 6].
+* 📁 **View Party**: Manage up to 6 party members and swap the Pokemon on your main screen[cite: 6].
+* 🎒 **Open Bag**: Check your item inventory, including Poke Balls and Potions[cite: 6].
+* 🍃 **Release to Wild**: Say goodbye and release your Pokemon into nature[cite: 6].
+
+### 💻 System Tray Menu
+Right-click the system tray icon in the Windows taskbar to quickly access core features and settings[cite: 6].
+* **Bring to Front**: Bring the hidden TamaPoke widget back to the top of the screen[cite: 6].
+* **Walking Mode**: Toggle the mode where your Pokemon roams freely around the desktop[cite: 6].
+* **Settings**: Finely adjust the game environment to your preference[cite: 6].
+  * **Use Tray Notifications**: Receive Windows notifications for status changes[cite: 6].
+  * **Farewell Age (Days)**: Adjust the base lifespan (in days) before parting with your Pokemon[cite: 6].
+  * **Roaming Pokemon Count**: Set the number of party Pokemon that appear during Walking Mode[cite: 6].
+  * **Pokemon Size (Scale)**: Adjust the dot pixel size of the Pokemon in Walking Mode[cite: 6].
+  * **Taskbar Restriction**: Restrict movement so Pokemon don't hide behind the taskbar[cite: 6].
+  * **Hatch Generation Selection**: Select generations (Gen 1 to Gen 9) to encounter Pokemon from specific regions[cite: 6].
+* **Check for Updates**: Check for the latest TamaPoke release and update the client[cite: 6].
+* **Fully Exit**: Safely save all progress (Pokedex, party, status) and completely close the program[cite: 6].
+
+---
+
+## 🌟 Key Features
+
+* **Desktop Floating Widget**: Real-time status management with a transparent overlay and hover opacity control[cite: 6].
+* **Life Cycle & Raising System**: 
+  * Manage 4 core stats (Fullness, Joy, Energy, Hygiene) by feeding, playing, sleeping, and cleaning[cite: 6].
+  * Features time-based growth and a multi-branch evolution system (including condition requirements and evolution postponement)[cite: 6].
+  * Safe runaway, release, and emotional farewell mechanisms trigger when the lifespan is reached[cite: 6].
+* **Party & Battle/Capture System**: 
+  * Keep up to 6 Pokemon in your party and freely swap with your main Pokemon[cite: 6].
+  * Intuitive in-game overlay pop-ups for swapping or releasing members when catching a new Pokemon with a full party[cite: 6].
+  * Built-in safe synchronization logic to prevent data corruption (cloning bugs) during releases[cite: 6].
+* **Mini-Game System**: Manage stats through interactive mini-games like ball bouncing, berry catching, rhythm memory, and cleaning[cite: 6].
+* **JSON-Based Data Persistence**: Progress, Pokedex, and party info are safely saved and loaded via JSON save files[cite: 6].
+
+---
+
+## 🛠️ Tech Stack
+
+* **Language**: C#, C++[cite: 6]
+* **Framework**: WPF (Windows Presentation Foundation), .NET[cite: 6]
+* **Architecture**: MVVM Pattern[cite: 6]
+* **Data Storage**: JSON[cite: 6]
+
+---
+
+## 🔗 References (Open Source Projects)
+
+This desktop project was reimagined for the desktop environment by referencing the game loops, planning, and ideas from the following embedded/web-based original `TamaPoke` projects[cite: 6]:
+
+* [socquique/TamaPoke](https://github.com/socquique/TamaPoke) — Original firmware and basic Tamagotchi mechanics[cite: 6].
+* [ShadowEnemyx/TamaPoke (Expanded Update)](https://github.com/ShadowEnemyx/TamaPoke/tree/tamapoke-expanded-update) — Expanded features and content references[cite: 6].
+* [DylanPDao/TamaPoke](https://github.com/DylanPDao/TamaPoke) — Battle and additional system expansion ideas[cite: 6].
 
 ---
 
 ## 📝 Credits & Acknowledgements
 
-* **Sprite Assets**: 게임 내 사용된 모든 포켓몬 도트 스프라이트(Sprites)는 포켓몬 불가사의 던전 커뮤니티의 오픈소스 프로젝트인 [PMDCollab/SpriteCollab](https://github.com/PMDCollab/SpriteCollab)의 원본 리소스를 활용하였습니다. 고품질의 스프라이트를 제공해 주신 커뮤니티 기여자분들께 깊은 감사를 드립니다.
-  * 해당 리소스는 **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** 라이선스에 따라 비상업적 목적으로만 사용되었습니다.
-  * 라이선스 전문 확인: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/)
-* **Badge Images**: 본 프로젝트에 사용된 체육관 뱃지 이미지는 [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page)의 자료를 참고 및 인용하였습니다.
-* **Disclaimer**: 이 프로젝트는 비상업적 팬 프로젝트(Fan Project)이며, 포켓몬스터(Pokémon)와 관련된 모든 저작권 및 상표권은 Nintendo, Creatures Inc., GAME FREAK inc. 에 귀속되어 있습니다.
+* **Sprite Assets**: All Pokemon dot sprites used in this game utilize the original resources from the Pokemon Mystery Dungeon community's open-source project, [PMDCollab/SpriteCollab](https://github.com/PMDCollab/SpriteCollab)[cite: 6]. Deep thanks to the community contributors for providing high-quality sprites[cite: 6].
+  * These resources are used strictly for non-commercial purposes under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license[cite: 6].
+  * Read the full license: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/)[cite: 6].
+* **Badge Images**: Gym badge images reference and cite materials from [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page)[cite: 6].
+* **Disclaimer**: This is a non-commercial fan project[cite: 6]. All copyrights and trademarks related to Pokémon belong to Nintendo, Creatures Inc., and GAME FREAK inc[cite: 6].
