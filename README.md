@@ -56,15 +56,15 @@ TamaPoke는 바탕화면 위에 둥둥 떠 있는(Floating) 반투명 위젯 형
 <!-- 🌟 다마포케 스크린샷 갤러리 (2열 표 형태) -->
 | 메인 플레이 화면 | 다양한 동작 대기 |
 |:---:|:---:|
-| <img src="./ScreenShot/Idle.jpg" width="400"/> | <img src="./ScreenShot/Idle2.jpg" width="400"/> |
+| <img src="./ScreenShot/Idle.jpg" width="300"/> | <img src="./ScreenShot/Idle2.jpg" width="300"/> |
 | **먹이 주기 및 상호작용** | **바탕화면 산책 모드** |
-| <img src="./ScreenShot/eat.jpg" width="400"/> | <img src="./ScreenShot/walking.jpg" width="400"/> |
+| <img src="./ScreenShot/eat.jpg" width="300"/> | <img src="./ScreenShot/walking.jpg" width="300"/> |
 | **야생 포켓몬 배틀** | **체육관 도전** |
-| <img src="./ScreenShot/battle.jpg" width="400"/> | <img src="./ScreenShot/gym.jpg" width="400"/> |
+| <img src="./ScreenShot/battle.jpg" width="300"/> | <img src="./ScreenShot/gym.jpg" width="300"/> |
 | **포켓몬 도감 수집** | **파티 멤버 관리** |
-| <img src="./ScreenShot/dex.jpg" width="400"/> | <img src="./ScreenShot/party.jpg" width="400"/> |
+| <img src="./ScreenShot/dex.jpg" width="300"/> | <img src="./ScreenShot/party.jpg" width="300"/> |
 | **상세 설정 화면** | **통합 업데이트 시스템** |
-| <img src="./ScreenShot/setting.jpg" width="400"/> | <img src="./ScreenShot/update.jpg" width="400"/> |
+| <img src="./ScreenShot/setting.jpg" width="300"/> | <img src="./ScreenShot/update.jpg" width="300"/> |
 
 ---
 ## 🛠️ 기술 스택 (Tech Stack)
