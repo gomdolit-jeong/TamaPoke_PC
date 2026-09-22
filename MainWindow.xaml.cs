@@ -35,6 +35,8 @@ namespace TamaPoke
         // 산책 모드 상태 관리 변수
         private bool _isWalkModeActive = false;
 
+        private System.Windows.Forms.ToolStripMenuItem? _walkModeMenuItem;
+
         private static readonly System.Collections.Generic.List<PetWindowInfo> _activePets = new System.Collections.Generic.List<PetWindowInfo>();
 
         public class PetWindowInfo
@@ -77,11 +79,12 @@ namespace TamaPoke
             openMenuItem.Click += (s, e) => { this.Show(); this.WindowState = WindowState.Normal; this.Activate(); };
 
             // 🌟 산책 모드 메뉴 설정
-            var walkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem("산책 모드");
-            walkModeMenuItem.CheckOnClick = true;
-            walkModeMenuItem.CheckedChanged += (s, e) =>
+            _walkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem("산책 모드");
+            _walkModeMenuItem.ShortcutKeyDisplayString = "Ctrl+W";
+            _walkModeMenuItem.CheckOnClick = true;
+            _walkModeMenuItem.CheckedChanged += (s, e) =>
             {
-                _isWalkModeActive = walkModeMenuItem.Checked;
+                _isWalkModeActive = _walkModeMenuItem.Checked;
 
                 if (_isWalkModeActive)
                 {
@@ -125,7 +128,8 @@ namespace TamaPoke
                 }
             };
 
-            var settingsMenuItem = new System.Windows.Forms.ToolStripMenuItem("설정");
+            var settingsMenuItem = new System.Windows.Forms.ToolStripMenuItem("게임 설정");
+            settingsMenuItem.ShortcutKeyDisplayString = "Ctrl+O"; // 👈 우측에 단축키 텍스트를 예쁘게 띄워줍니다.
             settingsMenuItem.Click += (s, e) =>
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -143,6 +147,7 @@ namespace TamaPoke
             // 🌟 [통합 업데이트 메뉴] 하나의 버튼으로 두 기능을 순차적으로 실행합니다!
             // =========================================================================
             var updateMenuItem = new System.Windows.Forms.ToolStripMenuItem("다마포케 통합 업데이트");
+            updateMenuItem.ShortcutKeyDisplayString = "Ctrl+U"; // 👈 우측에 단축키 텍스트를 예쁘게 띄워줍니다.
             updateMenuItem.Click += (s, e) =>
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -174,7 +179,10 @@ namespace TamaPoke
             };
 
             contextMenu.Items.Add(openMenuItem);
-            contextMenu.Items.Add(walkModeMenuItem);
+            if (_walkModeMenuItem != null)
+            {
+                contextMenu.Items.Add(_walkModeMenuItem);
+            }
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(settingsMenuItem);
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
@@ -242,6 +250,17 @@ namespace TamaPoke
                 IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(petWindow).Handle;
                 int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
                 SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TOOLWINDOW & ~WS_EX_APPWINDOW);
+            };
+
+            petWindow.KeyDown += (s, e) =>
+            {
+                bool isCtrlDown = System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control;
+
+                if (isCtrlDown && e.Key == System.Windows.Input.Key.W)
+                {
+                    // MainWindow에 만들어두었던 토글 스위치를 작동시킵니다!
+                    this.ToggleWalkMode();
+                }
             };
 
             var roamingView = new RoamingView
@@ -461,6 +480,15 @@ namespace TamaPoke
 
             SafeSetAction(petState, PokemonState.ANIM_WALK);
             moveTimer.Start();
+        }
+
+        public void ToggleWalkMode()
+        {
+            if (_walkModeMenuItem != null)
+            {
+                // 메뉴의 체크 상태를 반대로 뒤집으면 자동으로 CheckedChanged 이벤트가 발동합니다.
+                _walkModeMenuItem.Checked = !_walkModeMenuItem.Checked;
+            }
         }
 
         private void MainGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

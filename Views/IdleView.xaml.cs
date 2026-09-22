@@ -13,34 +13,53 @@ namespace TamaPoke.Views
         {
             InitializeComponent();
 
-//             this.Loaded += (s, e) =>
-//             {
-//                 Window window = Window.GetWindow(this);
-//                 if (window != null)
-//                 {
-//                     window.KeyDown += Window_KeyDown;
-//                 }
-//             };
+             this.Loaded += (s, e) =>
+             {
+                 Window window = Window.GetWindow(this);
+                 if (window != null)
+                 {
+                     window.KeyDown += Window_KeyDown;
+                 }
+             };
         }
 
         private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-//             if (e.Key == System.Windows.Input.Key.R && System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control)
-//             {
-//                 if (DataContext is PokemonState pet)
-//                 {
-//                     System.Windows.MessageBoxResult result = System.Windows.MessageBox.Show(
-//                         "모든 데이터(도감, 출석 기록 등)를 완전히 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
-//                         "전체 데이터 공장 초기화",
-//                         System.Windows.MessageBoxButton.YesNo,
-//                         System.Windows.MessageBoxImage.Error);
-//                     if (result == MessageBoxResult.Yes)
-//                     {
-//                         if (!pet.IsMuted) SoundManager.Play(SoundManager.N_DENY);
-//                         pet.FactoryReset();
-//                     }
-//                 }
-//             }
+            // Ctrl 키가 같이 눌렸는지 확인합니다.
+            bool isCtrlDown = System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control;
+
+            if (isCtrlDown)
+            {
+                if (e.Key == System.Windows.Input.Key.O) // 🌟 Ctrl + O : 게임 설정 창 열기
+                {
+                    var settingsWindow = new SettingsWindow();
+                    Window mainWindow = Window.GetWindow(this);
+                    if (mainWindow != null && mainWindow.IsVisible)
+                    {
+                        settingsWindow.Owner = mainWindow;
+                    }
+                    settingsWindow.ShowDialog();
+                }
+                else if (e.Key == System.Windows.Input.Key.U) // Ctrl + U : 업데이트 창 열기
+                {
+                    var updateWindow = new UpdateProgressWindow();
+                    Window mainWindow = Window.GetWindow(this);
+                    if (mainWindow != null && mainWindow.IsVisible)
+                    {
+                        updateWindow.Owner = mainWindow;
+                    }
+                    updateWindow.ShowDialog();
+                }
+                else if (e.Key == System.Windows.Input.Key.W) // 🌟 Ctrl + W : 산책 모드 ON / OFF 토글
+                {
+                    Window window = Window.GetWindow(this);
+                    if (window is MainWindow mainWindow)
+                    {
+                        // MainWindow에 만들어둔 토글 메서드를 실행합니다.
+                        mainWindow.ToggleWalkMode();
+                    }
+                }
+            }
         }
 
         private PokemonState? GetPet() => DataContext as PokemonState;
