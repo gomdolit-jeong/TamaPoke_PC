@@ -106,7 +106,45 @@ namespace TamaPoke.Utils
         /// <summary>
         /// 메인 애니메이션용 리더기: 이미지와 크기 정보를 리스트로 넘겨줍니다.
         /// </summary>
+        // 모션/방향이 바뀔 때마다 .bin 전체를 다시 디코딩하지 않도록 최근 파일 몇 개를 캐시합니다.
+        private const int FRAME_CACHE_SIZE = 8;
+        private static readonly LinkedList<(string Path, List<SpriteFrameData> Frames)> _frameCache = new();
+
         public static List<SpriteFrameData> LoadFramesFromBin(string binFilePath)
+        {
+            for (var node = _frameCache.First; node != null; node = node.Next)
+            {
+                if (string.Equals(node.Value.Path, binFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _frameCache.Remove(node);
+                    _frameCache.AddFirst(node);
+                    return node.Value.Frames;
+                }
+            }
+
+            var frames = ReadFramesFromBin(binFilePath);
+            if (frames.Count > 0)
+            {
+                _frameCache.AddFirst((binFilePath, frames));
+                if (_frameCache.Count > FRAME_CACHE_SIZE) _frameCache.RemoveLast();
+            }
+            return frames;
+        }
+
+        // 모든 스트립 중 가장 큰 프레임 크기 (산책 창 크기 계산용)
+        public static (int Width, int Height) GetMaxFrameSize(string binFilePath)
+        {
+            int w = 0, h = 0;
+            foreach (var f in LoadFramesFromBin(binFilePath))
+            {
+                if (f == null) continue;
+                w = Math.Max(w, f.FrameWidth);
+                h = Math.Max(h, f.FrameHeight);
+            }
+            return (w, h);
+        }
+
+        private static List<SpriteFrameData> ReadFramesFromBin(string binFilePath)
         {
             List<SpriteFrameData> frames = new List<SpriteFrameData>();
             if (!File.Exists(binFilePath)) return frames;

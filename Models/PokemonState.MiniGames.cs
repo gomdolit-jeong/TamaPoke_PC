@@ -101,8 +101,7 @@ namespace TamaPoke.Models
         private void EndMiniGameRoutine(int actionId = 17, int timer = 90)
         {
             ResetPosition();
-            _tempActionId = actionId;
-            _tempActionTimer = timer;
+            PlayTempAction(actionId, timer);
             OnPropertyChanged(nameof(IsPlaying));
             CheckStateAndAnimate();
         }
@@ -161,8 +160,7 @@ namespace TamaPoke.Models
                 _ballVelX += dx * 0.05;
                 if (_ballVelX > 5.0) _ballVelX = 5.0; if (_ballVelX < -5.0) _ballVelX = -5.0;
 
-                _tempActionId = 10;
-                _tempActionTimer = 15;
+                PlayTempAction(10, 15);
                 CheckStateAndAnimate();
             }
         }

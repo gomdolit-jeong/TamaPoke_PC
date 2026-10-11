@@ -517,11 +517,10 @@ namespace TamaPoke.Models
                     }
                 }
 
-                if (playerSkill.Category == SkillCategory.Physical) _tempActionId = 1;
-                else if (playerSkill.Category == SkillCategory.Special) _tempActionId = 21;
-                else _tempActionId = 17;
-
-                _tempActionTimer = 15; UpdateAnimation(_tempActionId);
+                int attackAnim = playerSkill.Category == SkillCategory.Physical ? ANIM_ATTACK
+                               : playerSkill.Category == SkillCategory.Special ? ANIM_DEEPBREATH
+                               : ANIM_POSE;
+                PlayTempAction(attackAnim, 15); UpdateAnimation(attackAnim);
                 _enemyTempActionTimer = 15; UpdateEnemyAnimation(6);
 
                 await Task.Delay(600); IsEnemyTakingDamage = false; await Task.Delay(900);
@@ -551,7 +550,7 @@ namespace TamaPoke.Models
 
                 BattleMessage = $"{Name}에게 {selectedItem.Name}을(를) 사용했다!\n체력이 {healAmount} 회복되었다!";
 
-                _tempActionId = 10; _tempActionTimer = 30; CheckStateAndAnimate();
+                PlayTempAction(10, 30); CheckStateAndAnimate();
                 await Task.Delay(1500);
 
                 await EnemyTurnAction(false);
@@ -656,7 +655,7 @@ namespace TamaPoke.Models
                 }
 
                 _enemyTempActionId = 1; _enemyTempActionTimer = 15; UpdateEnemyAnimation(1);
-                _tempActionId = 6; _tempActionTimer = 15; UpdateAnimation(6);
+                PlayTempAction(6, 15); UpdateAnimation(6);
 
                 await Task.Delay(600); IsPlayerTakingDamage = false; await Task.Delay(900);
             }

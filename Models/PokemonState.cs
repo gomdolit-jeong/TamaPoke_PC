@@ -628,8 +628,7 @@ namespace TamaPoke.Models
         public void ResetPosition()
         {
             PosX = 0; PosY = 0; TargetPosX = 0; TargetPosY = 0; FlipX = 1;
-            _tempActionId = ANIM_IDLE;
-            _tempActionTimer = 0;
+            PlayTempAction(ANIM_IDLE, 0);
             CheckStateAndAnimate();
         }
 
@@ -869,6 +868,23 @@ namespace TamaPoke.Models
 
         private int _tempActionId = ANIM_IDLE;
         private int _tempActionTimer = 0;
+        // true: 혼자 노는 자동 행동(걷기/포즈 등), false: 유저 상호작용이나 이벤트로 시작된 행동
+        private bool _isAutoAction = false;
+
+        // 유저 행동/이벤트 모션 재생 (응가·청결 상태 모션보다 우선합니다)
+        private void PlayTempAction(int actionId, int ticks)
+        {
+            _tempActionId = actionId;
+            _tempActionTimer = ticks;
+            _isAutoAction = false;
+        }
+
+        // 자동 행동 모션 재생 (응가가 생기거나 더러워지면 중단됩니다)
+        private void PlayAutoAction(int actionId, int ticks)
+        {
+            PlayTempAction(actionId, ticks);
+            _isAutoAction = true;
+        }
         private int _currentActionId = ANIM_IDLE;
         private int _enemyTempActionId = ANIM_IDLE;
         private int _enemyTempActionTimer = 0;
@@ -1159,7 +1175,7 @@ namespace TamaPoke.Models
         {
             if (Poops > 0 || Hygiene < 30)
             {
-                if (_tempActionTimer > 0)
+                if (_tempActionTimer > 0 && _isAutoAction)
                 {
                     _tempActionTimer = 0;
                     _tempActionId = ANIM_IDLE;
@@ -1183,12 +1199,11 @@ namespace TamaPoke.Models
                         else
                         {
                             FlipX = moveRand.Next(0, 2) == 0 ? -1 : 1;
-                            _tempActionId = ANIM_WALK;
-                            _tempActionTimer = moveRand.Next(120, 240);
+                            PlayAutoAction(ANIM_WALK, moveRand.Next(120, 240));
                         }
                     }
-                    else if (r < 60) { int[] flair = { ANIM_POSE, ANIM_NOD, ANIM_DEEPBREATH }; _tempActionId = flair[moveRand.Next(flair.Length)]; _tempActionTimer = 90; }
-                    else { _tempActionId = ANIM_IDLE; _tempActionTimer = moveRand.Next(60, 150); }
+                    else if (r < 60) { int[] flair = { ANIM_POSE, ANIM_NOD, ANIM_DEEPBREATH }; PlayAutoAction(flair[moveRand.Next(flair.Length)], 90); }
+                    else { PlayAutoAction(ANIM_IDLE, moveRand.Next(60, 150)); }
                 }
             }
         }
@@ -1234,8 +1249,7 @@ namespace TamaPoke.Models
 
             ResetPosition();
 
-            _tempActionId = ANIM_EAT;
-            _tempActionTimer = 65;
+            PlayTempAction(ANIM_EAT, 65);
 
             OnPropertyChanged(nameof(CurrentFoodIcon));
             OnPropertyChanged(nameof(CurrentFoodColor));
@@ -1247,8 +1261,7 @@ namespace TamaPoke.Models
 
             if (!IsAnyMiniGameOpen && !IsBattleOpen)
             {
-                _tempActionId = ANIM_HOP;
-                _tempActionTimer = 30;
+                PlayTempAction(ANIM_HOP, 30);
                 CheckStateAndAnimate();
             }
         }
@@ -1262,16 +1275,15 @@ namespace TamaPoke.Models
 
             ResetPosition();
 
-            _tempActionId = ANIM_POSE;
-            _tempActionTimer = 60;
+            PlayTempAction(ANIM_POSE, 60);
+            CheckStateAndAnimate();
 
             await Task.Delay(2000);
             IsBathing = false;
 
             if (!IsAnyMiniGameOpen && !IsBattleOpen)
             {
-                _tempActionId = ANIM_SHAKE;
-                _tempActionTimer = 30;
+                PlayTempAction(ANIM_SHAKE, 30);
                 CheckStateAndAnimate();
             }
         }
@@ -1286,8 +1298,7 @@ namespace TamaPoke.Models
             if (!IsSleeping)
             {
                 // 🌟 잠에서 막 깼을 때: 14번(ANIM_WAKE) 모션을 60틱(약 2초) 동안 재생합니다!
-                _tempActionId = ANIM_WAKE;
-                _tempActionTimer = 60;
+                PlayTempAction(ANIM_WAKE, 60);
             }
             else
             {
@@ -1307,7 +1318,8 @@ namespace TamaPoke.Models
             Joy = Clamp100(Joy + 5); Bond = Clamp100(Bond + 1);
 
             ResetPosition();
-            _tempActionId = ANIM_HOP; _tempActionTimer = 30;
+            PlayTempAction(ANIM_HOP, 30);
+            CheckStateAndAnimate();
 
             IsPetting = true;
             await Task.Delay(1000);
@@ -1351,7 +1363,9 @@ namespace TamaPoke.Models
             if (IsAnyMiniGameOpen) return ANIM_IDLE;
 
             if (IsSleeping) return ANIM_SLEEP;
-            if (IsBathing) return ANIM_SHAKE;
+
+            // 유저가 직접 한 행동(먹기/쓰다듬기/씻기 등)은 상태 모션보다 먼저 보여줍니다.
+            if (_tempActionTimer > 0 && !_isAutoAction) return _tempActionId;
 
             if (Poops > 0) return ANIM_PAIN;
             if (Hygiene < 30) return ANIM_HURT;
@@ -1417,15 +1431,9 @@ namespace TamaPoke.Models
 
             if (rawStrips != null && rawStrips.Count > 0)
             {
-                int stripIndex = actionToLoad;
-
-                if (stripIndex >= rawStrips.Count)
-                {
-                    stripIndex = ANIM_IDLE;
-                    if (stripIndex >= rawStrips.Count) { stripIndex = 0; }
-                }
-
-                var targetData = rawStrips[stripIndex];
+                // 요청한 모션이 없는(비어 있는) 스프라이트는 IDLE → 첫 번째 유효 모션 순으로 대체합니다.
+                SpriteFrameData? PickStrip(int index) => index >= 0 && index < rawStrips.Count ? rawStrips[index] : null;
+                var targetData = PickStrip(actionToLoad) ?? PickStrip(ANIM_IDLE) ?? rawStrips.FirstOrDefault(r => r != null);
                 if (targetData != null && targetData.Image != null)
                 {
                     int directionRow = Direction;

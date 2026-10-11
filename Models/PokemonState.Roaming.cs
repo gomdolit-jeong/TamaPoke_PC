@@ -30,9 +30,15 @@ namespace TamaPoke.Models
         public void SetPlayModeAction(int actionId, int timer = 9999)
         {
             // 기존 파일에 선언되어 있던 비공개 변수들을 자유롭게 사용할 수 있습니다!
-            _tempActionId = actionId;
-            _tempActionTimer = timer;
+            PlayTempAction(actionId, timer);
             CheckStateAndAnimate();
+        }
+
+        // 산책용 펫 창이 닫힐 때 애니메이션 타이머를 멈춰 타이머가 계속 쌓이지 않게 합니다.
+        public void StopAnimationLoop()
+        {
+            _mainLoopTimer?.Stop();
+            _animationFrames = null;
         }
     }
 }

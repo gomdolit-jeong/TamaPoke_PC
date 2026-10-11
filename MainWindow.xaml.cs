@@ -215,10 +215,10 @@ namespace TamaPoke
         {
             var petState = new PokemonState
             {
+                IsFreeRoaming = true,
                 SpeciesId = partyMember.SpeciesId,
                 SpriteFileName = partyMember.SpriteFileName,
-                IsShiny = partyMember.IsShiny,
-                IsFreeRoaming = true
+                IsShiny = partyMember.IsShiny
             };
             petState.StartSubPetAnimationOnly();
 
@@ -226,8 +226,12 @@ namespace TamaPoke
             double rawScale = (gameSettings != null && gameSettings.RoamingPetScale > 0) ? gameSettings.RoamingPetScale : 2.0;
             double currentScale = Math.Min(rawScale, 3.0);
 
-            double baseWidth = 100.0;
-            double baseHeight = 100.0;
+            // 스프라이트 원본 크기(IdleView와 같은 2배)를 기준으로, 가장 큰 모션 프레임이 잘리지 않는 크기로 창을 만듭니다.
+            const double SPRITE_ZOOM = 2.0;
+            string spritePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites", petState.SpriteFileName);
+            var maxFrame = BinSpriteReader.GetMaxFrameSize(spritePath);
+            double baseWidth = Math.Max(50.0, maxFrame.Width) * SPRITE_ZOOM;
+            double baseHeight = Math.Max(50.0, maxFrame.Height) * SPRITE_ZOOM;
             double petWidth = baseWidth * currentScale;
             double petHeight = baseHeight * currentScale;
 
@@ -267,10 +271,12 @@ namespace TamaPoke
             var roamingView = new RoamingView
             {
                 DataContext = petState,
+                Width = baseWidth / SPRITE_ZOOM,
+                Height = baseHeight / SPRITE_ZOOM,
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
                 VerticalAlignment = System.Windows.VerticalAlignment.Bottom
             };
-            roamingView.LayoutTransform = new System.Windows.Media.ScaleTransform(currentScale, currentScale);
+            roamingView.LayoutTransform = new System.Windows.Media.ScaleTransform(currentScale * SPRITE_ZOOM, currentScale * SPRITE_ZOOM);
 
             System.Windows.Controls.Grid containerGrid = new System.Windows.Controls.Grid
             {
@@ -328,7 +334,12 @@ namespace TamaPoke
 
             DispatcherTimer moveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
 
-            petWindow.Closed += (s, e) => { _activePets.Remove(currentPetInfo); };
+            petWindow.Closed += (s, e) =>
+            {
+                moveTimer.Stop();
+                petState.StopAnimationLoop();
+                _activePets.Remove(currentPetInfo);
+            };
 
             petWindow.MouseLeftButtonDown += (s, e) =>
             {
@@ -336,7 +347,7 @@ namespace TamaPoke
                 {
                     moveTimer.Stop();
                     behaviorStep = 0;
-                    SafeSetAction(petState, PokemonState.ANIM_HURT, PokemonState.ANIM_IDLE, 9999);
+                    SafeSetAction(petState, PokemonState.ANIM_HURT, 9999);
 
                     try { petWindow.DragMove(); } catch { }
 
@@ -364,11 +375,11 @@ namespace TamaPoke
                 {
                     restCounter--;
 
-                    if (behaviorStep == 1) { if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_WAKE, PokemonState.ANIM_IDLE, 30); }
+                    if (behaviorStep == 1) { if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_WAKE, 30); }
                     else if (behaviorStep == 2)
                     {
-                        if (restCounter == 60) SafeSetAction(petState, PokemonState.ANIM_LEAPFORTH, PokemonState.ANIM_IDLE, 60);
-                        else if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_HITGROUND, PokemonState.ANIM_IDLE, 30);
+                        if (restCounter == 60) SafeSetAction(petState, PokemonState.ANIM_LEAPFORTH, 60);
+                        else if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_HITGROUND, 30);
                     }
 
                     if (restCounter <= 0)
@@ -423,8 +434,8 @@ namespace TamaPoke
                             petState.Direction = (diffX > 0) ? 2 : 6;
 
                             int interactionType = rnd.Next(0, 2);
-                            if (interactionType == 0) SafeSetAction(petState, PokemonState.ANIM_HOP, PokemonState.ANIM_IDLE, 45);
-                            else SafeSetAction(petState, PokemonState.ANIM_STRIKE, PokemonState.ANIM_IDLE, 45);
+                            if (interactionType == 0) SafeSetAction(petState, PokemonState.ANIM_HOP, 45);
+                            else SafeSetAction(petState, PokemonState.ANIM_STRIKE, 45);
                             return;
                         }
                     }
@@ -441,12 +452,12 @@ namespace TamaPoke
 
                     int actionRoll = rnd.Next(0, 100);
 
-                    if (actionRoll < 18) { SafeSetAction(petState, PokemonState.ANIM_IDLE, PokemonState.ANIM_IDLE, 60); restCounter = 60; }
-                    else if (actionRoll < 36) { SafeSetAction(petState, PokemonState.ANIM_POSE, PokemonState.ANIM_IDLE, 40); restCounter = 40; }
-                    else if (actionRoll < 52) { SafeSetAction(petState, PokemonState.ANIM_DEEPBREATH, PokemonState.ANIM_IDLE, 60); restCounter = 60; }
-                    else if (actionRoll < 68) { SafeSetAction(petState, PokemonState.ANIM_NOD, PokemonState.ANIM_IDLE, 60); restCounter = 60; }
-                    else if (actionRoll < 84) { behaviorStep = 1; SafeSetAction(petState, PokemonState.ANIM_SLEEP, PokemonState.ANIM_IDLE, 300); restCounter = 300; }
-                    else { behaviorStep = 2; SafeSetAction(petState, PokemonState.ANIM_SINK, PokemonState.ANIM_IDLE, 90); restCounter = 90; }
+                    if (actionRoll < 18) { SafeSetAction(petState, PokemonState.ANIM_IDLE, 60); restCounter = 60; }
+                    else if (actionRoll < 36) { SafeSetAction(petState, PokemonState.ANIM_POSE, 40); restCounter = 40; }
+                    else if (actionRoll < 52) { SafeSetAction(petState, PokemonState.ANIM_DEEPBREATH, 60); restCounter = 60; }
+                    else if (actionRoll < 68) { SafeSetAction(petState, PokemonState.ANIM_NOD, 60); restCounter = 60; }
+                    else if (actionRoll < 84) { behaviorStep = 1; SafeSetAction(petState, PokemonState.ANIM_SLEEP, 300); restCounter = 300; }
+                    else { behaviorStep = 2; SafeSetAction(petState, PokemonState.ANIM_SINK, 90); restCounter = 90; }
                 }
                 else
                 {
@@ -503,20 +514,10 @@ namespace TamaPoke
             }
         }
 
-        private void SafeSetAction(PokemonState petState, int animId, int fallbackAnim = PokemonState.ANIM_IDLE)
+        // 스프라이트에 해당 모션이 없으면 UpdateAnimation이 알아서 IDLE 스트립으로 대체합니다.
+        private static void SafeSetAction(PokemonState petState, int animId, int duration = 9999)
         {
-            try { petState.SetPlayModeAction(animId); }
-            catch { petState.SetPlayModeAction(fallbackAnim); }
-        }
-
-        private void SafeSetAction(PokemonState petState, int animId, int fallbackAnim, int duration)
-        {
-            try
-            {
-                if (duration > 0) petState.SetPlayModeAction(animId, duration);
-                else petState.SetPlayModeAction(animId);
-            }
-            catch { petState.SetPlayModeAction(fallbackAnim); }
+            petState.SetPlayModeAction(animId, duration > 0 ? duration : 9999);
         }
 
         private void ShowTrayNotification(string title, string message)

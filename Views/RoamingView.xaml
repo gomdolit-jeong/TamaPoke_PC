@@ -10,8 +10,10 @@
     <Grid Background="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center">
 
         <!-- IdleView에서 포켓몬을 그리는 로직만 그대로 가져왔습니다! -->
+        <!-- Stretch="None": 모션마다 프레임 크기가 달라도 포켓몬 크기가 일정하게 유지됩니다. -->
         <Image Source="{Binding CurrentFrame}" 
-               Width="80" Height="80" 
+               Stretch="None"
+               HorizontalAlignment="Center" VerticalAlignment="Center"
                RenderOptions.BitmapScalingMode="NearestNeighbor" 
                RenderTransformOrigin="0.5,0.5">
             <Image.RenderTransform>

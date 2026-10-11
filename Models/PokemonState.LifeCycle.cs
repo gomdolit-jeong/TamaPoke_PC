@@ -398,8 +398,7 @@ namespace TamaPoke.Models
             ResetPosition();
 
             EvolutionMessage = "오잉!?";
-            _tempActionId = 17;
-            _tempActionTimer = 90;
+            PlayTempAction(17, 90);
             CheckStateAndAnimate();
             await Task.Delay(1500);
 
@@ -414,8 +413,7 @@ namespace TamaPoke.Models
 
             ExecuteActualEvolve();
 
-            _tempActionId = 10;
-            _tempActionTimer = 60;
+            PlayTempAction(10, 60);
             CheckStateAndAnimate();
 
             EvolutionMessage = $"축하합니다! {oldName}은(는)\n{Name}(으)로 진화했습니다!";
