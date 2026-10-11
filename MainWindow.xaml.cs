@@ -494,6 +494,25 @@ namespace TamaPoke
             moveTimer.Start();
         }
 
+        // 공장 초기화: 산책 모드를 끄고, 데이터를 초기화한 뒤 메인 화면(알)으로 돌아옵니다.
+        // 배틀/미니게임/이별 연출 중에는 진행 중인 처리와 충돌하므로 false를 반환합니다.
+        public bool TryFactoryReset()
+        {
+            if (MyPet == null || !MyPet.CanFactoryReset) return false;
+
+            if (_walkModeMenuItem != null && _walkModeMenuItem.Checked)
+            {
+                _walkModeMenuItem.Checked = false; // 산책 펫 창 정리 + 메인 창 복귀
+            }
+
+            MyPet.FactoryReset();
+
+            IdleView idleView = new IdleView();
+            idleView.DataContext = MyPet;
+            NavigateTo(idleView);
+            return true;
+        }
+
         public void ToggleWalkMode()
         {
             if (_walkModeMenuItem != null)

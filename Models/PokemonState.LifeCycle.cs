@@ -131,6 +131,11 @@ namespace TamaPoke.Models
             }
 
             UpdateFilteredPokedex();
+
+            // 지역별 수집 수 표시 갱신 (1~9세대 전체)
+            OnPropertyChanged(nameof(KantoCountText)); OnPropertyChanged(nameof(JohtoCountText)); OnPropertyChanged(nameof(HoennCountText));
+            OnPropertyChanged(nameof(SinnohCountText)); OnPropertyChanged(nameof(UnovaCountText)); OnPropertyChanged(nameof(KalosCountText));
+            OnPropertyChanged(nameof(AlolaCountText)); OnPropertyChanged(nameof(GalarCountText)); OnPropertyChanged(nameof(PaldeaCountText));
         }
 
         public void UnlockPokemonInPokedex(int speciesId)
@@ -142,12 +147,6 @@ namespace TamaPoke.Models
                 UnlockedPokemon.Add(speciesId);
                 OnPropertyChanged(nameof(RegisteredCount));
                 RefreshPokedex();
-
-                OnPropertyChanged(nameof(KantoCountText));
-                OnPropertyChanged(nameof(JohtoCountText));
-                OnPropertyChanged(nameof(HoennCountText));
-                OnPropertyChanged(nameof(SinnohCountText));
-
                 Save();
             }
         }
@@ -488,7 +487,7 @@ namespace TamaPoke.Models
 
             Fullness = 80; Joy = 80; Energy = 80; Hygiene = 100;
             Poops = 0; Weight = 10; CareMistakes = 0; Bond = 0; NeglectTicks = 0;
-            IsSleeping = false; IsShiny = false; Genes = new PokemonGene(); BerryKnown = false;
+            IsSleeping = false; IsShiny = false; IsFemale = false; IsGenderless = false; Genes = new PokemonGene(); BerryKnown = false;
             Ceremony = 0; IsEvolutionPostponed = false; IsFarewellPostponed = false;
 
             IsBallGameOpen = false; IsCatchGameOpen = false; IsMemoGameOpen = false; IsCleanGameOpen = false;
@@ -497,6 +496,12 @@ namespace TamaPoke.Models
             IsPartyOpen = false;
             IsSwapMode = false;
             _pendingRetiree = null;
+
+            // 이전 포켓몬 기준으로 열려 있던 창/메뉴를 모두 닫습니다.
+            IsProfileOpen = false; IsDexOpen = false; IsInventoryOpen = false; IsFeedMenuOpen = false; IsPlayMenuOpen = false;
+            IsBattleInventoryOpen = false; IsGymConfirmOpen = false;
+            IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false; RecommendedSkill1 = null; RecommendedSkill2 = null;
+            _notifiedHunger = false; _notifiedSadness = false;
 
             TrAtk = 0; TrDef = 0; TrSpeed = 0; Medals = 0;
             for (int i = 0; i < 4; i++) Skills[i] = 0;
@@ -563,8 +568,14 @@ namespace TamaPoke.Models
         // ==========================================
         // 🌟 모든 데이터 공장 초기화
         // ==========================================
+        // 배틀/미니게임/연출이 진행 중이면 비동기 진행 코드가 초기화 이후에도 데이터를 건드리므로 막습니다.
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool CanFactoryReset => !IsBattleOpen && !IsAnyMiniGameOpen && Ceremony == 0;
+
         public void FactoryReset()
         {
+            if (!CanFactoryReset) return;
+
             if (System.IO.File.Exists(SaveFilePath)) System.IO.File.Delete(SaveFilePath);
 
             UnlockedPokemon.Clear(); FullPokedex.Clear(); OnPropertyChanged(nameof(RegisteredCount)); Streak = 0; LastEnd = 1; LastPlayedDate = DateTime.Now.Date;

@@ -13,14 +13,19 @@ namespace TamaPoke.Views
         {
             InitializeComponent();
 
-             this.Loaded += (s, e) =>
-             {
-                 Window window = Window.GetWindow(this);
-                 if (window != null)
-                 {
-                     window.KeyDown += Window_KeyDown;
-                 }
-             };
+            // 화면 전환 때마다 IdleView가 새로 만들어지므로, 사라질 때 단축키 연결을 꼭 해제합니다.
+            // (해제하지 않으면 핸들러가 쌓여 Ctrl+O/U 창이 여러 번 열립니다)
+            Window? hookedWindow = null;
+            this.Loaded += (s, e) =>
+            {
+                hookedWindow = Window.GetWindow(this);
+                if (hookedWindow != null) hookedWindow.KeyDown += Window_KeyDown;
+            };
+            this.Unloaded += (s, e) =>
+            {
+                if (hookedWindow != null) hookedWindow.KeyDown -= Window_KeyDown;
+                hookedWindow = null;
+            };
         }
 
         private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
