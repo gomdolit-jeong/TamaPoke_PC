@@ -23,6 +23,7 @@ namespace TamaPoke.Utils
     public static class SkillDex
     {
         public static Dictionary<int, SkillInfo> MoveDatabase { get; private set; } = new();
+        private const int TOXIC_MOVE_ID = 92;
 
         // 🌟 세대별 스킬 트리 딕셔너리
         public static Dictionary<int, Dictionary<string, List<LearnMove>>> PokemonLearnsets { get; private set; } = new();
@@ -56,7 +57,12 @@ namespace TamaPoke.Utils
 
                     if (moveData != null)
                     {
-                        foreach (var move in moveData) MoveDatabase[move.Id] = move;
+                        foreach (var move in moveData)
+                        {
+                            // 맹독(Toxic, 92번)은 데이터상 일반 독으로 들어오므로 맹독으로 보정합니다.
+                            if (move.Id == TOXIC_MOVE_ID && move.Ailment == SkillAilment.Poison) move.Ailment = SkillAilment.BadPoison;
+                            MoveDatabase[move.Id] = move;
+                        }
                     }
                 }
             }

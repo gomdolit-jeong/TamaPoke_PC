@@ -11,21 +11,38 @@ namespace TamaPoke.Models
         {
             return ailment switch
             {
-                SkillAilment.Sleep => rand.Next(1, 4), // 수면: 1~3턴 지속
+                SkillAilment.Sleep => rand.Next(2, 5), // 수면: 1~3턴 행동 불가 (턴 시작 시 1 감소 후 0이면 깨어남)
                 _ => 999 // 화상, 마비, 독, 얼음은 영구 유지
             };
         }
 
+        // 타입에 따른 상태이상 면역 (불꽃-화상, 얼음-얼음, 전기-마비, 독/강철-독)
+        public static bool IsImmune(SkillAilment ailment, PokemonType type1, PokemonType type2)
+        {
+            bool Has(PokemonType t) => type1 == t || type2 == t;
+            return ailment switch
+            {
+                SkillAilment.Burn => Has(PokemonType.Fire),
+                SkillAilment.Freeze => Has(PokemonType.Ice),
+                SkillAilment.Paralysis => Has(PokemonType.Electric),
+                SkillAilment.Poison or SkillAilment.BadPoison => Has(PokemonType.Poison) || Has(PokemonType.Steel),
+                _ => false
+            };
+        }
+
         // 2. 턴 시작 시 행동 가능 여부 검사
-        public static bool CanActThisTurn(SkillAilment ailment, ref int turnsLeft, string name, out string message)
+        // cured가 true면 상태이상이 풀린 것이므로 호출한 쪽에서 상태이상을 None으로 바꿔야 합니다.
+        public static bool CanActThisTurn(SkillAilment ailment, ref int turnsLeft, string name, out string message, out bool cured)
         {
             message = "";
+            cured = false;
 
             switch (ailment)
             {
                 case SkillAilment.Sleep:
                     if (turnsLeft <= 0)
                     {
+                        cured = true;
                         message = $"{name}은(는) 잠에서 깨어났다!";
                         return true;
                     }
@@ -36,6 +53,7 @@ namespace TamaPoke.Models
                     if (rand.Next(100) < 20) // 20% 확률로 얼음 해제
                     {
                         turnsLeft = 0;
+                        cured = true;
                         message = $"{name}의 얼음이 녹았다!";
                         return true;
                     }

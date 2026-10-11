@@ -233,7 +233,11 @@ namespace TamaPoke.Models
                 int score = 0;
                 if (m!.Category == SkillCategory.Status)
                 {
-                    score = 5;
+                    // 상태이상을 걸 수 있는 상황이면 40% 확률로 우선 사용, 걸 수 없으면 사용하지 않음
+                    bool canInflict = m.Ailment != SkillAilment.None && PlayerAilment == SkillAilment.None &&
+                                      !AilmentHelper.IsImmune(m.Ailment, myInfo?.Type1 ?? PokemonType.Normal, myInfo?.Type2 ?? PokemonType.None);
+                    if (m.Ailment != SkillAilment.None) score = canInflict && rand.Next(100) < 40 ? 500 : -100;
+                    else score = 5;
                 }
                 else
                 {
@@ -398,7 +402,8 @@ namespace TamaPoke.Models
             if (PlayerAilment != SkillAilment.None)
             {
                 if (_playerAilmentTurns > 0) _playerAilmentTurns--;
-                bool canAct = AilmentHelper.CanActThisTurn(PlayerAilment, ref _playerAilmentTurns, Name, out string statusMsg);
+                bool canAct = AilmentHelper.CanActThisTurn(PlayerAilment, ref _playerAilmentTurns, Name, out string statusMsg, out bool cured);
+                if (cured) PlayerAilment = SkillAilment.None;
 
                 if (!string.IsNullOrEmpty(statusMsg))
                 {
@@ -502,20 +507,7 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}적에게 {damage} 데미지를 입혔다!";
 
-                if (playerSkill.Ailment != SkillAilment.None && EnemyAilment == SkillAilment.None)
-                {
-                    if (rand.Next(100) < playerSkill.AilmentChance)
-                    {
-                        EnemyAilment = playerSkill.Ailment;
-                        _enemyAilmentTurns = AilmentHelper.GetInitialTurns(EnemyAilment);
-                        _enemyBadPoisonTurnCount = 1;
-
-                        await Task.Delay(1000);
-                        string ailmentIcon = AilmentHelper.GetAilmentIcon(EnemyAilment);
-                        BattleMessage = $"야생 {EnemyName}은(는) {ailmentIcon} 상태가 되었다!";
-                        await Task.Delay(1500);
-                    }
-                }
+                await TryInflictAilmentAsync(playerSkill, targetIsEnemy: true, isStatusMove: false);
 
                 int attackAnim = playerSkill.Category == SkillCategory.Physical ? ANIM_ATTACK
                                : playerSkill.Category == SkillCategory.Special ? ANIM_DEEPBREATH
@@ -525,7 +517,13 @@ namespace TamaPoke.Models
 
                 await Task.Delay(600); IsEnemyTakingDamage = false; await Task.Delay(900);
             }
-            else if (!isHit)
+            else if (isHit)
+            {
+                // 위력 0인 변화 기술 (전기자석파, 수면가루 등)
+                PlayTempAction(ANIM_POSE, 30); UpdateAnimation(ANIM_POSE);
+                await TryInflictAilmentAsync(playerSkill, targetIsEnemy: true, isStatusMove: true);
+            }
+            else
             {
                 _isCounterReady = false;
                 BattleMessage = $"{Name}의 공격은 빗나갔다!";
@@ -557,6 +555,57 @@ namespace TamaPoke.Models
             }
         }
 
+        // 기술의 상태이상을 대상에게 걸어 봅니다. (확률, 이미 걸린 상태, 타입 면역 반영)
+        // isStatusMove: 위력 0인 변화 기술이면 실패/무효 메시지도 보여줍니다.
+        private async Task<bool> TryInflictAilmentAsync(SkillInfo skill, bool targetIsEnemy, bool isStatusMove)
+        {
+            string targetName = targetIsEnemy ? $"야생 {EnemyName}" : Name;
+
+            if (skill.Ailment == SkillAilment.None)
+            {
+                if (isStatusMove) { BattleMessage = "하지만 아무 일도 일어나지 않았다!"; await Task.Delay(1500); }
+                return false;
+            }
+
+            var targetInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == (targetIsEnemy ? EnemySpeciesId : SpeciesId));
+            bool alreadyAiled = (targetIsEnemy ? EnemyAilment : PlayerAilment) != SkillAilment.None;
+            bool immune = AilmentHelper.IsImmune(skill.Ailment, targetInfo?.Type1 ?? PokemonType.Normal, targetInfo?.Type2 ?? PokemonType.None);
+
+            if (alreadyAiled || immune)
+            {
+                if (isStatusMove)
+                {
+                    BattleMessage = immune ? $"{targetName}에게는 효과가 없는 것 같다..." : "하지만 실패했다!";
+                    await Task.Delay(1500);
+                }
+                return false;
+            }
+
+            if (new Random().Next(100) >= skill.AilmentChance)
+            {
+                if (isStatusMove) { BattleMessage = "하지만 실패했다!"; await Task.Delay(1500); }
+                return false;
+            }
+
+            if (targetIsEnemy)
+            {
+                EnemyAilment = skill.Ailment;
+                _enemyAilmentTurns = AilmentHelper.GetInitialTurns(EnemyAilment);
+                _enemyBadPoisonTurnCount = 0;
+            }
+            else
+            {
+                PlayerAilment = skill.Ailment;
+                _playerAilmentTurns = AilmentHelper.GetInitialTurns(PlayerAilment);
+                _playerBadPoisonTurnCount = 0;
+            }
+
+            if (!isStatusMove) await Task.Delay(1000);
+            BattleMessage = $"{targetName}은(는) {AilmentHelper.GetAilmentIcon(skill.Ailment)} 상태가 되었다!";
+            await Task.Delay(1500);
+            return true;
+        }
+
         private async Task ProcessPlayerTurnEndAilment()
         {
             if (PlayerAilment != SkillAilment.None && PlayerHp > 0)
@@ -584,7 +633,8 @@ namespace TamaPoke.Models
             {
                 if (_enemyAilmentTurns > 0) _enemyAilmentTurns--;
 
-                bool canAct = AilmentHelper.CanActThisTurn(EnemyAilment, ref _enemyAilmentTurns, $"야생 {EnemyName}", out string statusMsg);
+                bool canAct = AilmentHelper.CanActThisTurn(EnemyAilment, ref _enemyAilmentTurns, $"야생 {EnemyName}", out string statusMsg, out bool cured);
+                if (cured) EnemyAilment = SkillAilment.None;
                 if (!string.IsNullOrEmpty(statusMsg))
                 {
                     BattleMessage = statusMsg;
@@ -639,25 +689,18 @@ namespace TamaPoke.Models
                 string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
                 BattleMessage = $"{extraMsg}{Name}(은)는 {enemyDamage} 데미지를 입었다!";
 
-                if (enemySkill.Ailment != SkillAilment.None && PlayerAilment == SkillAilment.None)
-                {
-                    if (rand.Next(100) < enemySkill.AilmentChance)
-                    {
-                        PlayerAilment = enemySkill.Ailment;
-                        _playerAilmentTurns = AilmentHelper.GetInitialTurns(PlayerAilment);
-                        _playerBadPoisonTurnCount = 1;
-
-                        await Task.Delay(1000);
-                        string ailmentIcon = AilmentHelper.GetAilmentIcon(PlayerAilment);
-                        BattleMessage = $"{Name}(은)는 {ailmentIcon} 상태가 되었다!";
-                        await Task.Delay(1500);
-                    }
-                }
+                await TryInflictAilmentAsync(enemySkill, targetIsEnemy: false, isStatusMove: false);
 
                 _enemyTempActionId = 1; _enemyTempActionTimer = 15; UpdateEnemyAnimation(1);
                 PlayTempAction(6, 15); UpdateAnimation(6);
 
                 await Task.Delay(600); IsPlayerTakingDamage = false; await Task.Delay(900);
+            }
+            else if (!playerDodged && enemyHits)
+            {
+                // 위력 0인 변화 기술
+                _enemyTempActionId = ANIM_POSE; _enemyTempActionTimer = 30; UpdateEnemyAnimation(ANIM_POSE);
+                await TryInflictAilmentAsync(enemySkill, targetIsEnemy: false, isStatusMove: true);
             }
             else if (playerDodged) { BattleMessage = $"{Name}(은)는 공격을 멋지게 피했다!"; await Task.Delay(1500); }
             else if (!enemyHits) { BattleMessage = $"야생 {EnemyName}의 공격은 빗나갔다!"; await Task.Delay(1500); }
