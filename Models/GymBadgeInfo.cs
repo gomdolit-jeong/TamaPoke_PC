@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO; // 🌟 오류 해결의 핵심! 파일 경로 도구를 사용하겠다고 선언합니다.
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -14,7 +15,7 @@ namespace TamaPoke.Models
         public int GlobalIndex { get; set; }
 
         // "Kanto_1.png" 형태로 경로를 자동 생성합니다!
-        public string ImagePath => Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "Badges", $"{RegionName}_{BadgeNumber}.png");
+        public string ImagePath => Path.Combine(TamaPoke.Utils.AppPaths.BadgeFolder, $"{RegionName}_{BadgeNumber}.png");
     }
 
     // 🌟 8개의 배지를 묶어서 "1세대 관동지방" 같은 헤더를 달아주는 그룹 클래스

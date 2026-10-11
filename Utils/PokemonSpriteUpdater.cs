@@ -22,8 +22,8 @@ namespace TamaPoke.Utils
         public static async Task DownloadAndConvertSpritesAsync(IProgress<string>? progress = null)
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string targetResourceDir = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites");
-            string dataFolderPath = Path.Combine(baseDir, "Data");
+            string targetResourceDir = AppPaths.SpriteFolder;
+            string dataFolderPath = AppPaths.DataFolder;
 
             string tempZipPath = Path.Combine(baseDir, "SpriteCollab_Temp.zip");
             string extractPath = Path.Combine(baseDir, "SpriteCollab_Extract");

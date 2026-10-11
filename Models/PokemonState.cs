@@ -17,13 +17,6 @@ using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Models
 {
-    public class DirtItem
-    {
-        public int Id { get; set; }
-        public double X { get; set; }
-        public double Y { get; set; }
-    }
-
     public class PokemonGene
     {
         public int HpGene { get; set; } = 100;
@@ -58,8 +51,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string spriteFolder = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites");
+                string spriteFolder = AppPaths.SpriteFolder;
 
                 if (Directory.Exists(spriteFolder))
                 {
@@ -257,7 +249,7 @@ namespace TamaPoke.Models
         public string GenderDisplay => IsEgg ? "" : (IsFemale ? "♀" : "♂");
 
         [JsonIgnore]
-        public System.Windows.Media.Brush GenderColor => IsFemale ? (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#E91E63")! : (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#1976D2")!;
+        public System.Windows.Media.Brush GenderColor => IsFemale ? BrushCache.Get("#E91E63") : BrushCache.Get("#1976D2");
 
         private int _speciesId = -1;
         public int SpeciesId
@@ -369,7 +361,7 @@ namespace TamaPoke.Models
                     if (overrideData.Id != 0) return overrideData.Type1;
                 }
 
-                return PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId)?.Type1 ?? PokemonType.Normal;
+                return PokemonDex.Get(SpeciesId)?.Type1 ?? PokemonType.Normal;
             }
         }
 
@@ -388,7 +380,7 @@ namespace TamaPoke.Models
                     if (overrideData.Id != 0) return overrideData.Type2;
                 }
 
-                return PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId)?.Type2 ?? PokemonType.None;
+                return PokemonDex.Get(SpeciesId)?.Type2 ?? PokemonType.None;
             }
         }
 
@@ -486,7 +478,7 @@ namespace TamaPoke.Models
         }
 
         [JsonIgnore] public int LowestStat => Math.Min(Math.Min(Fullness, Joy), Math.Min(Energy, Hygiene));
-        [JsonIgnore] public bool IsFinalEvolution => !IsEgg && (PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == SpeciesId)?.EvolveTo == 0);
+        [JsonIgnore] public bool IsFinalEvolution => !IsEgg && (PokemonDex.Get(SpeciesId)?.EvolveTo == 0);
         [JsonIgnore] public string LevelDisplay => IsEgg ? "" : $"Lv.{Level}";
 
         public int Streak { get; set; } = 0;
@@ -511,7 +503,7 @@ namespace TamaPoke.Models
 
         private int GetBiomeFromType()
         {
-            var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
+            var p = PokemonDex.Get(SpeciesId);
             if (p == null) return 0;
 
             switch (Type1)
@@ -526,9 +518,9 @@ namespace TamaPoke.Models
         }
 
         [JsonIgnore] public int Biome => IsEgg ? 0 : GetBiomeFromType();
-        [JsonIgnore] public System.Windows.Media.Brush SkyColor => (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(TimeOfDay == 0 ? "#E29181" : TimeOfDay == 1 ? "#B5DBE8" : TimeOfDay == 2 ? "#DC8457" : "#151C35")!;
-        [JsonIgnore] public System.Windows.Media.Brush GrassColor => (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(IsNight ? "#161C30" : Biome == 0 ? "#7EC07F" : Biome == 1 ? "#DCCA94" : Biome == 2 ? "#4F8A55" : Biome == 3 ? "#8A5544" : Biome == 4 ? "#A8906A" : "#E6EEF5")!;
-        [JsonIgnore] public System.Windows.Media.Brush GroundColor => (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(IsNight ? "#222638" : "#F2EFE1")!;
+        [JsonIgnore] public System.Windows.Media.Brush SkyColor => BrushCache.Get(TimeOfDay == 0 ? "#E29181" : TimeOfDay == 1 ? "#B5DBE8" : TimeOfDay == 2 ? "#DC8457" : "#151C35");
+        [JsonIgnore] public System.Windows.Media.Brush GrassColor => BrushCache.Get(IsNight ? "#161C30" : Biome == 0 ? "#7EC07F" : Biome == 1 ? "#DCCA94" : Biome == 2 ? "#4F8A55" : Biome == 3 ? "#8A5544" : Biome == 4 ? "#A8906A" : "#E6EEF5");
+        [JsonIgnore] public System.Windows.Media.Brush GroundColor => BrushCache.Get(IsNight ? "#222638" : "#F2EFE1");
 
         private ImageSource? _backgroundImage;
         [JsonIgnore]
@@ -546,7 +538,7 @@ namespace TamaPoke.Models
 
             string timeSuffix = IsNight ? " NIGHT" : "";
             string fileName = $"{biomeNames[b]}{timeSuffix}.png";
-            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "Backgrounds", fileName);
+            string path = Path.Combine(AppPaths.BackgroundFolder, fileName);
 
             if (File.Exists(path))
             {
@@ -679,15 +671,21 @@ namespace TamaPoke.Models
         [JsonIgnore]
         public ObservableCollection<PokedexEntry> FilteredPokedex { get; set; } = new ObservableCollection<PokedexEntry>();
 
-        [JsonIgnore] public string KantoCountText => $"({FullPokedex.Count(p => p.Id >= 1 && p.Id <= 151 && p.IsUnlocked)}/151)";
-        [JsonIgnore] public string JohtoCountText => $"({FullPokedex.Count(p => p.Id >= 152 && p.Id <= 251 && p.IsUnlocked)}/100)";
-        [JsonIgnore] public string HoennCountText => $"({FullPokedex.Count(p => p.Id >= 252 && p.Id <= 386 && p.IsUnlocked)}/135)";
-        [JsonIgnore] public string SinnohCountText => $"({FullPokedex.Count(p => p.Id >= 387 && p.Id <= 493 && p.IsUnlocked)}/107)";
-        [JsonIgnore] public string UnovaCountText => $"({FullPokedex.Count(p => p.Id >= 494 && p.Id <= 649 && p.IsUnlocked)}/156)";
-        [JsonIgnore] public string KalosCountText => $"({FullPokedex.Count(p => p.Id >= 650 && p.Id <= 721 && p.IsUnlocked)}/72)";
-        [JsonIgnore] public string AlolaCountText => $"({FullPokedex.Count(p => p.Id >= 722 && p.Id <= 809 && p.IsUnlocked)}/88)";
-        [JsonIgnore] public string GalarCountText => $"({FullPokedex.Count(p => p.Id >= 810 && p.Id <= 905 && p.IsUnlocked)}/96)";
-        [JsonIgnore] public string PaldeaCountText => $"({FullPokedex.Count(p => p.Id >= 906 && p.Id <= 1025 && p.IsUnlocked)}/120)";
+        [JsonIgnore] public string KantoCountText => RegionCountText(1);
+        [JsonIgnore] public string JohtoCountText => RegionCountText(2);
+        [JsonIgnore] public string HoennCountText => RegionCountText(3);
+        [JsonIgnore] public string SinnohCountText => RegionCountText(4);
+        [JsonIgnore] public string UnovaCountText => RegionCountText(5);
+        [JsonIgnore] public string KalosCountText => RegionCountText(6);
+        [JsonIgnore] public string AlolaCountText => RegionCountText(7);
+        [JsonIgnore] public string GalarCountText => RegionCountText(8);
+        [JsonIgnore] public string PaldeaCountText => RegionCountText(9);
+
+        private string RegionCountText(int generation)
+        {
+            var r = GameRegions.ByGeneration(generation)!;
+            return $"({FullPokedex.Count(p => r.Contains(p.Id) && p.IsUnlocked)}/{r.Count})";
+        }
 
         private int _currentRegionIndex = 0;
         [JsonIgnore] public int CurrentRegionIndex
@@ -718,21 +716,8 @@ namespace TamaPoke.Models
         public void UpdateFilteredPokedex()
         {
             FilteredPokedex.Clear();
-            int startId = 1, endId = GameConstants.MAX_POKEMON_ID;
-
-            switch (CurrentRegionIndex)
-            {
-                case 0: startId = 1; endId = 151; break;
-                case 1: startId = 152; endId = 251; break;
-                case 2: startId = 252; endId = 386; break;
-                case 3: startId = 387; endId = 493; break;
-                case 4: startId = 494; endId = 649; break;
-                case 5: startId = 650; endId = 721; break;
-                case 6: startId = 722; endId = 809; break;
-                case 7: startId = 810; endId = 905; break;
-                case 8: startId = 906; endId = GameConstants.MAX_POKEMON_ID; break;
-                default: startId = 1; endId = GameConstants.MAX_POKEMON_ID; break;
-            }
+            var region = GameRegions.ByGeneration(CurrentRegionIndex + 1);
+            int startId = region?.StartId ?? 1, endId = region?.EndId ?? GameConstants.MAX_POKEMON_ID;
 
             foreach (var entry in FullPokedex.Where(p => p.Id >= startId && p.Id <= endId))
             {
@@ -1404,8 +1389,7 @@ namespace TamaPoke.Models
         private void UpdateAnimation(int actionToLoad)
         {
             _currentActionId = actionToLoad;
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string spriteFolder = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites");
+            string spriteFolder = AppPaths.SpriteFolder;
 
             List<SpriteFrameData>? rawStrips = null;
 
@@ -1465,8 +1449,7 @@ namespace TamaPoke.Models
         private void UpdateEnemyAnimation(int actionToLoad)
         {
             _enemyTempActionId = actionToLoad;
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string spriteFolder = Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites");
+            string spriteFolder = AppPaths.SpriteFolder;
             string enemyPath = Path.Combine(spriteFolder, $"p{EnemySpeciesId:D4}.bin");
 
             if (Directory.Exists(spriteFolder))

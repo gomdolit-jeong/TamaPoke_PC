@@ -3,6 +3,7 @@ using System.Linq;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -63,7 +64,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                var pokemon = PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == SpeciesId);
+                var pokemon = PokemonDex.Get(SpeciesId);
                 return pokemon != null ? pokemon.Type1.ToString().ToUpper() : "";
             }
         }
@@ -73,7 +74,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                var pokemon = PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == SpeciesId);
+                var pokemon = PokemonDex.Get(SpeciesId);
                 if (pokemon == null || pokemon.Type2 == PokemonType.None) return "";
                 return pokemon.Type2.ToString().ToUpper();
             }
@@ -84,11 +85,9 @@ namespace TamaPoke.Models
         {
             get
             {
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-
                 // 🌟 저장된 고유 파일명이 있다면 그걸 쓰고, 없으면 기본 번호 파일명으로 대처합니다.
                 string targetFile = string.IsNullOrEmpty(SpriteFileName) ? $"p{SpeciesId:D4}.bin" : SpriteFileName;
-                string targetPath = System.IO.Path.Combine(baseDir, "Assets", "Resource", "PokemonSprites", targetFile);
+                string targetPath = AppPaths.SpritePath(targetFile);
 
                 if (System.IO.File.Exists(targetPath))
                 {

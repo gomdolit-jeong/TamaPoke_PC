@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq; // 🌟 FirstOrDefault 사용을 위해 추가
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -28,18 +29,21 @@ namespace TamaPoke.Models
         public int BaseSpD { get; set; }
         public int EvolveTo { get; set; }
         public int EvolveLevel { get; set; }
-        public int GenderRate { get; set; }
+        public int GenderRate { get; set; } // -1: 무성, 0~8: 암컷 비율(8분율)
     }
 
     public static class PokemonDex
     {
         public static List<PokemonInfo> AllPokemons { get; private set; } = new List<PokemonInfo>();
 
+        // 도감 번호로 빠르게 찾기 위한 색인 (LoadPokemonData에서 갱신)
+        private static Dictionary<int, PokemonInfo> _byId = new();
+
         public static void LoadPokemonData()
         {
             try
             {
-                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "pokemon_data.json");
+                string filePath = AppPaths.DataPath("pokemon_data.json");
 
                 if (File.Exists(filePath))
                 {
@@ -52,6 +56,7 @@ namespace TamaPoke.Models
                     };
 
                     AllPokemons = JsonSerializer.Deserialize<List<PokemonInfo>>(jsonString, options) ?? new List<PokemonInfo>();
+                    _byId = AllPokemons.GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First());
                 }
                 else
                 {
@@ -64,12 +69,22 @@ namespace TamaPoke.Models
             }
         }
 
-        // 🌟 누락되었던 GetName 헬퍼 메서드 추가
+        public static PokemonInfo? Get(int speciesId) => _byId.TryGetValue(speciesId, out var info) ? info : null;
+
         public static string GetName(int speciesId)
         {
             if (speciesId < 0) return "알";
-            var poke = AllPokemons.FirstOrDefault(p => p.Id == speciesId);
-            return poke?.DisplayName ?? $"MON #{speciesId:D4}";
+            return Get(speciesId)?.DisplayName ?? $"MON #{speciesId:D4}";
+        }
+
+        // 종족의 성비에 따라 성별을 정합니다. (무성 종족은 IsGenderless = true)
+        public static (bool IsGenderless, bool IsFemale) RollGender(int speciesId, Random rand)
+        {
+            int rate = Get(speciesId)?.GenderRate ?? -1;
+            if (rate == -1) return (true, false);
+            if (rate == 0) return (false, false);  // 100% 수컷
+            if (rate == 8) return (false, true);   // 100% 암컷
+            return (false, rand.Next(8) < rate);
         }
     }
 }

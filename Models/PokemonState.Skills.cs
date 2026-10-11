@@ -32,7 +32,7 @@ namespace TamaPoke.Models
                 return;
             }
 
-            var d = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
+            var d = PokemonDex.Get(SpeciesId);
             if (d == null) return;
 
             int lvl = Level;

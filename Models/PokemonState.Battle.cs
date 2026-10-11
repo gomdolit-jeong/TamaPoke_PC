@@ -19,7 +19,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
+                var p = PokemonDex.Get(SpeciesId);
                 int baseHp = p?.BaseHp ?? 50;
                 return (((baseHp * 2 + Genes.HpGene + (TrDef / 4)) * Level) / 100) + Level + 10;
             }
@@ -30,7 +30,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
+                var p = PokemonDex.Get(SpeciesId);
                 return CalculateStat(p?.BaseAtk ?? 50, Genes.AtkGene, TrAtk, Level);
             }
         }
@@ -40,7 +40,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
+                var p = PokemonDex.Get(SpeciesId);
                 return CalculateStat(p?.BaseDef ?? 50, Genes.DefGene, TrDef, Level);
             }
         }
@@ -50,7 +50,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                var p = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
+                var p = PokemonDex.Get(SpeciesId);
                 int baseSpe = p?.BaseSpeed ?? 50;
                 return (((baseSpe * 2 + Genes.SpeGene + (TrSpeed / 4)) * Level) / 100) + 5;
             }
@@ -137,9 +137,9 @@ namespace TamaPoke.Models
         {
             if (maxHp <= 0) return System.Windows.Media.Brushes.Green;
             double ratio = (double)hp / maxHp;
-            if (ratio > 0.5) return (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#4CAF50")!;
-            if (ratio > 0.2) return (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FBC02D")!;
-            return (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#E53935")!;
+            if (ratio > 0.5) return BrushCache.Get("#4CAF50");
+            if (ratio > 0.2) return BrushCache.Get("#FBC02D");
+            return BrushCache.Get("#E53935");
         }
 
         private bool _isPlayerTakingDamage = false;
@@ -156,7 +156,7 @@ namespace TamaPoke.Models
         private void GenerateEnemySkills()
         {
             for (int i = 0; i < 4; i++) EnemySkills[i] = 0;
-            var d = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
+            var d = PokemonDex.Get(EnemySpeciesId);
             if (d == null) return;
 
             int n = SkillDex.GetLearnCount(EnemySpeciesId);
@@ -218,8 +218,8 @@ namespace TamaPoke.Models
 
         private SkillInfo ChooseEnemySkill()
         {
-            var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
-            var myInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
+            var enemyInfo = PokemonDex.Get(EnemySpeciesId);
+            var myInfo = PokemonDex.Get(SpeciesId);
             Random rand = new Random();
 
             var availableSkills = EnemySkills.Where(id => id != 0).Select(id => SkillDex.GetSkill(id)).Where(s => s != null).ToList();
@@ -295,17 +295,8 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool IsEnemyShiny { get => _isEnemyShiny; set => SetProperty(ref _isEnemyShiny, value); }
 
         private bool _isEnemyFemale = false;
+        private bool _isEnemyGenderless = false;
         private string _enemySpriteFileName = "";
-
-        private void DetermineEnemyGender(int speciesId, Random rand)
-        {
-            var pInfo = PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == speciesId);
-            int rate = pInfo != null ? pInfo.GenderRate : -1;
-
-            if (rate == -1 || rate == 0) _isEnemyFemale = false;
-            else if (rate == 8) _isEnemyFemale = true;
-            else _isEnemyFemale = rand.Next(8) < rate;
-        }
 
         public async void StartWildBattle()
         {
@@ -327,41 +318,12 @@ namespace TamaPoke.Models
             PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;
 
             IsEnemyShiny = rand.Next(100) < 1;
-            DetermineEnemyGender(EnemySpeciesId, rand);
+            (_isEnemyGenderless, _isEnemyFemale) = PokemonDex.RollGender(EnemySpeciesId, rand);
 
-            string assetFolderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites");
-            string searchPattern = $"p{EnemySpeciesId:D4}*.bin";
-            string[] allForms = System.IO.Directory.Exists(assetFolderPath) ? System.IO.Directory.GetFiles(assetFolderPath, searchPattern) : Array.Empty<string>();
+            string[] allForms = AppPaths.GetSpriteForms(EnemySpeciesId);
+            _enemySpriteFileName = SpriteForms.ApplyVariants(allForms, SpriteForms.PickBaseForm(EnemySpeciesId, allForms, rand), IsEnemyShiny, _isEnemyFemale);
 
-            string baseFileName = $"p{EnemySpeciesId:D4}.bin";
-            _enemySpriteFileName = baseFileName;
-
-            if (allForms.Length > 1 && rand.Next(100) < 10)
-            {
-                var specialForms = allForms.Where(f =>
-                    System.IO.Path.GetFileName(f) != baseFileName &&
-                    !System.IO.Path.GetFileName(f).ToLower().Contains("shiny") &&
-                    !System.IO.Path.GetFileName(f).ToLower().Contains("female")).ToArray();
-
-                if (specialForms.Length > 0) _enemySpriteFileName = System.IO.Path.GetFileName(specialForms[rand.Next(specialForms.Length)]);
-            }
-
-            string fileNameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(_enemySpriteFileName);
-            bool tryShiny = IsEnemyShiny && !fileNameWithoutExt.ToLower().Contains("shiny");
-            bool tryFemale = _isEnemyFemale && !fileNameWithoutExt.ToLower().Contains("female");
-            string? finalMatch = null;
-
-            if (tryShiny && tryFemale)
-            {
-                finalMatch = allForms.FirstOrDefault(f => System.IO.Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Shiny_Female", StringComparison.OrdinalIgnoreCase) || System.IO.Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Female_Shiny", StringComparison.OrdinalIgnoreCase))
-                             ?? allForms.FirstOrDefault(f => System.IO.Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Shiny", StringComparison.OrdinalIgnoreCase));
-            }
-            else if (tryFemale) finalMatch = allForms.FirstOrDefault(f => System.IO.Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Female", StringComparison.OrdinalIgnoreCase));
-            else if (tryShiny) finalMatch = allForms.FirstOrDefault(f => System.IO.Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Shiny", StringComparison.OrdinalIgnoreCase));
-
-            if (finalMatch != null) _enemySpriteFileName = System.IO.Path.GetFileName(finalMatch);
-
-            var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
+            var enemyInfo = PokemonDex.Get(EnemySpeciesId);
             int enemyBaseHp = enemyInfo != null ? enemyInfo.BaseHp : 50;
             EnemyMaxHp = ((enemyBaseHp * 2 + 15) * EnemyLevel / 100) + EnemyLevel + 10;
             EnemyHp = EnemyMaxHp;
@@ -457,8 +419,8 @@ namespace TamaPoke.Models
                 return;
             }
 
-            var myInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
-            var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
+            var myInfo = PokemonDex.Get(SpeciesId);
+            var enemyInfo = PokemonDex.Get(EnemySpeciesId);
 
             BattleMessage = $"{Name}의 {playerSkill.Name}!";
             await Task.Delay(1000);
@@ -556,7 +518,7 @@ namespace TamaPoke.Models
                 return false;
             }
 
-            var targetInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == (targetIsEnemy ? EnemySpeciesId : SpeciesId));
+            var targetInfo = PokemonDex.Get((targetIsEnemy ? EnemySpeciesId : SpeciesId));
             bool alreadyAiled = (targetIsEnemy ? EnemyAilment : PlayerAilment) != SkillAilment.None;
             bool immune = AilmentHelper.IsImmune(skill.Ailment, targetInfo?.Type1 ?? PokemonType.Normal, targetInfo?.Type2 ?? PokemonType.None);
 
@@ -616,8 +578,8 @@ namespace TamaPoke.Models
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || IsBattleResolved) return;
 
-            var myInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == SpeciesId);
-            var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
+            var myInfo = PokemonDex.Get(SpeciesId);
+            var enemyInfo = PokemonDex.Get(EnemySpeciesId);
             Random rand = new Random();
 
             if (EnemyAilment != SkillAilment.None)
@@ -864,7 +826,7 @@ namespace TamaPoke.Models
                     AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL,
                     IsShiny = IsEnemyShiny,
                     IsFemale = _isEnemyFemale,
-                    IsGenderless = (PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == EnemySpeciesId)?.GenderRate ?? -1) == -1,
+                    IsGenderless = _isEnemyGenderless,
                     TrAtk = 0,
                     TrDef = 0,
                     TrSpeed = 0,
@@ -1010,7 +972,7 @@ namespace TamaPoke.Models
             EnemyLevel = leader.Level;
             PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;
 
-            var enemyInfo = PokemonDex.AllPokemons.FirstOrDefault(x => x.Id == EnemySpeciesId);
+            var enemyInfo = PokemonDex.Get(EnemySpeciesId);
             int enemyBaseHp = enemyInfo != null ? enemyInfo.BaseHp : 50;
 
             int baseGymHp = (((enemyBaseHp * 2 + 31) * EnemyLevel) / 100) + EnemyLevel + 10;

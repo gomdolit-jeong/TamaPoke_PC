@@ -63,7 +63,7 @@ namespace TamaPoke
         private void SetupSystemTray()
         {
             _notifyIcon = new System.Windows.Forms.NotifyIcon();
-            string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "monsterball.ico");
+            string iconPath = System.IO.Path.Combine(AppPaths.ResourceFolder, "monsterball.ico");
 
             if (System.IO.File.Exists(iconPath)) _notifyIcon.Icon = new System.Drawing.Icon(iconPath);
 
@@ -192,8 +192,6 @@ namespace TamaPoke
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            SkillDex.LoadSkillData();
-            PokemonDex.LoadPokemonData();
             MyPet = PokemonState.Load();
             if (MyPet != null)
             {
@@ -228,7 +226,7 @@ namespace TamaPoke
 
             // 스프라이트 원본 크기(IdleView와 같은 2배)를 기준으로, 가장 큰 모션 프레임이 잘리지 않는 크기로 창을 만듭니다.
             const double SPRITE_ZOOM = 2.0;
-            string spritePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites", petState.SpriteFileName);
+            string spritePath = AppPaths.SpritePath(petState.SpriteFileName);
             var maxFrame = BinSpriteReader.GetMaxFrameSize(spritePath);
             double baseWidth = Math.Max(50.0, maxFrame.Width) * SPRITE_ZOOM;
             double baseHeight = Math.Max(50.0, maxFrame.Height) * SPRITE_ZOOM;

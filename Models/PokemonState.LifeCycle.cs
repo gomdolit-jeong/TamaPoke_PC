@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -19,7 +20,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites", _spriteFileName);
+                string fullPath = AppPaths.SpritePath(_spriteFileName);
 
                 if (!File.Exists(fullPath))
                 {
@@ -48,34 +49,6 @@ namespace TamaPoke.Models
         // 🌟 진화 테이블 시스템
         // ==========================================
         public static Dictionary<int, (int EvolveLevel, int[] NextSpeciesIds)> DexTable { get; private set; } = new();
-
-        private int GetGenStartId(int gen) => gen switch
-        {
-            1 => 1,
-            2 => 152,
-            3 => 252,
-            4 => 387,
-            5 => 494,
-            6 => 650,
-            7 => 722,
-            8 => 810,
-            9 => 906,
-            _ => 1
-        };
-
-        private int GetGenEndId(int gen) => gen switch
-        {
-            1 => 151,
-            2 => 251,
-            3 => 386,
-            4 => 493,
-            5 => 649,
-            6 => 721,
-            7 => 809,
-            8 => 905,
-            9 => GameConstants.MAX_POKEMON_ID,
-            _ => GameConstants.MAX_POKEMON_ID
-        };
 
         public static void InitializeEvolutionTable()
         {
@@ -155,28 +128,6 @@ namespace TamaPoke.Models
         // 🌟 알 부화 (탄생) 로직
         // ==========================================
 
-        private void ApplyGenderRatio(int speciesId, Random rand)
-        {
-            var pInfo = PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == speciesId);
-            int rate = pInfo != null ? pInfo.GenderRate : -1;
-
-            IsGenderless = (rate == -1);
-
-            if (rate == -1 || rate == 0)
-            {
-                IsFemale = false; // 무성이거나 100% 수컷
-            }
-            else if (rate == 8)
-            {
-                IsFemale = true; // 100% 암컷
-            }
-            else
-            {
-                // 8분율 기반 깔끔한 확률 계산
-                IsFemale = rand.Next(8) < rate;
-            }
-        }
-
         public void Hatch()
         {
             _overrideName = null;
@@ -185,7 +136,7 @@ namespace TamaPoke.Models
             Random rand = new Random();
 
             SpeciesId = DetermineHatchSpecies(rand);
-            ApplyGenderRatio(SpeciesId, rand);
+            (IsGenderless, IsFemale) = PokemonDex.RollGender(SpeciesId, rand);
             ApplyShinyAndSprite(rand);
             ResetNewbornStats(rand);
             RegisterToPartyAndDex();
@@ -203,7 +154,7 @@ namespace TamaPoke.Models
         {
             try
             {
-                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "missing_sprites.json");
+                string path = AppPaths.DataPath("missing_sprites.json");
                 if (File.Exists(path))
                 {
                     string json = File.ReadAllText(path);
@@ -241,7 +192,7 @@ namespace TamaPoke.Models
             foreach (var rootId in DexTable.Keys) CollectEvolutions(rootId);
 
             var baseSpeciesIds = PokemonDex.AllPokemons
-                .Where(p => Settings.SelectedGenerations.Any(gen => p.Id >= GetGenStartId(gen) && p.Id <= GetGenEndId(gen))
+                .Where(p => Settings.SelectedGenerations.Any(gen => GameRegions.ByGeneration(gen)?.Contains(p.Id) ?? true)
                             && !allEvolvedIds.Contains(p.Id)
                             && !LegendaryIds.Contains(p.Id)
                             && !MissingSpriteIds.Contains(p.Id))
@@ -266,45 +217,24 @@ namespace TamaPoke.Models
             if (shinyBase < 8) shinyBase = 8;
             IsShiny = (rand.Next(shinyBase) == 0);
 
-            string assetFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites");
-
-            if (!Directory.Exists(assetFolderPath))
-            {
-                Directory.CreateDirectory(assetFolderPath);
-            }
-
-            string searchPattern = $"p{SpeciesId:D4}*.bin";
-            string[] allForms = Directory.GetFiles(assetFolderPath, searchPattern);
-
-            string baseFileName = $"p{SpeciesId:D4}.bin";
-            SpriteFileName = baseFileName;
-
-            if (allForms.Length > 0)
-            {
-                if (allForms.Length > 1 && rand.Next(100) < 10)
-                {
-                    var specialForms = allForms.Where(f => Path.GetFileName(f) != baseFileName && !Path.GetFileName(f).ToLower().Contains("shiny") && !Path.GetFileName(f).ToLower().Contains("female")).ToArray();
-                    if (specialForms.Length > 0)
-                    {
-                        string selectedFormPath = specialForms[rand.Next(specialForms.Length)];
-                        SpriteFileName = Path.GetFileName(selectedFormPath);
-                    }
-                }
-
-                SpriteFileName = ResolveComplexSpriteName(allForms, SpriteFileName);
-
-                if (SpriteFileName.ToLower().Contains("shiny") && Settings.UseTrayNotifications)
-                {
-                    TrayNotificationRequested?.Invoke("✨ 반짝반짝!", "색이 다른(이로치) 포켓몬이 태어났어요!");
-                }
-                else if (SpriteFileName != baseFileName && !SpriteFileName.ToLower().Contains("female") && Settings.UseTrayNotifications)
-                {
-                    TrayNotificationRequested?.Invoke("✨ 특별한 탄생!", "평소와 다른 특별한 모습의 포켓몬이 태어났어요!");
-                }
-            }
-            else
+            Directory.CreateDirectory(AppPaths.SpriteFolder);
+            string[] allForms = AppPaths.GetSpriteForms(SpeciesId);
+            if (allForms.Length == 0)
             {
                 SpriteFileName = "p0000.bin";
+                return;
+            }
+
+            string baseFileName = SpriteForms.BaseFileName(SpeciesId);
+            SpriteFileName = SpriteForms.ApplyVariants(allForms, SpriteForms.PickBaseForm(SpeciesId, allForms, rand), IsShiny, IsFemale);
+
+            if (SpriteFileName.ToLower().Contains("shiny") && Settings.UseTrayNotifications)
+            {
+                TrayNotificationRequested?.Invoke("✨ 반짝반짝!", "색이 다른(이로치) 포켓몬이 태어났어요!");
+            }
+            else if (SpriteFileName != baseFileName && !SpriteFileName.ToLower().Contains("female") && Settings.UseTrayNotifications)
+            {
+                TrayNotificationRequested?.Invoke("✨ 특별한 탄생!", "평소와 다른 특별한 모습의 포켓몬이 태어났어요!");
             }
         }
 
@@ -349,35 +279,6 @@ namespace TamaPoke.Models
 
             // 새로 태어난 포켓몬은 메인이므로 항상 Party[0]에 들어갑니다.
             InsertNewLeader(CreatePartyMemberSnapshot());
-        }
-
-        private string ResolveComplexSpriteName(string[] allForms, string baseFileName)
-        {
-            if (allForms.Length == 0) return "p0000.bin";
-
-            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(baseFileName);
-            bool tryShiny = IsShiny && !fileNameWithoutExt.ToLower().Contains("shiny");
-            bool tryFemale = IsFemale && !fileNameWithoutExt.ToLower().Contains("female");
-
-            string? finalMatch = null;
-
-            if (tryShiny && tryFemale)
-            {
-                finalMatch = allForms.FirstOrDefault(f =>
-                    Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Shiny_Female", StringComparison.OrdinalIgnoreCase) ||
-                    Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Female_Shiny", StringComparison.OrdinalIgnoreCase))
-                    ?? allForms.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Shiny", StringComparison.OrdinalIgnoreCase));
-            }
-            else if (tryFemale)
-            {
-                finalMatch = allForms.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Female", StringComparison.OrdinalIgnoreCase));
-            }
-            else if (tryShiny)
-            {
-                finalMatch = allForms.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals($"{fileNameWithoutExt}_Shiny", StringComparison.OrdinalIgnoreCase));
-            }
-
-            return finalMatch != null ? Path.GetFileName(finalMatch) : baseFileName;
         }
 
         #endregion
@@ -464,16 +365,11 @@ namespace TamaPoke.Models
 
         public void RefreshSpriteFileName()
         {
-            string assetFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Resource", "PokemonSprites");
-
-            if (!Directory.Exists(assetFolderPath))
-            {
-                Directory.CreateDirectory(assetFolderPath);
-            }
-
-            string[] allForms = Directory.GetFiles(assetFolderPath, $"p{SpeciesId:D4}*.bin");
-
-            SpriteFileName = ResolveComplexSpriteName(allForms, $"p{SpeciesId:D4}.bin");
+            Directory.CreateDirectory(AppPaths.SpriteFolder);
+            string[] allForms = AppPaths.GetSpriteForms(SpeciesId);
+            SpriteFileName = allForms.Length == 0
+                ? "p0000.bin"
+                : SpriteForms.ApplyVariants(allForms, SpriteForms.BaseFileName(SpeciesId), IsShiny, IsFemale);
         }
 
         // ==========================================

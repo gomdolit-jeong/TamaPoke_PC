@@ -14,8 +14,9 @@ namespace TamaPoke
         {
             base.OnStartup(e);
 
-            // 앱이 시작될 때 포켓몬 데이터를 가장 먼저 메모리에 로드합니다.
+            // 앱이 시작될 때 포켓몬/기술 데이터를 가장 먼저 메모리에 로드합니다.
             PokemonDex.LoadPokemonData();
+            TamaPoke.Utils.SkillDex.LoadSkillData();
         }
     }
 

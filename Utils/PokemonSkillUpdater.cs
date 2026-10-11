@@ -117,7 +117,7 @@ namespace TamaPoke.Utils
                 catch (Exception) { /* 무시 */ }
             }
 
-            string dataFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+            string dataFolderPath = AppPaths.DataFolder;
             if (!Directory.Exists(dataFolderPath)) Directory.CreateDirectory(dataFolderPath);
 
             // 🌟 한글이 깨지지 않고 예쁘게 저장되도록 옵션을 설정합니다!

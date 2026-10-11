@@ -32,7 +32,7 @@ namespace TamaPoke.Utils
         {
             try
             {
-                string dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+                string dataFolder = AppPaths.DataFolder;
 
                 string learnsetPath = Path.Combine(dataFolder, "pokemon_skills.json");
                 if (File.Exists(learnsetPath))
