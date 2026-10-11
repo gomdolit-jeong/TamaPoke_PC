@@ -279,6 +279,12 @@ namespace TamaPoke.Models
 
         public void ToggleMute() => IsMuted = !IsMuted;
 
+        // 음소거가 아닐 때만 효과음을 재생합니다.
+        public void PlaySound((int f, int ms)[] notes)
+        {
+            if (!IsMuted) SoundManager.Play(notes);
+        }
+
         public async void Pet()
         {
             if (IsEgg || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsDexOpen || IsBattleOpen) return;

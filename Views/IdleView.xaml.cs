@@ -12,59 +12,6 @@ namespace TamaPoke.Views
         public IdleView()
         {
             InitializeComponent();
-
-            // 화면 전환 때마다 IdleView가 새로 만들어지므로, 사라질 때 단축키 연결을 꼭 해제합니다.
-            // (해제하지 않으면 핸들러가 쌓여 Ctrl+O/U 창이 여러 번 열립니다)
-            Window? hookedWindow = null;
-            this.Loaded += (s, e) =>
-            {
-                hookedWindow = Window.GetWindow(this);
-                if (hookedWindow != null) hookedWindow.KeyDown += Window_KeyDown;
-            };
-            this.Unloaded += (s, e) =>
-            {
-                if (hookedWindow != null) hookedWindow.KeyDown -= Window_KeyDown;
-                hookedWindow = null;
-            };
-        }
-
-        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            // Ctrl 키가 같이 눌렸는지 확인합니다.
-            bool isCtrlDown = System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control;
-
-            if (isCtrlDown)
-            {
-                if (e.Key == System.Windows.Input.Key.O) // 🌟 Ctrl + O : 게임 설정 창 열기
-                {
-                    var settingsWindow = new SettingsWindow();
-                    Window mainWindow = Window.GetWindow(this);
-                    if (mainWindow != null && mainWindow.IsVisible)
-                    {
-                        settingsWindow.Owner = mainWindow;
-                    }
-                    settingsWindow.ShowDialog();
-                }
-                else if (e.Key == System.Windows.Input.Key.U) // Ctrl + U : 업데이트 창 열기
-                {
-                    var updateWindow = new UpdateProgressWindow();
-                    Window mainWindow = Window.GetWindow(this);
-                    if (mainWindow != null && mainWindow.IsVisible)
-                    {
-                        updateWindow.Owner = mainWindow;
-                    }
-                    updateWindow.ShowDialog();
-                }
-                else if (e.Key == System.Windows.Input.Key.W) // 🌟 Ctrl + W : 산책 모드 ON / OFF 토글
-                {
-                    Window window = Window.GetWindow(this);
-                    if (window is MainWindow mainWindow)
-                    {
-                        // MainWindow에 만들어둔 토글 메서드를 실행합니다.
-                        mainWindow.ToggleWalkMode();
-                    }
-                }
-            }
         }
 
         private PokemonState? GetPet() => DataContext as PokemonState;
@@ -87,11 +34,11 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && pet.IsAlive && !pet.IsEgg && !pet.IsSleeping)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+                pet.PlaySound(SoundManager.N_TAP);
                 pet.IsPlayMenuOpen = false;
                 pet.IsFeedMenuOpen = !pet.IsFeedMenuOpen;
             }
-            else if (pet != null && !pet.IsMuted) SoundManager.Play(SoundManager.N_DENY);
+            else pet?.PlaySound(SoundManager.N_DENY);
         }
 
         private void FeedItem_Click(object sender, RoutedEventArgs e)
@@ -99,7 +46,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && sender is System.Windows.Controls.Button btn && int.TryParse(btn.Tag?.ToString(), out int foodType))
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_EAT);
+                pet.PlaySound(SoundManager.N_EAT);
                 pet.Feed(foodType);
             }
         }
@@ -109,11 +56,11 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && pet.IsAlive && !pet.IsEgg && !pet.IsSleeping)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+                pet.PlaySound(SoundManager.N_TAP);
                 pet.IsFeedMenuOpen = false;
                 pet.IsPlayMenuOpen = !pet.IsPlayMenuOpen;
             }
-            else if (pet != null && !pet.IsMuted) SoundManager.Play(SoundManager.N_DENY);
+            else pet?.PlaySound(SoundManager.N_DENY);
         }
 
         // ==========================================
@@ -124,7 +71,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && pet.IsAlive && !pet.IsEgg && !pet.IsSleeping)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_PLAY);
+                pet.PlaySound(SoundManager.N_PLAY);
                 pet.StartBallGame();
 
                 Window window = Window.GetWindow(this);
@@ -142,7 +89,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && pet.IsAlive && !pet.IsEgg && !pet.IsSleeping)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_PLAY);
+                pet.PlaySound(SoundManager.N_PLAY);
                 pet.StartCatchGame(); // 게임 시작!
 
                 // 캐싱된 뷰를 사용하여 부드럽게 전환
@@ -160,7 +107,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && pet.IsAlive && !pet.IsEgg && !pet.IsSleeping)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_PLAY);
+                pet.PlaySound(SoundManager.N_PLAY);
                 pet.StartMemoGame(); // 🌟 게임 시작
 
                 // 뷰 통째로 전환
@@ -178,7 +125,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && pet.IsAlive && !pet.IsEgg && !pet.IsSleeping)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_PLAY);
+                pet.PlaySound(SoundManager.N_PLAY);
                 pet.StartCleanGame(); // 게임 시작
 
                 Window window = Window.GetWindow(this);
@@ -196,7 +143,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && pet.IsBallGameOpen)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+                pet.PlaySound(SoundManager.N_TAP);
                 pet.TapBall();
             }
         }
@@ -208,7 +155,7 @@ namespace TamaPoke.Views
             {
                 pet.IsFeedMenuOpen = false;
                 pet.IsPlayMenuOpen = false;
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+                pet.PlaySound(SoundManager.N_TAP);
                 pet.ToggleSleep();
             }
         }
@@ -220,16 +167,16 @@ namespace TamaPoke.Views
             {
                 pet.IsFeedMenuOpen = false;
                 pet.IsPlayMenuOpen = false;
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_MEDAL);
+                pet.PlaySound(SoundManager.N_MEDAL);
                 pet.Clean();
             }
-            else if (pet != null && !pet.IsMuted) SoundManager.Play(SoundManager.N_DENY);
+            else pet?.PlaySound(SoundManager.N_DENY);
         }
 
         private void SkipTimeButton_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null && !pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+            pet?.PlaySound(SoundManager.N_TAP);
             pet?.SkipTimeForTest();
         }
 
@@ -238,7 +185,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_MEDAL);
+                pet.PlaySound(SoundManager.N_MEDAL);
                 pet.StartEvolutionCeremony();
             }
         }
@@ -248,7 +195,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+                pet.PlaySound(SoundManager.N_TAP);
                 pet.PostponeEvolve();
             }
         }
@@ -256,7 +203,7 @@ namespace TamaPoke.Views
         private void StartFarewell_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null) { if (!pet.IsMuted) SoundManager.Play(SoundManager.N_MEDAL); pet.StartFarewell(); }
+            if (pet != null) { pet.PlaySound(SoundManager.N_MEDAL); pet.StartFarewell(); }
         }
 
         private void PostponeFarewell_Click(object sender, RoutedEventArgs e)
@@ -264,7 +211,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+                pet.PlaySound(SoundManager.N_TAP);
                 pet.PostponeFarewell();
             }
         }
@@ -272,7 +219,7 @@ namespace TamaPoke.Views
         private void StartRunaway_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
-            if (pet != null) { if (!pet.IsMuted) SoundManager.Play(SoundManager.N_DENY); pet.StartRunaway(); }
+            if (pet != null) { pet.PlaySound(SoundManager.N_DENY); pet.StartRunaway(); }
         }
 
         private void DexButton_Click(object sender, RoutedEventArgs e)
@@ -291,14 +238,14 @@ namespace TamaPoke.Views
 
             if (pet.IsEgg)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+                pet.PlaySound(SoundManager.N_TAP);
                 pet.TapEgg();
             }
             else if (pet.IsAlive && !pet.IsSleeping && !pet.IsCeremony)
             {
                 pet.IsFeedMenuOpen = false;
                 pet.IsPlayMenuOpen = false;
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_HEART);
+                pet.PlaySound(SoundManager.N_HEART);
                 pet.Pet();
             }
         }
@@ -350,15 +297,15 @@ namespace TamaPoke.Views
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    if (!pet.IsMuted) SoundManager.Play(SoundManager.N_DENY);
+                    pet.PlaySound(SoundManager.N_DENY);
                     pet.IsDexOpen = false;
                     pet.IsProfileOpen = false;
                     pet.StartRelease();
                 }
             }
-            else if (DataContext is PokemonState pet2 && !pet2.IsMuted)
+            else
             {
-                SoundManager.Play(SoundManager.N_DENY);
+                GetPet()?.PlaySound(SoundManager.N_DENY);
             }
         }
         private void MenuItem_OpenParty_Click(object sender, RoutedEventArgs e)

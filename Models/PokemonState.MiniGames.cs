@@ -109,7 +109,7 @@ namespace TamaPoke.Models
         public async void TriggerAttackMotion()
         {
             if (!IsCleanGameOpen) return;
-            if (!IsMuted) SoundManager.Play(SoundManager.N_TAP);
+            PlaySound(SoundManager.N_TAP);
             UpdateAnimation(6);
             await Task.Delay(500);
             if (IsCleanGameOpen) CheckStateAndAnimate();

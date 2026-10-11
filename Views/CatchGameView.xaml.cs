@@ -85,16 +85,7 @@ namespace TamaPoke.Views
             }
         }
 
-        // 🌟 메인 화면으로 돌아가는 로직을 하나의 메서드로 깔끔하게 묶어 재사용합니다.
-        private void ReturnToIdle(PokemonState pet)
-        {
-            Window parentWindow = Window.GetWindow(this);
-            if (parentWindow is MainWindow mainWindow)
-            {
-                IdleView idleView = new IdleView();
-                idleView.DataContext = pet;
-                mainWindow.NavigateTo(idleView);
-            }
-        }
+        // 메인(대기) 화면으로 돌아갑니다.
+        private void ReturnToIdle(PokemonState pet) => (Window.GetWindow(this) as MainWindow)?.ShowIdleView(pet);
     }
 }

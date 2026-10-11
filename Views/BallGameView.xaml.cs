@@ -80,7 +80,7 @@ namespace TamaPoke.Views
             var pet = GetPet();
             if (pet != null && pet.IsBallGameOpen)
             {
-                if (!pet.IsMuted) SoundManager.Play(SoundManager.N_TAP);
+                pet.PlaySound(SoundManager.N_TAP);
                 pet.TapBall();
                 e.Handled = true;
             }
@@ -96,15 +96,7 @@ namespace TamaPoke.Views
             }
         }
 
-        public void ReturnToIdle(PokemonState pet)
-        {
-            Window parentWindow = Window.GetWindow(this);
-            if (parentWindow is MainWindow mainWindow)
-            {
-                IdleView idleView = new IdleView();
-                idleView.DataContext = pet;
-                mainWindow.NavigateTo(idleView);
-            }
-        }
+        // 메인(대기) 화면으로 돌아갑니다.
+        public void ReturnToIdle(PokemonState pet) => (Window.GetWindow(this) as MainWindow)?.ShowIdleView(pet);
     }
 }
