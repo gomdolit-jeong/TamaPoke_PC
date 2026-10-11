@@ -1544,15 +1544,25 @@ namespace TamaPoke.Models
             {
                 try
                 {
-                    var pet = JsonSerializer.Deserialize<PokemonState>(File.ReadAllText(SaveFilePath));
+                    string json = File.ReadAllText(SaveFilePath);
+                    var pet = JsonSerializer.Deserialize<PokemonState>(json);
                     if (pet != null)
                     {
-                        pet.InitializeAfterLoad();
-
-                        if (pet.Inventory == null || pet.Inventory.Count == 0)
+                        // 아이템은 배틀로만 얻습니다. 가방이 비어 있어도 다시 채우지 않고,
+                        // 가방 기능이 생기기 전의 세이브(Inventory 키 자체가 없음)만 기본 아이템을 지급합니다.
+                        bool hasInventoryKey;
+                        using (var doc = JsonDocument.Parse(json)) hasInventoryKey = doc.RootElement.TryGetProperty(nameof(Inventory), out _);
+                        if (!hasInventoryKey || pet.Inventory == null)
                         {
+                            pet.Inventory ??= new ObservableCollection<ItemInfo>();
                             pet.InitializeInventory();
                         }
+                        else
+                        {
+                            pet.MigrateLegacyInventory();
+                        }
+
+                        pet.InitializeAfterLoad();
 
                         return pet;
                     }

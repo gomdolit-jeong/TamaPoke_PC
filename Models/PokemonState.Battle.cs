@@ -791,8 +791,8 @@ namespace TamaPoke.Models
             BattleMessage = "관장에게 승리하여\n상품을 획득했습니다!";
             await Task.Delay(2000);
 
-            AddItemToInventory("고급상처약", "체력의 50% 회복", ItemType.Potion, 50, 2);
-            AddItemToInventory("몬스터볼", "야생 포켓몬 포획", ItemType.monsterball, 0, 3);
+            AddItem(ItemDex.HyperPotion, 2);
+            AddItem(ItemDex.MonsterBall, 3);
 
             BattleMessage = "고급상처약 2개와\n몬스터볼 3개를 얻었다!";
             await Task.Delay(2500);
@@ -901,13 +901,13 @@ namespace TamaPoke.Models
             if (rand.Next(100) < 50)
             {
                 int itemRoll = rand.Next(100);
-                if (itemRoll < 50) { AddItemToInventory("몬스터볼", "야생 포켓몬을 잡을 때 쓴다.", ItemType.monsterball, 1, 1); dropMessage = "몬스터볼 1개를 얻었다!"; }
+                if (itemRoll < 50) { AddItem(ItemDex.MonsterBall, 1); dropMessage = "몬스터볼 1개를 얻었다!"; }
                 else
                 {
                     int potionRoll = rand.Next(100);
-                    if (potionRoll < 60) { AddItemToInventory("상처약", "포켓몬의 체력을 15% 회복한다.", ItemType.Potion, 15, 1); dropMessage = "상처약 1개를 얻었다!"; }
-                    else if (potionRoll < 90) { AddItemToInventory("좋은상처약", "포켓몬의 체력을 30% 회복한다.", ItemType.Potion, 30, 1); dropMessage = "좋은상처약 1개를 얻었다!"; }
-                    else { AddItemToInventory("고급상처약", "포켓몬의 체력을 50% 회복한다.", ItemType.Potion, 50, 1); dropMessage = "앗! 고급상처약 1개를 얻었다!"; }
+                    if (potionRoll < 60) { AddItem(ItemDex.Potion, 1); dropMessage = "상처약 1개를 얻었다!"; }
+                    else if (potionRoll < 90) { AddItem(ItemDex.SuperPotion, 1); dropMessage = "좋은상처약 1개를 얻었다!"; }
+                    else { AddItem(ItemDex.HyperPotion, 1); dropMessage = "앗! 고급상처약 1개를 얻었다!"; }
                 }
             }
 
