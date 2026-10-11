@@ -1,9 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace TamaPoke.Models
 {
+    // 파티 규칙: 메인(대표) 포켓몬은 항상 Party[0]에 위치합니다.
+    // 메인이 알이거나 이별/가출/방생 연출 중일 때는 Party[0]을 건드리지 않습니다.
     public partial class PokemonState
     {
         public ObservableCollection<PartyMember> Party { get; set; } = new();
@@ -17,7 +20,10 @@ namespace TamaPoke.Models
             set => SetProperty(ref _isSwapMode, value);
         }
 
-        // 🌟 [리팩토링 핵심 1] 파티 멤버 데이터를 복사하는 공통 헬퍼 메서드입니다!
+        // 메인 포켓몬이 파티에 반영될 수 있는 상태인지 (알/연출 중에는 반영하지 않음)
+        private bool CanSyncLeader => !IsEgg && Ceremony == 0;
+
+        // 현재 메인 포켓몬의 상태를 파티 멤버 데이터로 복사합니다.
         private PartyMember CreatePartyMemberSnapshot()
         {
             return new PartyMember
@@ -28,6 +34,8 @@ namespace TamaPoke.Models
                 Level = this.Level,
                 AgeMinutes = this.AgeMinutes,
                 IsShiny = this.IsShiny,
+                IsFemale = this.IsFemale,
+                IsGenderless = this.IsGenderless,
                 TrAtk = this.TrAtk,
                 TrDef = this.TrDef,
                 TrSpeed = this.TrSpeed,
@@ -37,32 +45,58 @@ namespace TamaPoke.Models
                 Hygiene = this.Hygiene,
                 Bond = this.Bond,
                 Weight = this.Weight,
+                CareMistakes = this.CareMistakes,
+                BerryKnown = this.BerryKnown,
                 IsEvolutionPostponed = this.IsEvolutionPostponed,
                 Medals = this.Medals,
                 Skills = this.Skills != null ? (int[])this.Skills.Clone() : new int[4],
-                Genes = this.Genes != null ? new PokemonGene
-                {
-                    HpGene = this.Genes.HpGene,
-                    AtkGene = this.Genes.AtkGene,
-                    DefGene = this.Genes.DefGene,
-                    SpeGene = this.Genes.SpeGene
-                } : new PokemonGene()
+                Genes = CloneGenes(this.Genes)
             };
         }
 
-        public void RetireToParty()
-        {
-            // 🌟 20줄이 1줄로 단축되었습니다!
-            var retiredPokemon = CreatePartyMemberSnapshot();
+        private static PokemonGene CloneGenes(PokemonGene? g) => g == null
+            ? new PokemonGene()
+            : new PokemonGene { HpGene = g.HpGene, AtkGene = g.AtkGene, DefGene = g.DefGene, SpeGene = g.SpeGene };
 
-            if (Party.Count < 6)
-                Party.Add(retiredPokemon);
-            else
-            {
-                _pendingRetiree = retiredPokemon;
-                IsSwapMode = true;
-                IsPartyOpen = true;
-            }
+        // 파티 멤버 데이터를 메인 포켓몬 상태로 불러옵니다.
+        private void LoadFromPartyMember(PartyMember m)
+        {
+            _overrideName = null;
+            _overrideLevel = null;
+
+            this.SpeciesId = m.SpeciesId;
+            this.SpriteFileName = m.SpriteFileName;
+            this.AgeMinutes = m.AgeMinutes;
+            _ageSeconds = this.AgeMinutes * 60;
+            this.IsShiny = m.IsShiny;
+            this.IsFemale = m.IsFemale;
+            this.IsGenderless = m.IsGenderless;
+            this.TrAtk = m.TrAtk;
+            this.TrDef = m.TrDef;
+            this.TrSpeed = m.TrSpeed;
+            this.Fullness = m.Fullness;
+            this.Joy = m.Joy;
+            this.Energy = m.Energy;
+            this.Hygiene = m.Hygiene;
+            this.Bond = m.Bond;
+            this.Weight = m.Weight;
+            this.CareMistakes = m.CareMistakes;
+            this.BerryKnown = m.BerryKnown;
+            this.IsEvolutionPostponed = m.IsEvolutionPostponed;
+            this.Medals = m.Medals;
+            this.Skills = m.Skills != null ? (int[])m.Skills.Clone() : new int[4];
+            this.Genes = CloneGenes(m.Genes);
+
+            // 교체되어 나온 포켓몬은 깨어 있는 상태로 시작합니다.
+            IsSleeping = false;
+            IsFarewellPostponed = false;
+            NeglectTicks = 0;
+
+            OnPropertyChanged(nameof(Name));
+            OnPropertyChanged(nameof(GenderDisplay));
+            OnPropertyChanged(nameof(GenderColor));
+            OnPropertyChanged(nameof(FavoriteBerryName));
+            OnPropertyChanged(nameof(CurrentSkills));
         }
 
         public void UpdatePartyFirstFlags()
@@ -87,84 +121,42 @@ namespace TamaPoke.Models
 
         public void ExecuteSwap(PartyMember targetToReplace)
         {
-            if (_pendingRetiree != null && Party.Contains(targetToReplace))
-            {
-                int index = Party.IndexOf(targetToReplace);
-                Party[index] = _pendingRetiree;
-                _pendingRetiree = null;
-                IsSwapMode = false;
-            }
+            if (_pendingRetiree == null || !Party.Contains(targetToReplace)) return;
+
+            int index = Party.IndexOf(targetToReplace);
+            if (index == 0 && CanSyncLeader) return; // 메인 포켓몬 자리는 교체 대상이 아닙니다.
+
+            Party[index] = _pendingRetiree;
+            _pendingRetiree = null;
+            IsSwapMode = false;
+            UpdatePartyFirstFlags();
+            Save();
         }
 
         public void SwapMainWithParty(PartyMember targetMember)
         {
             if (targetMember == null || !Party.Contains(targetMember)) return;
+            if (!CanSyncLeader) return; // 알 상태/연출 중에는 교체 불가
 
             int targetIndex = Party.IndexOf(targetMember);
             if (targetIndex == 0) return;
 
-            var newLeader = new PartyMember
-            {
-                SpeciesId = targetMember.SpeciesId,
-                Name = targetMember.Name,
-                SpriteFileName = targetMember.SpriteFileName,
-                Level = targetMember.Level,
-                AgeMinutes = targetMember.AgeMinutes,
-                IsShiny = targetMember.IsShiny,
-                TrAtk = targetMember.TrAtk,
-                TrDef = targetMember.TrDef,
-                TrSpeed = targetMember.TrSpeed,
-                Fullness = targetMember.Fullness,
-                Joy = targetMember.Joy,
-                Energy = targetMember.Energy,
-                Hygiene = targetMember.Hygiene,
-                Bond = targetMember.Bond,
-                Weight = targetMember.Weight,
-                IsEvolutionPostponed = targetMember.IsEvolutionPostponed,
-                Medals = targetMember.Medals,
-                Skills = targetMember.Skills != null ? (int[])targetMember.Skills.Clone() : new int[4],
-                Genes = targetMember.Genes != null ? new PokemonGene { HpGene = targetMember.Genes.HpGene, AtkGene = targetMember.Genes.AtkGene, DefGene = targetMember.Genes.DefGene, SpeGene = targetMember.Genes.SpeGene } : new PokemonGene()
-            };
-
-            // 🌟 예전 리더 데이터를 파티로 넣을 때 헬퍼 메서드 사용!
             var oldLeader = CreatePartyMemberSnapshot();
 
-            Party.RemoveAt(targetIndex);
-            Party.Insert(targetIndex, oldLeader);
-            Party.RemoveAt(0);
-            Party.Insert(0, newLeader);
+            // 선택한 멤버를 맨 앞(메인)으로, 기존 메인을 그 자리로 보냅니다.
+            Party[targetIndex] = oldLeader;
+            if (Party.Count > 0) Party[0] = targetMember;
+            else Party.Add(targetMember);
 
-            this.SpeciesId = newLeader.SpeciesId;
-            this.SpriteFileName = newLeader.SpriteFileName;
-            this.Name = newLeader.Name;
-            this._overrideLevel = null;
-            this.AgeMinutes = newLeader.AgeMinutes;
-            _ageSeconds = this.AgeMinutes * 60;
-            this.IsShiny = newLeader.IsShiny;
-            this.TrAtk = newLeader.TrAtk;
-            this.TrDef = newLeader.TrDef;
-            this.TrSpeed = newLeader.TrSpeed;
-            this.Fullness = newLeader.Fullness;
-            this.Joy = newLeader.Joy;
-            this.Energy = newLeader.Energy;
-            this.Hygiene = newLeader.Hygiene;
-            this.Bond = newLeader.Bond;
-            this.Weight = newLeader.Weight;
-            this.IsEvolutionPostponed = newLeader.IsEvolutionPostponed;
-            this.Medals = newLeader.Medals;
+            LoadFromPartyMember(targetMember);
 
-            if (newLeader.Skills != null) this.Skills = (int[])newLeader.Skills.Clone();
-            if (newLeader.Genes != null) this.Genes = new PokemonGene { HpGene = newLeader.Genes.HpGene, AtkGene = newLeader.Genes.AtkGene, DefGene = newLeader.Genes.DefGene, SpeGene = newLeader.Genes.SpeGene };
-
-            for (int i = 0; i < Party.Count; i++)
-            {
-                Party[i].IsFirst = (i == 0);
-                Party[i].IsSelected = false;
-            }
+            foreach (var member in Party) member.IsSelected = false;
+            UpdatePartyFirstFlags();
 
             IsPartyOpen = false;
+            ResetPosition();
             UpdateBackgroundImage();
-            CheckStateAndAnimate();
+            ReloadSprite();
             Save();
         }
 
@@ -174,15 +166,55 @@ namespace TamaPoke.Models
             IsSwapMode = false;
         }
 
+        // 메인 포켓몬의 최신 상태를 Party[0]에 반영합니다.
         public void SyncMainToLeader()
         {
-            if (Party == null) return;
+            if (Party == null || !CanSyncLeader) return;
 
-            // 🌟 여기서도 20줄이 1줄로 단축되었습니다!
             var currentMain = CreatePartyMemberSnapshot();
+            currentMain.IsFirst = true;
 
             if (Party.Count == 0) Party.Add(currentMain);
-            else { Party.RemoveAt(0); Party.Insert(0, currentMain); }
+            else Party[0] = currentMain;
+        }
+
+        // 메인 포켓몬이 파티를 떠날 때(이별/가출/방생) Party[0]을 제거합니다.
+        private void RemoveLeaderFromParty()
+        {
+            if (Party != null && Party.Count > 0) Party.RemoveAt(0);
+            UpdatePartyFirstFlags();
+        }
+
+        // 새로 태어난 포켓몬을 메인 자리(Party[0])에 넣습니다.
+        private void InsertNewLeader(PartyMember newborn)
+        {
+            newborn.IsFirst = true;
+            if (Party.Count < 6) Party.Insert(0, newborn);
+            else Party[0] = newborn;
+            UpdatePartyFirstFlags();
+        }
+
+        // 이전 버전에서 메인 포켓몬이 파티 뒤쪽에 들어가 있던 세이브를 바로잡습니다.
+        // (부화한 포켓몬이 맨 뒤에 추가되던 버그) 유전자까지 같은 멤버를 메인으로 판단합니다.
+        private void RepairLeaderSlot()
+        {
+            if (Party == null || Party.Count == 0 || !CanSyncLeader) return;
+
+            bool IsMain(PartyMember p) =>
+                p.SpeciesId == SpeciesId && p.SpriteFileName == SpriteFileName && p.Genes != null &&
+                p.Genes.HpGene == Genes.HpGene && p.Genes.AtkGene == Genes.AtkGene &&
+                p.Genes.DefGene == Genes.DefGene && p.Genes.SpeGene == Genes.SpeGene;
+
+            bool leaderOk = IsMain(Party[0]);
+
+            // Party[0] 이외의 자리에 있는 메인 포켓몬(뒤쪽에 추가됐거나 복제된 것)을 제거합니다.
+            bool removed = false;
+            for (int i = Party.Count - 1; i >= 1; i--)
+            {
+                if (IsMain(Party[i])) { Party.RemoveAt(i); removed = true; }
+            }
+
+            if (!leaderOk && removed) InsertNewLeader(CreatePartyMemberSnapshot());
         }
 
         public void OpenParty()

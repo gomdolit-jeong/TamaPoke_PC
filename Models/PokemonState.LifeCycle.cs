@@ -348,34 +348,8 @@ namespace TamaPoke.Models
                 OnPropertyChanged(nameof(RegisteredCount));
             }
 
-            var newbornMember = new PartyMember
-            {
-                SpeciesId = this.SpeciesId,
-                Name = this.Name,
-                Level = this.Level,
-                IsShiny = this.IsShiny,
-                TrAtk = this.TrAtk,
-                TrDef = this.TrDef,
-                TrSpeed = this.TrSpeed,
-                Skills = (int[])this.Skills.Clone(),
-                Genes = new PokemonGene
-                {
-                    HpGene = this.Genes.HpGene,
-                    AtkGene = this.Genes.AtkGene,
-                    DefGene = this.Genes.DefGene,
-                    SpeGene = this.Genes.SpeGene
-                }
-            };
-
-            if (Party.Count == 0)
-            {
-                Party.Add(newbornMember);
-            }
-            else
-            {
-                if (Party.Count < 6) Party.Add(newbornMember);
-                else Party[0] = newbornMember;
-            }
+            // 새로 태어난 포켓몬은 메인이므로 항상 Party[0]에 들어갑니다.
+            InsertNewLeader(CreatePartyMemberSnapshot());
         }
 
         private string ResolveComplexSpriteName(string[] allForms, string baseFileName)
@@ -487,6 +461,7 @@ namespace TamaPoke.Models
             RefreshPokedex();
 
             PlayerHp = CombatMaxHp;
+            SyncMainToLeader();
             Save();
         }
 
@@ -544,11 +519,7 @@ namespace TamaPoke.Models
             if (IsEgg || Ceremony != 0) return;
             ResetPosition();
 
-            if (Party != null && Party.Count > 0)
-            {
-                var target = Party.FirstOrDefault(p => p.SpeciesId == this.SpeciesId);
-                if (target != null) Party.Remove(target);
-            }
+            RemoveLeaderFromParty();
 
             LastEnd = 1;
             Ceremony = 1;
@@ -560,11 +531,7 @@ namespace TamaPoke.Models
             if (IsEgg || Ceremony != 0) return;
             ResetPosition();
 
-            if (Party != null && Party.Count > 0)
-            {
-                var target = Party.FirstOrDefault(p => p.SpeciesId == this.SpeciesId);
-                if (target != null) Party.Remove(target);
-            }
+            RemoveLeaderFromParty();
 
             LastEnd = 2;
             Ceremony = 2;
@@ -576,11 +543,7 @@ namespace TamaPoke.Models
             if (IsEgg || Ceremony != 0) return;
             ResetPosition();
 
-            if (Party != null && Party.Count > 0)
-            {
-                var target = Party.FirstOrDefault(p => p.SpeciesId == this.SpeciesId);
-                if (target != null) Party.Remove(target);
-            }
+            RemoveLeaderFromParty();
 
             LastEnd = 3;
             Ceremony = 3;

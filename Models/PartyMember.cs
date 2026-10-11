@@ -18,6 +18,8 @@ namespace TamaPoke.Models
         public int Level { get; set; }
         public int AgeMinutes { get; set; }
         public bool IsShiny { get; set; }
+        public bool IsFemale { get; set; }
+        public bool IsGenderless { get; set; }
 
         public int TrAtk { get; set; }
         public int TrDef { get; set; }
@@ -29,6 +31,8 @@ namespace TamaPoke.Models
         public int Hygiene { get; set; }
         public int Bond { get; set; }
         public int Weight { get; set; }
+        public int CareMistakes { get; set; }
+        public bool BerryKnown { get; set; }
         public bool IsEvolutionPostponed { get; set; }
         public int Medals { get; set; }
 

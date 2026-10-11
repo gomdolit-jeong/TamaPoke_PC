@@ -830,6 +830,8 @@ namespace TamaPoke.Models
                     Level = EnemyLevel,
                     AgeMinutes = (EnemyLevel - 1) * MINUTES_PER_LEVEL,
                     IsShiny = IsEnemyShiny,
+                    IsFemale = _isEnemyFemale,
+                    IsGenderless = (PokemonDex.AllPokemons.FirstOrDefault(p => p.Id == EnemySpeciesId)?.GenderRate ?? -1) == -1,
                     TrAtk = 0,
                     TrDef = 0,
                     TrSpeed = 0,

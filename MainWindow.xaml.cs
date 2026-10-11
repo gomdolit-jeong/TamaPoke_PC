@@ -93,6 +93,7 @@ namespace TamaPoke
                     if (MyPet != null)
                     {
                         MyPet.IsFreeRoaming = true;
+                        MyPet.SyncMainToLeader(); // 산책 펫이 진화 후의 최신 모습으로 나오도록 반영
                     }
 
                     var currentSettings = TamaPoke.Utils.SettingsManager.Load();

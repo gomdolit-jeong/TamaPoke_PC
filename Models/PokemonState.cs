@@ -973,6 +973,9 @@ namespace TamaPoke.Models
                 InitializeEvolutionTable();
             }
 
+            RepairLeaderSlot();
+            UpdatePartyFirstFlags();
+
             InitializeBadgesList();
             RefreshPokedex(); UpdateDayNightCycle(); CheckDailyStreak(); UpdateBackgroundImage();
 
@@ -1525,6 +1528,8 @@ namespace TamaPoke.Models
 
         public void Save()
         {
+            // 저장 직전에 메인 포켓몬의 최신 상태를 Party[0]에 반영합니다.
+            SyncMainToLeader();
             try { var options = new JsonSerializerOptions { WriteIndented = true }; File.WriteAllText(SaveFilePath, JsonSerializer.Serialize(this, options)); }
             catch (Exception ex) { Console.WriteLine($"저장 실패: {ex.Message}"); }
         }
