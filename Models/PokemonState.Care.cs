@@ -79,6 +79,10 @@ namespace TamaPoke.Models
             if (AgeMinutes % MINUTES_PER_LEVEL == 0) IsEvolutionPostponed = false;
             if (LowestStat >= 40) { _goodTicks++; if (_goodTicks >= 720) { _goodTicks = 0; if (TrDef < 100) TrDef++; } } else { _goodTicks = 0; }
 
+            // 몸무게는 자는 중에도 3분마다 1씩 자연스럽게 빠집니다. (원작과 동일)
+            if (Weight > 0 && AgeMinutes % WEIGHT_BURN_EVERY_MINUTES == 0) Weight--;
+
+            // 자는 동안에는 케어 실수가 생기지 않습니다. (원작과 동일)
             if (IsSleeping)
             {
                 Energy = Clamp100(Energy + 6);
@@ -100,6 +104,8 @@ namespace TamaPoke.Models
             }
 
             if (AgeMinutes % 10 == 0) { int dJoy = 0; if (Fullness < 30) dJoy -= 2; if (Hygiene < 30) dJoy -= 3; Joy = Clamp100(Joy + dJoy); }
+
+            CheckCareMistake();
 
             if (Fullness == 0 && Joy == 0 && Energy == 0 && Hygiene == 0)
             {
@@ -138,6 +144,18 @@ namespace TamaPoke.Models
             }
 
             CheckMedals();
+        }
+
+        // 케어 실수: 스탯 하나라도 10 이하로 방치되면 1회 (같은 방치를 매분 세지 않도록 60분 쿨다운)
+        // 실수 1회마다 진화가 1레벨 늦어지고 유대감이 1 줄어듭니다. 퍼펙트 바디 메달은 실수 0회일 때만. (원작과 동일)
+        private void CheckCareMistake()
+        {
+            if (_mistakeCooldown > 0) _mistakeCooldown--;
+            if (LowestStat > CARE_MISTAKE_THRESHOLD || _mistakeCooldown > 0) return;
+
+            CareMistakes++;
+            _mistakeCooldown = CARE_MISTAKE_COOLDOWN_MINUTES;
+            if (Bond > 1) Bond--;
         }
 
         private void HandleStatusInterrupts()

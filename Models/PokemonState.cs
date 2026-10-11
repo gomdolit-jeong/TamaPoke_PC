@@ -17,7 +17,7 @@ using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Models
 {
-    public partial class PokemonState : INotifyPropertyChanged
+    public partial class PokemonState : INotifyPropertyChanged, IJsonOnDeserializing, IJsonOnDeserialized
     {
         [JsonIgnore]
         public ObservableCollection<BadgeRegionGroup> BadgeGroups { get; set; } = new ObservableCollection<BadgeRegionGroup>();
@@ -69,6 +69,9 @@ namespace TamaPoke.Models
         private const int POOP_CHANCE = 5;
         private const int MINUTES_PER_LEVEL = 60;
         private const int RUNAWAY_TICKS = 60;
+        private const int CARE_MISTAKE_THRESHOLD = 10;          // 이 값 이하로 떨어진 스탯이 있으면 케어 실수
+        private const int CARE_MISTAKE_COOLDOWN_MINUTES = 60;   // 같은 방치를 다시 세기까지 (원작 60분)
+        private const int WEIGHT_BURN_EVERY_MINUTES = 3;        // 몸무게 자연 감소 주기
 
         private const int MED_LV10 = 1 << 0;
         private const int MED_LV25 = 1 << 1;
@@ -105,7 +108,7 @@ namespace TamaPoke.Models
         private int _hygiene = 100;
         public int Hygiene { get => _hygiene; set { if (SetProperty(ref _hygiene, Clamp100(value))) CheckStateAndAnimate(); } }
 
-        private int _weight = 10;
+        private int _weight = 0;
         public int Weight { get => _weight; set { if (SetProperty(ref _weight, Clamp100(value))) CheckMedals(); } }
 
         private int _bond = 0;
@@ -434,6 +437,7 @@ namespace TamaPoke.Models
         }
 
         private int _careMistakes = 0;
+        private int _mistakeCooldown = 0; // 케어 실수를 다시 세기까지 남은 분
         private int _goodTicks = 0;
         public int CareMistakes { get => _careMistakes; set { if (SetProperty(ref _careMistakes, value)) { OnPropertyChanged(nameof(CanEvolveNow)); OnPropertyChanged(nameof(EvolveProgressText)); } } }
 
@@ -522,9 +526,15 @@ namespace TamaPoke.Models
 
         #region 내부 헬퍼 (Helpers)
         public Action? RequestCatchAnimation;
+        // 세이브를 읽거나 파티 멤버를 대표로 불러오는 동안에는 메달을 판정하지 않습니다.
+        // (속성이 하나씩 채워지는 중이라, 예: 나이는 읽었는데 케어 실수는 아직 0인 상태로 잘못 판정될 수 있음)
+        private bool _suspendMedalCheck = false;
+        void IJsonOnDeserializing.OnDeserializing() => _suspendMedalCheck = true;
+        void IJsonOnDeserialized.OnDeserialized() => _suspendMedalCheck = false;
+
         private void CheckMedals()
         {
-            if (IsEgg) return;
+            if (IsEgg || _suspendMedalCheck) return;
             int newMedals = Medals;
             if (Level >= 10) newMedals |= MED_LV10;
             if (Level >= 25) newMedals |= MED_LV25;

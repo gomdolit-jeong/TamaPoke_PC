@@ -797,6 +797,7 @@ namespace TamaPoke.Models
                     TrAtk = 0,
                     TrDef = 0,
                     TrSpeed = 0,
+                    Weight = new Random().Next(10, 31), // 야생에서 막 온 포켓몬: 바로 퍼펙트 바디를 받지 않도록
                     Skills = (int[])EnemySkills.Clone(),
                     Genes = new PokemonGene(),
                     SpriteFileName = _enemySpriteFileName

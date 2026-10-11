@@ -345,7 +345,7 @@ namespace TamaPoke.Models
             _overrideLevel = null;
 
             Fullness = 80; Joy = 80; Energy = 80; Hygiene = 100;
-            Poops = 0; Weight = 10; CareMistakes = 0; Bond = 0; NeglectTicks = 0;
+            Poops = 0; Weight = 0; CareMistakes = 0; _mistakeCooldown = 0; Bond = 0; NeglectTicks = 0;
             IsSleeping = false; IsShiny = false; IsFemale = false; IsGenderless = false; Genes = new PokemonGene(); BerryKnown = false;
             Ceremony = 0; IsEvolutionPostponed = false; IsFarewellPostponed = false;
 

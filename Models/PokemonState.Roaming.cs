@@ -50,7 +50,7 @@ namespace TamaPoke.Models
         private const int WALK_STAT_FLOOR = 30;          // 산책 중 스탯 하한선
         private const int WALK_ITEM_CHANCE_PER_MIN = 5;  // 분당 아이템 발견 확률(%) → 평균 20분에 1개
         private const int WALK_MAX_ITEMS = 5;            // 한 번 산책에서 주울 수 있는 최대 개수
-        private const int WALK_MINUTES_PER_AGE = 3;      // 산책 중에는 3분에 1분씩 나이를 먹음 → 레벨업 속도 1/3 (3시간에 1레벨)
+        private const int WALK_MINUTES_PER_AGE = 3;      // 산책 중에는 3분에 1분씩 나이를 먹음 → 레벨업 속도 절반 (3시간에 1레벨)
 
         // 산책 중 발견 아이템 가중치 (ItemId, 가중치)
         private static readonly (string ItemId, int Weight)[] WalkItemTable =
@@ -119,6 +119,7 @@ namespace TamaPoke.Models
             }
             NeglectTicks = 0;
 
+            if (Weight > 0 && _walkMinutes % WEIGHT_BURN_EVERY_MINUTES == 0) Weight--;
             Joy = ApplyWalkStat(Joy, _walkMinutes, 10, +1);
             Fullness = ApplyWalkStat(Fullness, _walkMinutes, 20, -1);
             Energy = ApplyWalkStat(Energy, _walkMinutes, 20, -1);
@@ -133,6 +134,7 @@ namespace TamaPoke.Models
                     m.AgeMinutes++;
                     m.Level = 1 + (m.AgeMinutes / MINUTES_PER_LEVEL);
                 }
+                if (m.Weight > 0 && _walkMinutes % WEIGHT_BURN_EVERY_MINUTES == 0) m.Weight--;
                 m.Joy = ApplyWalkStat(m.Joy, _walkMinutes, 10, +1);
                 m.Fullness = ApplyWalkStat(m.Fullness, _walkMinutes, 20, -1);
                 m.Energy = ApplyWalkStat(m.Energy, _walkMinutes, 20, -1);

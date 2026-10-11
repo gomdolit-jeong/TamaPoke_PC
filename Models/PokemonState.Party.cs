@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -61,6 +61,7 @@ namespace TamaPoke.Models
         // 파티 멤버 데이터를 메인 포켓몬 상태로 불러옵니다.
         private void LoadFromPartyMember(PartyMember m)
         {
+            _suspendMedalCheck = true; // 값을 다 채운 뒤 한 번만 판정
             _overrideName = null;
             _overrideLevel = null;
 
@@ -97,6 +98,9 @@ namespace TamaPoke.Models
             OnPropertyChanged(nameof(GenderColor));
             OnPropertyChanged(nameof(FavoriteBerryName));
             OnPropertyChanged(nameof(CurrentSkills));
+
+            _suspendMedalCheck = false;
+            CheckMedals();
         }
 
         public void UpdatePartyFirstFlags()
