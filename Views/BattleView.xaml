@@ -17,6 +17,7 @@
             <Setter Property="BorderThickness" Value="0.8"/>
             <Setter Property="Padding" Value="3,0"/>
             <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
@@ -113,7 +114,7 @@
 
                     <Grid Margin="0,4,0,0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="30"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" Style="{StaticResource EnemyAilmentPill}"
@@ -195,7 +196,7 @@
 
                     <Grid Margin="0,4,0,0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="30"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" Style="{StaticResource PlayerAilmentPill}"
