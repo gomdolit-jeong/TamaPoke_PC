@@ -162,49 +162,6 @@ namespace TamaPoke.Models
         public const int ANIM_FAINT = 33;       // 기절 (체력이 0이 되어 완전히 쓰러짐)
         public const int ANIM_HITGROUND = 34;   // 땅에 강하게 부딪히기 / 거친 착지
 
-        public static int GetTotalFramesForMotion(int animIndex)
-        {
-            switch (animIndex)
-            {
-                case ANIM_WALK: return 48;
-                case ANIM_ATTACK: return 88;
-                case ANIM_STRIKE: return 88;
-                case ANIM_SHOOT: return 48;
-                case ANIM_SHAKE: return 48;
-                case ANIM_SLEEP: return 16;
-                case ANIM_HURT: return 16;
-                case ANIM_IDLE: return 24;
-                case ANIM_SWING: return 72;
-                case ANIM_DOUBLE: return 128;
-                case ANIM_HOP: return 80;
-                case ANIM_CHARGE: return 80;
-                case ANIM_ROTATE: return 72;
-                case ANIM_EVENTSLEEP: return 16;
-                case ANIM_WAKE: return 48;
-                case ANIM_EAT: return 32;
-                case ANIM_TUMBLE: return 64;
-                case ANIM_POSE: return 40;
-                case ANIM_PULL: return 56;
-                case ANIM_PAIN: return 96;
-                case ANIM_FLOAT: return 32;
-                case ANIM_DEEPBREATH: return 72;
-                case ANIM_NOD: return 24;
-                case ANIM_SIT: return 24;
-                case ANIM_LOOKUP: return 16;
-                case ANIM_SINK: return 96;
-                case ANIM_TRIP: return 40;
-                case ANIM_LAYING: return 8;
-                case ANIM_LEAPFORTH: return 48;
-                case ANIM_HEAD: return 8;
-                case ANIM_CRINGE: return 16;
-                case ANIM_LOSTBALANCE: return 16;
-                case ANIM_TUMBLEBACK: return 80;
-                case ANIM_FAINT: return 32;
-                case ANIM_HITGROUND: return 64;
-                default: return 24;
-            }
-        }
-
         private const int MAX_POOPS = 3;
         private const int POOP_CHANCE = 5;
         private const int MINUTES_PER_LEVEL = 60;
@@ -607,6 +564,13 @@ namespace TamaPoke.Models
         #region 애니메이션 및 메인 UI 상태 (Animations & UI)
         private BitmapSource[]? _animationFrames;
         private int _currentFrameIndex = 0;
+
+        // 프레임별 재생 시간 (1/60초 단위, AnimData.xml의 Durations). 없으면 DEFAULT_FRAME_MS로 고정 재생합니다.
+        private int[]? _animationDurations;
+        private const double DEFAULT_FRAME_MS = 200.0;
+        private const double PMD_TICK_MS = 1000.0 / 60.0;
+        private double _frameElapsedMs = 0;
+        private long _lastLoopTimestamp = 0;
         private DispatcherTimer? _mainLoopTimer;
         private BitmapSource? _currentFrame;
 
@@ -1016,11 +980,41 @@ namespace TamaPoke.Models
             _mainLoopTimer.Start();
         }
 
-        private int _frameTickCounter = 0;
+        private double GetCurrentFrameDurationMs()
+        {
+            if (_animationDurations != null && _currentFrameIndex < _animationDurations.Length)
+                return _animationDurations[_currentFrameIndex] * PMD_TICK_MS;
+            return DEFAULT_FRAME_MS;
+        }
+
+        // 실제 경과 시간만큼 프레임을 넘깁니다. (DispatcherTimer 간격이 흔들려도 재생 속도가 일정)
+        private void AdvanceAnimationFrame()
+        {
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
+            if (_lastLoopTimestamp != 0)
+                _frameElapsedMs += (now - _lastLoopTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            _lastLoopTimestamp = now;
+
+            if (_animationFrames == null || _animationFrames.Length <= 1) { _frameElapsedMs = 0; return; }
+
+            // 창이 잠시 멈췄다 돌아온 경우 한꺼번에 여러 바퀴 돌지 않도록 상한을 둡니다.
+            if (_frameElapsedMs > 1000) _frameElapsedMs = 1000;
+
+            bool changed = false;
+            double frameMs = GetCurrentFrameDurationMs();
+            while (_frameElapsedMs >= frameMs)
+            {
+                _frameElapsedMs -= frameMs;
+                _currentFrameIndex = (_currentFrameIndex + 1) % _animationFrames.Length;
+                frameMs = GetCurrentFrameDurationMs();
+                changed = true;
+            }
+            if (changed) CurrentFrame = _animationFrames[_currentFrameIndex];
+        }
+
         private void MainLoopTimer_Tick(object? sender, EventArgs e)
         {
-            _frameTickCounter++;
-            if (_frameTickCounter >= 6) { _frameTickCounter = 0; if (_animationFrames != null && _animationFrames.Length > 0) { _currentFrameIndex = (_currentFrameIndex + 1) % _animationFrames.Length; CurrentFrame = _animationFrames[_currentFrameIndex]; } }
+            AdvanceAnimationFrame();
 
             // 🌟 1. 걷기 중 양 끝에 도달했을 때 즉시 턴하는 로직!
             if (!IsFreeRoaming && _currentActionId == ANIM_WALK && _tempActionTimer > 0 && !IsBattleOpen)
@@ -1453,7 +1447,9 @@ namespace TamaPoke.Models
                     if (slicedFrames.Count > 0)
                     {
                         _animationFrames = slicedFrames.ToArray();
+                        _animationDurations = targetData.Durations.Length == slicedFrames.Count ? targetData.Durations : null;
                         _currentFrameIndex = 0;
+                        _frameElapsedMs = 0;
                         CurrentFrame = _animationFrames[0];
                     }
                 }

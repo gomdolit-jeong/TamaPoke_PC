@@ -158,6 +158,8 @@ namespace TamaPoke.Utils
 
 		/// <summary>
 		/// PNG 이미지를 MemoryStream을 활용하여 압축 상태 그대로 이진 파일(.bin)로 저장합니다.
+		/// 파일 형식(v2): [버전 마커 -2][스트립 수] 이후 스트립마다
+		/// [FW][FH][Duration 개수][Duration...(1/60초 단위)][PNG 길이][PNG 바이트]
 		/// </summary>
 		private static bool AutoConvertPmdToBin(string folderPath, string xmlFilePath, string outputBinPath)
 		{
@@ -169,8 +171,8 @@ namespace TamaPoke.Utils
 				XmlNodeList? animNodes = doc.SelectNodes("//Anim");
 				if (animNodes == null || animNodes.Count == 0) return false;
 
-				// Index를 키로, (FrameWidth, FrameHeight, 이미지경로)를 저장
-				Dictionary<int, (int FW, int FH, string PngPath)> animDataDict = new();
+				// Index를 키로, (FrameWidth, FrameHeight, 프레임별 재생시간, 이미지경로)를 저장
+				Dictionary<int, (int FW, int FH, List<int> Durations, string PngPath)> animDataDict = new();
 				int maxIndex = 0;
 
 				foreach (XmlNode animNode in animNodes)
@@ -188,18 +190,29 @@ namespace TamaPoke.Utils
 						: animNode;
 
 					int fw = 0, fh = 0;
+					List<int> durations = new List<int>();
 					if (sourceNode != null)
 					{
 						// 🌟 AnimData.xml에 명시된 완벽한 프레임 사이즈를 가져옵니다!
 						fw = int.Parse(sourceNode.SelectSingleNode("FrameWidth")?.InnerText ?? "0");
 						fh = int.Parse(sourceNode.SelectSingleNode("FrameHeight")?.InnerText ?? "0");
+
+						// 프레임마다 재생 시간이 다릅니다. (단위: 1/60초)
+						XmlNodeList? durationNodes = sourceNode.SelectNodes("Durations/Duration");
+						if (durationNodes != null)
+						{
+							foreach (XmlNode d in durationNodes)
+							{
+								if (int.TryParse(d.InnerText, out int ticks) && ticks > 0) durations.Add(ticks);
+							}
+						}
 					}
 
 					string pngPath = Path.Combine(folderPath, $"{targetAnimName}-Anim.png");
 
 					if (File.Exists(pngPath) && fw > 0 && fh > 0)
 					{
-						animDataDict[index] = (fw, fh, pngPath);
+						animDataDict[index] = (fw, fh, durations, pngPath);
 						if (index > maxIndex) maxIndex = index;
 					}
 				}
@@ -209,6 +222,7 @@ namespace TamaPoke.Utils
 
 				using (BinaryWriter writer = new BinaryWriter(File.Open(outputBinPath, FileMode.Create)))
 				{
+					writer.Write(BinSpriteReader.FORMAT_V2_MARKER);
 					writer.Write(totalStrips);
 
 					for (int i = 0; i < totalStrips; i++)
@@ -224,6 +238,8 @@ namespace TamaPoke.Utils
 								// 🌟 픽셀 데이터 전에 정확한 크기 정보를 먼저 기록합니다.
 								writer.Write(data.FW);
 								writer.Write(data.FH);
+								writer.Write(data.Durations.Count);
+								foreach (int ticks in data.Durations) writer.Write(ticks);
 								writer.Write(pngBytes.Length);
 								writer.Write(pngBytes);
 							}
@@ -232,6 +248,7 @@ namespace TamaPoke.Utils
 						{
 							writer.Write(0); // FW
 							writer.Write(0); // FH
+							writer.Write(0); // Duration 개수
 							writer.Write(0); // Length
 						}
 					}

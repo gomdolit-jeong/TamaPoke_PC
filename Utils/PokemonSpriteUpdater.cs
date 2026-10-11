@@ -116,6 +116,7 @@ namespace TamaPoke.Utils
                 progress?.Report("기존 SpriteConverter를 사용해 .bin 파일로 굽기 시작합니다...");
 
                 string convertResult = SpriteConverter.BatchConvertAll(sourceSpriteFolder, targetResourceDir, targetTrackerPath);
+                BinSpriteReader.ClearCache(); // 새로 만든 bin(재생시간 포함)을 다시 읽도록 캐시 초기화
                 progress?.Report(convertResult);
             }
             catch (TaskCanceledException)
