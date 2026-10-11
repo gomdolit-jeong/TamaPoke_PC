@@ -27,6 +27,7 @@ namespace TamaPoke
         // 🌟 포켓몬 공통 설정 변수
         // ==========================================
         private readonly double BASE_ROAMING_SPEED = 3.0;
+        private const int RUMMAGE_TICKS = 130; // 풀숲 뒤적이기 연출 길이 (33ms 틱, 약 4.3초)
 
         public PokemonState? MyPet { get; set; }
         private DispatcherTimer? _gameTimer;
@@ -43,6 +44,9 @@ namespace TamaPoke
         {
             public required Window WindowInstance { get; set; }
             public required PokemonState State { get; set; }
+
+            // 산책 중 이 펫이 줍게 된 아이템 (풀숲 뒤적이기 연출이 끝나면 머리 위에 표시)
+            public ItemDefinition? PendingFoundItem { get; set; }
         }
 
         public MainWindow()
@@ -90,11 +94,7 @@ namespace TamaPoke
                 {
                     this.Hide();
 
-                    if (MyPet != null)
-                    {
-                        MyPet.IsFreeRoaming = true;
-                        MyPet.SyncMainToLeader(); // 산책 펫이 진화 후의 최신 모습으로 나오도록 반영
-                    }
+                    MyPet?.BeginWalk();
 
                     var currentSettings = TamaPoke.Utils.SettingsManager.Load();
                     int targetCount = currentSettings != null ? currentSettings.RoamingPokemonCount : 1;
@@ -117,11 +117,7 @@ namespace TamaPoke
                     }
                     _activePets.Clear();
 
-                    if (MyPet != null)
-                    {
-                        MyPet.IsFreeRoaming = false;
-                        MyPet.ResetPosition();
-                    }
+                    MyPet?.EndWalk(); // 돌아오면 메인 화면에 산책 요약을 보여줍니다.
 
                     this.Show();
                     this.WindowState = WindowState.Normal;
@@ -199,7 +195,11 @@ namespace TamaPoke
             SkillDex.LoadSkillData();
             PokemonDex.LoadPokemonData();
             MyPet = PokemonState.Load();
-            if (MyPet != null) MyPet.TrayNotificationRequested += ShowTrayNotification;
+            if (MyPet != null)
+            {
+                MyPet.TrayNotificationRequested += ShowTrayNotification;
+                MyPet.WalkItemFound += OnWalkItemFound;
+            }
 
             _gameTimer = new DispatcherTimer();
             _gameTimer.Interval = TimeSpan.FromSeconds(1);
@@ -347,6 +347,8 @@ namespace TamaPoke
                 {
                     moveTimer.Stop();
                     behaviorStep = 0;
+                    restCounter = 0;
+                    petState.IsRummaging = false; // 뒤적이던 중이면 중단 (아이템은 남아 있다가 다시 연출)
                     SafeSetAction(petState, PokemonState.ANIM_HURT, 9999);
 
                     try { petWindow.DragMove(); } catch { }
@@ -381,6 +383,21 @@ namespace TamaPoke
                         if (restCounter == 60) SafeSetAction(petState, PokemonState.ANIM_LEAPFORTH, 60);
                         else if (restCounter == 30) SafeSetAction(petState, PokemonState.ANIM_HITGROUND, 30);
                     }
+                    else if (behaviorStep == 4)
+                    {
+                        // 풀숲 뒤적이기: 뛰어들기 → 뒤적뒤적 → 아이템 들고 깡총
+                        if (restCounter == RUMMAGE_TICKS - 30) SafeSetAction(petState, PokemonState.ANIM_PULL, 60);
+                        else if (restCounter == 40)
+                        {
+                            petState.IsRummaging = false;
+                            SafeSetAction(petState, PokemonState.ANIM_HOP, 40);
+                            if (currentPetInfo.PendingFoundItem != null)
+                            {
+                                petState.ShowRoamingBubble(currentPetInfo.PendingFoundItem.Icon);
+                                currentPetInfo.PendingFoundItem = null;
+                            }
+                        }
+                    }
 
                     if (restCounter <= 0)
                     {
@@ -412,6 +429,16 @@ namespace TamaPoke
                         behaviorStep = 0;
                         SafeSetAction(petState, PokemonState.ANIM_WALK);
                     }
+                    return;
+                }
+
+                // 아이템을 줍게 된 펫: 걷다가 그 자리의 풀숲으로 뛰어듭니다.
+                if (behaviorStep == 0 && currentPetInfo.PendingFoundItem != null)
+                {
+                    behaviorStep = 4;
+                    restCounter = RUMMAGE_TICKS;
+                    petState.IsRummaging = true;
+                    SafeSetAction(petState, PokemonState.ANIM_LEAPFORTH, 30);
                     return;
                 }
 
@@ -537,6 +564,25 @@ namespace TamaPoke
         private static void SafeSetAction(PokemonState petState, int animId, int duration = 9999)
         {
             petState.SetPlayModeAction(animId, duration > 0 ? duration : 9999);
+        }
+
+        // 산책 중 아이템 발견: 바탕화면의 펫 하나 머리 위에 말풍선을 띄우고 트레이 알림을 보냅니다.
+        private void OnWalkItemFound(ItemDefinition item)
+        {
+            if (_activePets.Count > 0)
+            {
+                // 아무 펫 하나가 풀숲을 뒤적여서 찾아낸 것처럼 연출합니다. (moveTimer에서 처리)
+                // 이미 뒤적이기 대기 중인 펫은 피해서, 연출이 겹쳐 하나가 묻히지 않게 합니다.
+                var candidates = _activePets.Where(p => p.PendingFoundItem == null).ToList();
+                if (candidates.Count == 0) candidates = _activePets;
+                var finder = candidates[new Random().Next(candidates.Count)];
+                finder.PendingFoundItem = item;
+            }
+
+            if (MyPet != null && MyPet.Settings.UseTrayNotifications && _notifyIcon != null && _notifyIcon.Visible)
+            {
+                _notifyIcon.ShowBalloonTip(3000, "산책 중 발견!", $"{item.Name}을(를) 주웠어요!", System.Windows.Forms.ToolTipIcon.Info);
+            }
         }
 
         private void ShowTrayNotification(string title, string message)

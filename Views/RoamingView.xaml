@@ -3,11 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              mc:Ignorable="d" 
              Background="Transparent">
 
     <!-- 🌟 핵심: 몬스터볼 테두리나 UI 없이, 오직 투명한 바탕에 포켓몬 이미지만 띄웁니다. -->
-    <Grid Background="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center">
+    <Grid Background="Transparent">
 
         <!-- IdleView에서 포켓몬을 그리는 로직만 그대로 가져왔습니다! -->
         <!-- Stretch="None": 모션마다 프레임 크기가 달라도 포켓몬 크기가 일정하게 유지됩니다. -->
@@ -26,8 +27,75 @@
             </Image.RenderTransform>
         </Image>
 
-        <!-- 원하신다면 여기에 땀방울(💧)이나 기분(❤️) 이모지를 띄우는 코드를 
-             IdleView에서 복사해 와서 살짝 얹어주셔도 아주 귀엽습니다! -->
+        <!-- 풀숲 뒤적이기: 포켓몬 몸 아래쪽을 덮는 풀숲이 좌우로 흔들립니다. (포켓몬보다 앞에 그려서 뛰어든 것처럼 보이게)
+             PMD 프레임은 포켓몬이 가운데에 있으므로, 프레임 가장자리가 아닌 가운데를 기준으로 배치합니다. -->
+        <Grid IsHitTestVisible="False">
+            <Viewbox Width="72" Height="36" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Margin="0,0,0,22" RenderTransformOrigin="0.5,1">
+                <Viewbox.RenderTransform>
+                    <RotateTransform Angle="0"/>
+                </Viewbox.RenderTransform>
+                <Viewbox.Style>
+                    <Style TargetType="Viewbox">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRummaging}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard Name="RustleAnim">
+                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="-7" To="7" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <StopStoryboard BeginStoryboardName="RustleAnim"/>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Viewbox.Style>
+                <!-- 잎을 겹쳐 쌓아 덤불처럼 보이게 합니다. (뒤쪽 2장 + 앞쪽 3장) -->
+                <Grid Width="46" Height="24">
+                    <emoji:TextBlock Text="🌿" FontSize="20" Margin="6,0,0,0"  HorizontalAlignment="Left"  VerticalAlignment="Top"/>
+                    <emoji:TextBlock Text="🌿" FontSize="20" Margin="0,0,6,0"  HorizontalAlignment="Right" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5">
+                        <emoji:TextBlock.RenderTransform><ScaleTransform ScaleX="-1"/></emoji:TextBlock.RenderTransform>
+                    </emoji:TextBlock>
+                    <emoji:TextBlock Text="🌿" FontSize="20" Margin="-4,0,0,-2" HorizontalAlignment="Left"  VerticalAlignment="Bottom"/>
+                    <emoji:TextBlock Text="🌿" FontSize="22" Margin="0,0,0,-3"  HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                    <emoji:TextBlock Text="🌿" FontSize="20" Margin="0,0,-4,-2" HorizontalAlignment="Right" VerticalAlignment="Bottom" RenderTransformOrigin="0.5,0.5">
+                        <emoji:TextBlock.RenderTransform><ScaleTransform ScaleX="-1"/></emoji:TextBlock.RenderTransform>
+                    </emoji:TextBlock>
+                </Grid>
+            </Viewbox>
+        </Grid>
+
+        <!-- 머리 위 말풍선 (산책 중 아이템을 주웠을 때 등): 나타날 때 아래에서 살짝 떠오릅니다. -->
+        <emoji:TextBlock Text="{Binding RoamingBubble, NotifyOnTargetUpdated=True}" FontSize="12"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,58" IsHitTestVisible="False">
+            <emoji:TextBlock.RenderTransform>
+                <TranslateTransform Y="0"/>
+            </emoji:TextBlock.RenderTransform>
+            <emoji:TextBlock.Style>
+                <Style TargetType="emoji:TextBlock">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding RoamingBubble}" Value="">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </emoji:TextBlock.Style>
+            <emoji:TextBlock.Triggers>
+                <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="8" To="0" Duration="0:0:0.4"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </emoji:TextBlock.Triggers>
+        </emoji:TextBlock>
     </Grid>
 
 </UserControl>

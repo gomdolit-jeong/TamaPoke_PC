@@ -644,6 +644,9 @@ namespace TamaPoke.Models
             {
                 if (Ceremony == 4) return string.IsNullOrEmpty(EvolutionMessage) ? "✨ 진화하는 중입니다... ✨" : EvolutionMessage;
 
+                // 잠깐 보여주는 이벤트 메시지 (기술 습득 결과, 산책 요약 등)
+                if (!string.IsNullOrEmpty(_eventMessage)) return _eventMessage;
+
                 if (IsBattleOpen) return "야생 포켓몬과 배틀 중!";
                 if (IsProfileOpen) return "프로필 확인 중...";
                 if (IsBallGameOpen) return "집중해서 공을 튕기세요!";
@@ -1067,7 +1070,10 @@ namespace TamaPoke.Models
         {
             if (IsGamePaused) return;
 
-            if (IsFreeRoaming || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
+            // 산책 중에는 산책 전용 규칙으로 시간이 흐릅니다. (PokemonState.Roaming.cs)
+            if (IsFreeRoaming) { WalkTick(); return; }
+
+            if (IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
 
             _ageSeconds++;
             UpdateDayNightCycle();
