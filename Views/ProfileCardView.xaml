@@ -500,10 +500,9 @@
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="몸무게" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding Weight}" FontSize="13" FontWeight="Bold" Foreground="#1976D2" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Weight, StringFormat={}{0} Kg}" FontSize="13" FontWeight="Bold" Foreground="#1976D2" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
-                    <TextBlock Text="퍼펙트 바디: Lv.5 · 실수 0 · 몸무게 0" FontSize="9" Foreground="#999" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Grid>
 
