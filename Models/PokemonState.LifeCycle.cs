@@ -87,43 +87,6 @@ namespace TamaPoke.Models
             DexTable[215] = (28, new int[] { 461, 903 });
         }
 
-        public void RefreshPokedex()
-        {
-            FullPokedex.Clear();
-            var sortedPokemons = PokemonDex.AllPokemons.OrderBy(p => p.Id);
-
-            foreach (var poke in sortedPokemons)
-            {
-                bool unlocked = UnlockedPokemon.Contains(poke.Id);
-                FullPokedex.Add(new PokedexEntry
-                {
-                    Id = poke.Id,
-                    SpeciesName = poke.DisplayName,
-                    IsUnlocked = unlocked
-                });
-            }
-
-            UpdateFilteredPokedex();
-
-            // 지역별 수집 수 표시 갱신 (1~9세대 전체)
-            OnPropertyChanged(nameof(KantoCountText)); OnPropertyChanged(nameof(JohtoCountText)); OnPropertyChanged(nameof(HoennCountText));
-            OnPropertyChanged(nameof(SinnohCountText)); OnPropertyChanged(nameof(UnovaCountText)); OnPropertyChanged(nameof(KalosCountText));
-            OnPropertyChanged(nameof(AlolaCountText)); OnPropertyChanged(nameof(GalarCountText)); OnPropertyChanged(nameof(PaldeaCountText));
-        }
-
-        public void UnlockPokemonInPokedex(int speciesId)
-        {
-            if (UnlockedPokemon == null) UnlockedPokemon = new List<int>();
-
-            if (!UnlockedPokemon.Contains(speciesId))
-            {
-                UnlockedPokemon.Add(speciesId);
-                OnPropertyChanged(nameof(RegisteredCount));
-                RefreshPokedex();
-                Save();
-            }
-        }
-
         // ==========================================
         // 🌟 알 부화 (탄생) 로직
         // ==========================================
