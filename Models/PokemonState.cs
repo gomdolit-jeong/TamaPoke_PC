@@ -121,12 +121,8 @@ namespace TamaPoke.Models
             }
         }
 
-        private GameSettings _settings = new GameSettings();
-        public GameSettings Settings
-        {
-            get => _settings;
-            set => SetProperty(ref _settings, value);
-        }
+        // 설정은 settings.json 하나만 원본으로 사용합니다. (save.json에는 저장하지 않음)
+        [JsonIgnore] public GameSettings Settings => SettingsManager.Current;
 
         #region 상수 및 열거형 (Constants)
         // 포켓몬의 다양한 행동과 감정 표현을 담당하는 애니메이션 상수입니다.
@@ -538,11 +534,11 @@ namespace TamaPoke.Models
 
         public int Streak { get; set; } = 0;
         public DateTime LastPlayedDate { get; set; } = DateTime.Now.Date;
-        public int RegisteredCount { get; set; } = 25;
+        [JsonIgnore] public int RegisteredCount => UnlockedPokemon?.Count ?? 0;
         public int LastEnd { get; set; } = 1;
 
         private int _timeOfDay = 1;
-        public int TimeOfDay
+        [JsonIgnore] public int TimeOfDay
         {
             get => _timeOfDay;
             set
@@ -620,14 +616,14 @@ namespace TamaPoke.Models
         [JsonIgnore] public BitmapSource? EnemyCurrentFrame { get => _enemyCurrentFrame; set => SetProperty(ref _enemyCurrentFrame, value); }
 
         private double _posX = 0;
-        public double PosX { get => _posX; set => SetProperty(ref _posX, value); }
+        [JsonIgnore] public double PosX { get => _posX; set => SetProperty(ref _posX, value); }
         private double _posY = 0;
-        public double PosY { get => _posY; set => SetProperty(ref _posY, value); }
-        public double TargetPosX { get; set; } = 0;
-        public double TargetPosY { get; set; } = 0;
+        [JsonIgnore] public double PosY { get => _posY; set => SetProperty(ref _posY, value); }
+        [JsonIgnore] public double TargetPosX { get; set; } = 0;
+        [JsonIgnore] public double TargetPosY { get; set; } = 0;
 
         private double _flipX = 1;
-        public double FlipX { get => _flipX; set => SetProperty(ref _flipX, value); }
+        [JsonIgnore] public double FlipX { get => _flipX; set => SetProperty(ref _flipX, value); }
 
         public void ResetPosition()
         {
@@ -642,10 +638,10 @@ namespace TamaPoke.Models
         [JsonIgnore] public string SoundIcon => IsMuted ? "🔇" : "🔊";
 
         private string _evolutionMessage = "";
-        public string EvolutionMessage { get => _evolutionMessage; set { SetProperty(ref _evolutionMessage, value); OnPropertyChanged(nameof(MoodText)); } }
+        [JsonIgnore] public string EvolutionMessage { get => _evolutionMessage; set { SetProperty(ref _evolutionMessage, value); OnPropertyChanged(nameof(MoodText)); } }
 
         private bool _isEvolvingFlash = false;
-        public bool IsEvolvingFlash { get => _isEvolvingFlash; set => SetProperty(ref _isEvolvingFlash, value); }
+        [JsonIgnore] public bool IsEvolvingFlash { get => _isEvolvingFlash; set => SetProperty(ref _isEvolvingFlash, value); }
 
         private int _ceremony = 0;
         public int Ceremony
@@ -728,7 +724,7 @@ namespace TamaPoke.Models
         [JsonIgnore] public string PaldeaCountText => $"({FullPokedex.Count(p => p.Id >= 906 && p.Id <= 1025 && p.IsUnlocked)}/120)";
 
         private int _currentRegionIndex = 0;
-        public int CurrentRegionIndex
+        [JsonIgnore] public int CurrentRegionIndex
         {
             get => _currentRegionIndex;
             set
@@ -741,7 +737,7 @@ namespace TamaPoke.Models
         }
 
         private bool _isShowOnlyUnlocked = false;
-        public bool IsShowOnlyUnlocked
+        [JsonIgnore] public bool IsShowOnlyUnlocked
         {
             get => _isShowOnlyUnlocked;
             set
@@ -782,7 +778,7 @@ namespace TamaPoke.Models
         }
 
         private bool _isDexOpen = false;
-        public bool IsDexOpen
+        [JsonIgnore] public bool IsDexOpen
         {
             get => _isDexOpen;
             set
@@ -797,12 +793,12 @@ namespace TamaPoke.Models
         }
 
         private bool _isFeedMenuOpen = false;
-        public bool IsFeedMenuOpen { get => _isFeedMenuOpen; set => SetProperty(ref _isFeedMenuOpen, value); }
+        [JsonIgnore] public bool IsFeedMenuOpen { get => _isFeedMenuOpen; set => SetProperty(ref _isFeedMenuOpen, value); }
         private bool _isPlayMenuOpen = false;
-        public bool IsPlayMenuOpen { get => _isPlayMenuOpen; set => SetProperty(ref _isPlayMenuOpen, value); }
+        [JsonIgnore] public bool IsPlayMenuOpen { get => _isPlayMenuOpen; set => SetProperty(ref _isPlayMenuOpen, value); }
 
         private bool _isProfileOpen = false;
-        public bool IsProfileOpen
+        [JsonIgnore] public bool IsProfileOpen
         {
             get => _isProfileOpen;
             set
@@ -817,18 +813,18 @@ namespace TamaPoke.Models
         }
 
         private int _profilePage = 0;
-        public int ProfilePage { get => _profilePage; set { SetProperty(ref _profilePage, value); OnPropertyChanged(nameof(ProfilePageDisplay)); } }
+        [JsonIgnore] public int ProfilePage { get => _profilePage; set { SetProperty(ref _profilePage, value); OnPropertyChanged(nameof(ProfilePageDisplay)); } }
         [JsonIgnore] public string ProfilePageDisplay => $"페이지 {ProfilePage + 1} / 6";
 
         private string _currentFoodIcon = "🍎";
-        public string CurrentFoodIcon { get => _currentFoodIcon; set => SetProperty(ref _currentFoodIcon, value); }
+        [JsonIgnore] public string CurrentFoodIcon { get => _currentFoodIcon; set => SetProperty(ref _currentFoodIcon, value); }
         private string _currentFoodColor = "#E53935";
-        public string CurrentFoodColor { get => _currentFoodColor; set => SetProperty(ref _currentFoodColor, value); }
+        [JsonIgnore] public string CurrentFoodColor { get => _currentFoodColor; set => SetProperty(ref _currentFoodColor, value); }
         private bool _isBathing = false;
-        public bool IsBathing { get => _isBathing; set => SetProperty(ref _isBathing, value); }
+        [JsonIgnore] public bool IsBathing { get => _isBathing; set => SetProperty(ref _isBathing, value); }
 
         private bool _isPetting = false;
-        public bool IsPetting { get => _isPetting; set => SetProperty(ref _isPetting, value); }
+        [JsonIgnore] public bool IsPetting { get => _isPetting; set => SetProperty(ref _isPetting, value); }
 
         private bool _berryKnown = false;
         public bool BerryKnown { get => _berryKnown; set { if (SetProperty(ref _berryKnown, value)) CheckMedals(); } }
@@ -883,7 +879,7 @@ namespace TamaPoke.Models
         private int _neglectTicks = 0;
         public int NeglectTicks { get => _neglectTicks; set { SetProperty(ref _neglectTicks, value); OnPropertyChanged(nameof(CanRunawayNow)); } }
         private int _eggTaps = 0;
-        public int EggTaps { get => _eggTaps; set => SetProperty(ref _eggTaps, value); }
+        [JsonIgnore] public int EggTaps { get => _eggTaps; set => SetProperty(ref _eggTaps, value); }
 
         private bool _isEvolutionPostponed = false;
         public bool IsEvolutionPostponed { get => _isEvolutionPostponed; set { SetProperty(ref _isEvolutionPostponed, value); OnPropertyChanged(nameof(CanShowEvolvePrompt)); } }
@@ -965,8 +961,10 @@ namespace TamaPoke.Models
             IsBathing = false; IsPetting = false;
 
             if (Ceremony == 4) Ceremony = 0;
+            // 이별/가출/방생 연출(10초) 도중 종료된 경우: 타이머가 다시 돌지 않으므로 바로 새 알로 넘어갑니다.
+            else if (Ceremony != 0) PrepareNewEgg();
             if (UnlockedPokemon == null) UnlockedPokemon = new List<int>();
-            if (UnlockedPokemon.Count == 0 && SpeciesId > 0) { UnlockedPokemon.Add(SpeciesId); RegisteredCount = UnlockedPokemon.Count; }
+            if (UnlockedPokemon.Count == 0 && SpeciesId > 0) UnlockedPokemon.Add(SpeciesId);
 
             IsFarewellPostponed = false;
 

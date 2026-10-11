@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text.Json;
 using TamaPoke.Models;
@@ -10,7 +10,13 @@ namespace TamaPoke.Utils
         // 설정 파일 경로 (실행 파일과 같은 폴더의 settings.json)
         private static readonly string SettingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
 
-        // 설정을 불러오는 메서드 (파일이 없으면 기본 설정 객체를 생성하고 저장)
+        private static GameSettings? _current;
+
+        // 게임 로직이 참조하는 현재 설정입니다. Save()가 호출되면 즉시 갱신됩니다.
+        public static GameSettings Current => _current ??= Load();
+
+        // 설정을 파일에서 새로 불러오는 메서드 (파일이 없으면 기본 설정 객체를 생성하고 저장)
+        // 설정 창처럼 '편집용 사본'이 필요한 곳에서 사용합니다.
         public static GameSettings Load()
         {
             try
@@ -36,6 +42,8 @@ namespace TamaPoke.Utils
         // 설정을 파일에 저장하는 메서드
         public static void Save(GameSettings settings)
         {
+            _current = settings;
+
             try
             {
                 var options = new JsonSerializerOptions { WriteIndented = true };

@@ -11,7 +11,7 @@ namespace TamaPoke.Models
         private PartyMember? _pendingRetiree = null;
 
         private bool _isSwapMode = false;
-        public bool IsSwapMode
+        [JsonIgnore] public bool IsSwapMode
         {
             get => _isSwapMode;
             set => SetProperty(ref _isSwapMode, value);
@@ -72,7 +72,7 @@ namespace TamaPoke.Models
         }
 
         private bool _isPartyOpen = false;
-        public bool IsPartyOpen
+        [JsonIgnore] public bool IsPartyOpen
         {
             get => _isPartyOpen;
             set

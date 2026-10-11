@@ -26,71 +26,71 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool IsMinigameOpen => IsBallGameOpen;
 
         private bool _isBallGameOpen = false;
-        public bool IsBallGameOpen { get => _isBallGameOpen; set { if (SetProperty(ref _isBallGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsMinigameOpen)); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        [JsonIgnore] public bool IsBallGameOpen { get => _isBallGameOpen; set { if (SetProperty(ref _isBallGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsMinigameOpen)); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
 
         private bool _isCatchGameOpen = false;
-        public bool IsCatchGameOpen { get => _isCatchGameOpen; set { if (SetProperty(ref _isCatchGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        [JsonIgnore] public bool IsCatchGameOpen { get => _isCatchGameOpen; set { if (SetProperty(ref _isCatchGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
 
         private bool _isMemoGameOpen = false;
-        public bool IsMemoGameOpen { get => _isMemoGameOpen; set { if (SetProperty(ref _isMemoGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        [JsonIgnore] public bool IsMemoGameOpen { get => _isMemoGameOpen; set { if (SetProperty(ref _isMemoGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
 
         private bool _isCleanGameOpen = false;
-        public bool IsCleanGameOpen { get => _isCleanGameOpen; set { if (SetProperty(ref _isCleanGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        [JsonIgnore] public bool IsCleanGameOpen { get => _isCleanGameOpen; set { if (SetProperty(ref _isCleanGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
 
         [JsonIgnore]
         public bool IsAnyMiniGameOpen => IsBallGameOpen || IsCatchGameOpen || IsMemoGameOpen || IsCleanGameOpen;
 
         // --- 1. Ball Game ---
         private int _gameScore = 0;
-        public int GameScore { get => _gameScore; set => SetProperty(ref _gameScore, value); }
+        [JsonIgnore] public int GameScore { get => _gameScore; set => SetProperty(ref _gameScore, value); }
         private int _gameHighScore = 0;
         public int GameHighScore { get => _gameHighScore; set => SetProperty(ref _gameHighScore, value); }
         private int _gameMisses = 0;
-        public int GameMisses { get => _gameMisses; set => SetProperty(ref _gameMisses, value); }
+        [JsonIgnore] public int GameMisses { get => _gameMisses; set => SetProperty(ref _gameMisses, value); }
         private double _ballX = 144;
-        public double BallX { get => _ballX; set => SetProperty(ref _ballX, value); }
+        [JsonIgnore] public double BallX { get => _ballX; set => SetProperty(ref _ballX, value); }
         private double _ballY = 60;
-        public double BallY { get => _ballY; set => SetProperty(ref _ballY, value); }
+        [JsonIgnore] public double BallY { get => _ballY; set => SetProperty(ref _ballY, value); }
         private double _ballVelX = 0;
         private double _ballVelY = 0;
 
         // --- 2. Catch Game ---
         private int _catchScore;
-        public int CatchScore { get => _catchScore; set { _catchScore = value; OnPropertyChanged(); } }
+        [JsonIgnore] public int CatchScore { get => _catchScore; set { _catchScore = value; OnPropertyChanged(); } }
         private int _catchHighScore;
         public int CatchHighScore { get => _catchHighScore; set { _catchHighScore = value; OnPropertyChanged(); } }
         private double _catchTimeLeft;
-        public double CatchTimeLeft { get => _catchTimeLeft; set { _catchTimeLeft = value; OnPropertyChanged(); } }
+        [JsonIgnore] public double CatchTimeLeft { get => _catchTimeLeft; set { _catchTimeLeft = value; OnPropertyChanged(); } }
         private string _currentFruitIcon = "🍎";
-        public string CurrentFruitIcon { get => _currentFruitIcon; set { _currentFruitIcon = value; OnPropertyChanged(); } }
+        [JsonIgnore] public string CurrentFruitIcon { get => _currentFruitIcon; set { _currentFruitIcon = value; OnPropertyChanged(); } }
         private double _fruitX;
-        public double FruitX { get => _fruitX; set { _fruitX = value; OnPropertyChanged(); } }
+        [JsonIgnore] public double FruitX { get => _fruitX; set { _fruitX = value; OnPropertyChanged(); } }
         private double _fruitY;
-        public double FruitY { get => _fruitY; set { _fruitY = value; OnPropertyChanged(); } }
+        [JsonIgnore] public double FruitY { get => _fruitY; set { _fruitY = value; OnPropertyChanged(); } }
 
         // --- 3. Memo Game ---
         private int _memoScore;
-        public int MemoScore { get => _memoScore; set { _memoScore = value; OnPropertyChanged(); } }
+        [JsonIgnore] public int MemoScore { get => _memoScore; set { _memoScore = value; OnPropertyChanged(); } }
         private int _memoHighScore;
         public int MemoHighScore { get => _memoHighScore; set { _memoHighScore = value; OnPropertyChanged(); } }
         private string _memoStatusText = "";
-        public string MemoStatusText { get => _memoStatusText; set { _memoStatusText = value; OnPropertyChanged(); } }
-        private bool _isMemoBtn0Lit; public bool IsMemoBtn0Lit { get => _isMemoBtn0Lit; set { _isMemoBtn0Lit = value; OnPropertyChanged(); } }
-        private bool _isMemoBtn1Lit; public bool IsMemoBtn1Lit { get => _isMemoBtn1Lit; set { _isMemoBtn1Lit = value; OnPropertyChanged(); } }
-        private bool _isMemoBtn2Lit; public bool IsMemoBtn2Lit { get => _isMemoBtn2Lit; set { _isMemoBtn2Lit = value; OnPropertyChanged(); } }
-        private bool _isMemoBtn3Lit; public bool IsMemoBtn3Lit { get => _isMemoBtn3Lit; set { _isMemoBtn3Lit = value; OnPropertyChanged(); } }
+        [JsonIgnore] public string MemoStatusText { get => _memoStatusText; set { _memoStatusText = value; OnPropertyChanged(); } }
+        private bool _isMemoBtn0Lit; [JsonIgnore] public bool IsMemoBtn0Lit { get => _isMemoBtn0Lit; set { _isMemoBtn0Lit = value; OnPropertyChanged(); } }
+        private bool _isMemoBtn1Lit; [JsonIgnore] public bool IsMemoBtn1Lit { get => _isMemoBtn1Lit; set { _isMemoBtn1Lit = value; OnPropertyChanged(); } }
+        private bool _isMemoBtn2Lit; [JsonIgnore] public bool IsMemoBtn2Lit { get => _isMemoBtn2Lit; set { _isMemoBtn2Lit = value; OnPropertyChanged(); } }
+        private bool _isMemoBtn3Lit; [JsonIgnore] public bool IsMemoBtn3Lit { get => _isMemoBtn3Lit; set { _isMemoBtn3Lit = value; OnPropertyChanged(); } }
         private List<int> _memoSequence = new List<int>();
         private int _memoInputIndex = 0;
         private bool _isMemoShowingSequence = false;
 
         // --- 4. Clean Game ---
         private int _cleanScore;
-        public int CleanScore { get => _cleanScore; set { _cleanScore = value; OnPropertyChanged(); } }
+        [JsonIgnore] public int CleanScore { get => _cleanScore; set { _cleanScore = value; OnPropertyChanged(); } }
         private int _cleanHighScore;
         public int CleanHighScore { get => _cleanHighScore; set { _cleanHighScore = value; OnPropertyChanged(); } }
         private string _cleanStatusText = "";
-        public string CleanStatusText { get => _cleanStatusText; set { _cleanStatusText = value; OnPropertyChanged(); } }
-        public ObservableCollection<DirtItem> DirtItems { get; } = new();
+        [JsonIgnore] public string CleanStatusText { get => _cleanStatusText; set { _cleanStatusText = value; OnPropertyChanged(); } }
+        [JsonIgnore] public ObservableCollection<DirtItem> DirtItems { get; } = new();
         private double _dirtSpawnTimer = 0;
         private int _dirtIdCounter = 0;
         #endregion

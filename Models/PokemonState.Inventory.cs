@@ -7,7 +7,7 @@ namespace TamaPoke.Models
     public partial class PokemonState
     {
         private bool _isInventoryOpen;
-        public bool IsInventoryOpen
+        [JsonIgnore] public bool IsInventoryOpen
         {
             get => _isInventoryOpen;
             set { _isInventoryOpen = value; OnPropertyChanged(nameof(IsInventoryOpen)); }

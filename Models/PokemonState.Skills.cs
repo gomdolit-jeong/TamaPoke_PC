@@ -140,18 +140,18 @@ namespace TamaPoke.Models
 
         #region 스킬 학습 및 교체 시스템 로직 (Skill Learning Logic)
         private bool _isSkillLearnMenuOpen = false;
-        public bool IsSkillLearnMenuOpen { get => _isSkillLearnMenuOpen; set => SetProperty(ref _isSkillLearnMenuOpen, value); }
+        [JsonIgnore] public bool IsSkillLearnMenuOpen { get => _isSkillLearnMenuOpen; set => SetProperty(ref _isSkillLearnMenuOpen, value); }
 
         private bool _isSkillReplaceMenuOpen = false;
-        public bool IsSkillReplaceMenuOpen { get => _isSkillReplaceMenuOpen; set => SetProperty(ref _isSkillReplaceMenuOpen, value); }
+        [JsonIgnore] public bool IsSkillReplaceMenuOpen { get => _isSkillReplaceMenuOpen; set => SetProperty(ref _isSkillReplaceMenuOpen, value); }
 
         private SkillInfo? _recommendedSkill1;
-        public SkillInfo? RecommendedSkill1 { get => _recommendedSkill1; set { SetProperty(ref _recommendedSkill1, value); OnPropertyChanged(nameof(HasRecommendedSkill1)); } }
-        public bool HasRecommendedSkill1 => RecommendedSkill1 != null;
+        [JsonIgnore] public SkillInfo? RecommendedSkill1 { get => _recommendedSkill1; set { SetProperty(ref _recommendedSkill1, value); OnPropertyChanged(nameof(HasRecommendedSkill1)); } }
+        [JsonIgnore] public bool HasRecommendedSkill1 => RecommendedSkill1 != null;
 
         private SkillInfo? _recommendedSkill2;
-        public SkillInfo? RecommendedSkill2 { get => _recommendedSkill2; set { SetProperty(ref _recommendedSkill2, value); OnPropertyChanged(nameof(HasRecommendedSkill2)); } }
-        public bool HasRecommendedSkill2 => RecommendedSkill2 != null;
+        [JsonIgnore] public SkillInfo? RecommendedSkill2 { get => _recommendedSkill2; set { SetProperty(ref _recommendedSkill2, value); OnPropertyChanged(nameof(HasRecommendedSkill2)); } }
+        [JsonIgnore] public bool HasRecommendedSkill2 => RecommendedSkill2 != null;
 
         private SkillInfo? _skillToLearn;
         public void SelectRecommendedSkill(int optionNumber)

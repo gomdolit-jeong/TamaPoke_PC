@@ -140,7 +140,7 @@ namespace TamaPoke.Models
             if (!UnlockedPokemon.Contains(speciesId))
             {
                 UnlockedPokemon.Add(speciesId);
-                RegisteredCount = UnlockedPokemon.Count;
+                OnPropertyChanged(nameof(RegisteredCount));
                 RefreshPokedex();
 
                 OnPropertyChanged(nameof(KantoCountText));
@@ -183,7 +183,6 @@ namespace TamaPoke.Models
             _overrideName = null;
             _overrideLevel = null;
 
-            Settings = TamaPoke.Utils.SettingsManager.Load();
             Random rand = new Random();
 
             SpeciesId = DetermineHatchSpecies(rand);
@@ -346,7 +345,7 @@ namespace TamaPoke.Models
             {
                 UnlockedPokemon.Add(SpeciesId);
                 UnlockedPokemon.Sort();
-                RegisteredCount = UnlockedPokemon.Count;
+                OnPropertyChanged(nameof(RegisteredCount));
             }
 
             var newbornMember = new PartyMember
@@ -483,7 +482,7 @@ namespace TamaPoke.Models
             {
                 UnlockedPokemon.Add(SpeciesId);
                 UnlockedPokemon.Sort();
-                RegisteredCount = UnlockedPokemon.Count;
+                OnPropertyChanged(nameof(RegisteredCount));
             }
             RefreshPokedex();
 
@@ -607,7 +606,7 @@ namespace TamaPoke.Models
         {
             if (System.IO.File.Exists(SaveFilePath)) System.IO.File.Delete(SaveFilePath);
 
-            UnlockedPokemon.Clear(); FullPokedex.Clear(); RegisteredCount = 0; Streak = 0; LastEnd = 1; LastPlayedDate = DateTime.Now.Date;
+            UnlockedPokemon.Clear(); FullPokedex.Clear(); OnPropertyChanged(nameof(RegisteredCount)); Streak = 0; LastEnd = 1; LastPlayedDate = DateTime.Now.Date;
             GameHighScore = 0; CatchHighScore = 0; MemoHighScore = 0; CleanHighScore = 0;
             GymBadges = 0;
             IsGymBattle = false;

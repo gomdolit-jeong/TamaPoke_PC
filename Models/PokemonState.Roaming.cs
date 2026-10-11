@@ -8,11 +8,11 @@ namespace TamaPoke.Models
     // 🌟 partial 키워드를 사용하여 기존 PokemonState 클래스와 연결합니다!
     public partial class PokemonState
     {
-        public bool IsFreeRoaming { get; set; } = false;
+        [JsonIgnore] public bool IsFreeRoaming { get; set; } = false;
 
         // 🌟 방향을 조절할 수 있는 속성 (0:앞, 2:옆, 4:뒤)
         private int _direction = 0;
-        public int Direction
+        [JsonIgnore] public int Direction
         {
             get => _direction;
             set

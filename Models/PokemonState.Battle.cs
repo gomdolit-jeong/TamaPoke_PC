@@ -64,13 +64,13 @@ namespace TamaPoke.Models
 
         #region 배틀 시스템 UI 상태 (Battle System UI)
         private bool _isBattleOpen = false;
-        public bool IsBattleOpen { get => _isBattleOpen; set { if (SetProperty(ref _isBattleOpen, value)) { OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        [JsonIgnore] public bool IsBattleOpen { get => _isBattleOpen; set { if (SetProperty(ref _isBattleOpen, value)) { OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
 
         private bool _isDefeatedFadeOut = false;
-        public bool IsDefeatedFadeOut { get => _isDefeatedFadeOut; set => SetProperty(ref _isDefeatedFadeOut, value); }
+        [JsonIgnore] public bool IsDefeatedFadeOut { get => _isDefeatedFadeOut; set => SetProperty(ref _isDefeatedFadeOut, value); }
 
         private bool _isPlayerTurn = true;
-        public bool IsPlayerTurn
+        [JsonIgnore] public bool IsPlayerTurn
         {
             get => _isPlayerTurn;
             set
@@ -87,16 +87,16 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool IsAttackMenuVisible => !IsCatchOffered && !IsBattleResolved && IsAttackMenuOpen && !IsInventoryOpen && IsPlayerTurn;
 
         private bool _isBattleResolved = false;
-        public bool IsBattleResolved { get => _isBattleResolved; set { if (SetProperty(ref _isBattleResolved, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
+        [JsonIgnore] public bool IsBattleResolved { get => _isBattleResolved; set { if (SetProperty(ref _isBattleResolved, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
 
         private bool _isCatchOffered = false;
-        public bool IsCatchOffered { get => _isCatchOffered; set { if (SetProperty(ref _isCatchOffered, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
+        [JsonIgnore] public bool IsCatchOffered { get => _isCatchOffered; set { if (SetProperty(ref _isCatchOffered, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
 
         private bool _isAttackMenuOpen = false;
-        public bool IsAttackMenuOpen { get => _isAttackMenuOpen; set { if (SetProperty(ref _isAttackMenuOpen, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
+        [JsonIgnore] public bool IsAttackMenuOpen { get => _isAttackMenuOpen; set { if (SetProperty(ref _isAttackMenuOpen, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
 
         private bool _isBattleInventoryOpen = false;
-        public bool IsBattleInventoryOpen
+        [JsonIgnore] public bool IsBattleInventoryOpen
         {
             get => _isBattleInventoryOpen;
             set
@@ -110,25 +110,25 @@ namespace TamaPoke.Models
         }
 
         private bool _isEnemyVisible = true;
-        public bool IsEnemyVisible { get => _isEnemyVisible; set => SetProperty(ref _isEnemyVisible, value); }
+        [JsonIgnore] public bool IsEnemyVisible { get => _isEnemyVisible; set => SetProperty(ref _isEnemyVisible, value); }
 
         private int _enemySpeciesId = 1;
-        public int EnemySpeciesId { get => _enemySpeciesId; set { if (SetProperty(ref _enemySpeciesId, value)) OnPropertyChanged(nameof(EnemyName)); } }
+        [JsonIgnore] public int EnemySpeciesId { get => _enemySpeciesId; set { if (SetProperty(ref _enemySpeciesId, value)) OnPropertyChanged(nameof(EnemyName)); } }
 
         [JsonIgnore] public string EnemyName => PokemonDex.GetName(EnemySpeciesId);
 
         private int _enemyLevel = 1;
-        public int EnemyLevel { get => _enemyLevel; set => SetProperty(ref _enemyLevel, value); }
+        [JsonIgnore] public int EnemyLevel { get => _enemyLevel; set => SetProperty(ref _enemyLevel, value); }
 
         private int _playerHp = 100;
-        public int PlayerHp { get => _playerHp; set { if (SetProperty(ref _playerHp, value)) OnPropertyChanged(nameof(PlayerHpColor)); } }
+        [JsonIgnore] public int PlayerHp { get => _playerHp; set { if (SetProperty(ref _playerHp, value)) OnPropertyChanged(nameof(PlayerHpColor)); } }
         private int _playerMaxHp = 100;
-        public int PlayerMaxHp { get => _playerMaxHp; set { if (SetProperty(ref _playerMaxHp, value)) OnPropertyChanged(nameof(PlayerHpColor)); } }
+        [JsonIgnore] public int PlayerMaxHp { get => _playerMaxHp; set { if (SetProperty(ref _playerMaxHp, value)) OnPropertyChanged(nameof(PlayerHpColor)); } }
 
         private int _enemyHp = 100;
-        public int EnemyHp { get => _enemyHp; set { if (SetProperty(ref _enemyHp, value)) OnPropertyChanged(nameof(EnemyHpColor)); } }
+        [JsonIgnore] public int EnemyHp { get => _enemyHp; set { if (SetProperty(ref _enemyHp, value)) OnPropertyChanged(nameof(EnemyHpColor)); } }
         private int _enemyMaxHp = 100;
-        public int EnemyMaxHp { get => _enemyMaxHp; set { if (SetProperty(ref _enemyMaxHp, value)) OnPropertyChanged(nameof(EnemyHpColor)); } }
+        [JsonIgnore] public int EnemyMaxHp { get => _enemyMaxHp; set { if (SetProperty(ref _enemyMaxHp, value)) OnPropertyChanged(nameof(EnemyHpColor)); } }
 
         [JsonIgnore] public System.Windows.Media.Brush PlayerHpColor => GetHpColor(PlayerHp, PlayerMaxHp);
         [JsonIgnore] public System.Windows.Media.Brush EnemyHpColor => GetHpColor(EnemyHp, EnemyMaxHp);
@@ -143,15 +143,15 @@ namespace TamaPoke.Models
         }
 
         private bool _isPlayerTakingDamage = false;
-        public bool IsPlayerTakingDamage { get => _isPlayerTakingDamage; set => SetProperty(ref _isPlayerTakingDamage, value); }
+        [JsonIgnore] public bool IsPlayerTakingDamage { get => _isPlayerTakingDamage; set => SetProperty(ref _isPlayerTakingDamage, value); }
         private bool _isEnemyTakingDamage = false;
-        public bool IsEnemyTakingDamage { get => _isEnemyTakingDamage; set => SetProperty(ref _isEnemyTakingDamage, value); }
+        [JsonIgnore] public bool IsEnemyTakingDamage { get => _isEnemyTakingDamage; set => SetProperty(ref _isEnemyTakingDamage, value); }
 
         private string _battleMessage = "";
-        public string BattleMessage { get => _battleMessage; set => SetProperty(ref _battleMessage, value); }
+        [JsonIgnore] public string BattleMessage { get => _battleMessage; set => SetProperty(ref _battleMessage, value); }
 
         private bool _isCounterReady = false;
-        public int[] EnemySkills { get; set; } = new int[4] { 0, 0, 0, 0 };
+        [JsonIgnore] public int[] EnemySkills { get; set; } = new int[4] { 0, 0, 0, 0 };
 
         private void GenerateEnemySkills()
         {
@@ -271,7 +271,7 @@ namespace TamaPoke.Models
 
         #region 상태이상 관리 (Ailments & Battle Logic)
         private SkillAilment _playerAilment = SkillAilment.None;
-        public SkillAilment PlayerAilment
+        [JsonIgnore] public SkillAilment PlayerAilment
         {
             get => _playerAilment;
             set
@@ -285,7 +285,7 @@ namespace TamaPoke.Models
         private int _playerBadPoisonTurnCount = 0;
 
         private SkillAilment _enemyAilment = SkillAilment.None;
-        public SkillAilment EnemyAilment
+        [JsonIgnore] public SkillAilment EnemyAilment
         {
             get => _enemyAilment;
             set
@@ -299,7 +299,7 @@ namespace TamaPoke.Models
         private int _enemyBadPoisonTurnCount = 0;
 
         private bool _isEnemyShiny = false;
-        public bool IsEnemyShiny { get => _isEnemyShiny; set => SetProperty(ref _isEnemyShiny, value); }
+        [JsonIgnore] public bool IsEnemyShiny { get => _isEnemyShiny; set => SetProperty(ref _isEnemyShiny, value); }
 
         private bool _isEnemyFemale = false;
         private string _enemySpriteFileName = "";
@@ -926,13 +926,13 @@ namespace TamaPoke.Models
         public int GymBadges { get => _gymBadges; set => SetProperty(ref _gymBadges, value); }
 
         private bool _isGymBattle = false;
-        public bool IsGymBattle { get => _isGymBattle; set => SetProperty(ref _isGymBattle, value); }
+        [JsonIgnore] public bool IsGymBattle { get => _isGymBattle; set => SetProperty(ref _isGymBattle, value); }
 
         private bool _isGymConfirmOpen;
-        public bool IsGymConfirmOpen { get => _isGymConfirmOpen; set => SetProperty(ref _isGymConfirmOpen, value); }
+        [JsonIgnore] public bool IsGymConfirmOpen { get => _isGymConfirmOpen; set => SetProperty(ref _isGymConfirmOpen, value); }
 
         private GymLeaderInfo? _selectedGymLeader;
-        public GymLeaderInfo? SelectedGymLeader { get => _selectedGymLeader; set => SetProperty(ref _selectedGymLeader, value); }
+        [JsonIgnore] public GymLeaderInfo? SelectedGymLeader { get => _selectedGymLeader; set => SetProperty(ref _selectedGymLeader, value); }
 
         private int _selectedGymIndex;
 
