@@ -50,7 +50,7 @@ namespace TamaPoke.Models
         private const int WALK_STAT_FLOOR = 30;          // 산책 중 스탯 하한선
         private const int WALK_ITEM_CHANCE_PER_MIN = 5;  // 분당 아이템 발견 확률(%) → 평균 20분에 1개
         private const int WALK_MAX_ITEMS = 5;            // 한 번 산책에서 주울 수 있는 최대 개수
-        private const int WALK_MINUTES_PER_AGE = 2;      // 산책 중에는 2분에 1분씩 나이를 먹음 → 레벨업 속도 절반 (2시간에 1레벨)
+        private const int WALK_MINUTES_PER_AGE = 3;      // 산책 중에는 3분에 1분씩 나이를 먹음 → 레벨업 속도 1/3 (3시간에 1레벨)
 
         // 산책 중 발견 아이템 가중치 (ItemId, 가중치)
         private static readonly (string ItemId, int Weight)[] WalkItemTable =
