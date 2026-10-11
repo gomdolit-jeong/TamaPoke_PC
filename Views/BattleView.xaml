@@ -2,12 +2,62 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:TamaPoke.Converters"
+             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Height="288" Width="288"
              HorizontalAlignment="Center" VerticalAlignment="Center">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:TypeToColorConverter x:Key="TypeToColor"/>
+        <conv:AilmentStyleConverter x:Key="AilmentStyle"/>
+
+        <!-- 상태이상 배지 공통 모양 -->
+        <Style TargetType="Border" x:Key="AilmentPillBase">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5,0"/>
+            <Setter Property="Margin" Value="4,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- 걸리는 순간 배지 깜빡임 -->
+        <Storyboard x:Key="AilmentFlashAnim">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.2" Duration="0:0:0.12" AutoReverse="True" RepeatBehavior="3x"/>
+        </Storyboard>
+
+        <Style TargetType="Border" x:Key="EnemyAilmentPill" BasedOn="{StaticResource AilmentPillBase}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsEnemyAilmentFlash}" Value="True">
+                    <DataTrigger.EnterActions><BeginStoryboard Storyboard="{StaticResource AilmentFlashAnim}"/></DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="Border" x:Key="PlayerAilmentPill" BasedOn="{StaticResource AilmentPillBase}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsPlayerAilmentFlash}" Value="True">
+                    <DataTrigger.EnterActions><BeginStoryboard Storyboard="{StaticResource AilmentFlashAnim}"/></DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 스프라이트 위 상태이상 이모지: 위아래로 살짝 둥실둥실 -->
+        <Style TargetType="emoji:TextBlock" x:Key="AilmentFxStyle">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value><TranslateTransform Y="0"/></Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="0" To="-5" Duration="0:0:0.6"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
 
         <Style TargetType="Button" x:Key="RoundedButtonStyle">
             <Setter Property="Foreground" Value="White"/>
@@ -59,7 +109,13 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{Binding EnemyName}" FontSize="12" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="{Binding EnemyAilmentUI}" FontSize="10" FontWeight="Bold" Foreground="#E53935" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                        <Border Grid.Column="1" Style="{StaticResource EnemyAilmentPill}"
+                                Visibility="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Visibility}"
+                                Background="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Bg}"
+                                BorderBrush="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Border}">
+                            <TextBlock Text="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Text}" FontSize="10" FontWeight="Bold"
+                                       Foreground="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fg}"/>
+                        </Border>
                         <TextBlock Grid.Column="2" Text="{Binding EnemyLevel, StringFormat={} Lv.{0}}" FontSize="11" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                     </Grid>
 
@@ -92,12 +148,19 @@
 
             <Image Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,35,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
+            <emoji:TextBlock Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,30,40,0" Panel.ZIndex="5"
+                             Text="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"
+                             Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}"/>
+
             <!-- 🌟 플레이어 이미지 (앞모습에 거울 반전을 적용해 적을 바라보게 함) -->
             <Image Source="{Binding CurrentFrame}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="40,0,0,10" RenderOptions.BitmapScalingMode="NearestNeighbor">
                 <Image.RenderTransform>
                     <ScaleTransform ScaleX="-1" ScaleY="1" CenterX="36" CenterY="36"/>
                 </Image.RenderTransform>
             </Image>
+
+            <emoji:TextBlock Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="92,0,0,72" Panel.ZIndex="5"
+                             Text="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"/>
 
             <Grid x:Name="PokeballIcon" Width="24" Height="24" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="70,0,0,40" Visibility="Collapsed" Panel.ZIndex="10">
                 <Grid.RenderTransform>
@@ -123,7 +186,13 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="{Binding PlayerAilmentUI}" FontSize="10" FontWeight="Bold" Foreground="#E53935" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                        <Border Grid.Column="1" Style="{StaticResource PlayerAilmentPill}"
+                                Visibility="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Visibility}"
+                                Background="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Bg}"
+                                BorderBrush="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Border}">
+                            <TextBlock Text="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Text}" FontSize="10" FontWeight="Bold"
+                                       Foreground="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fg}"/>
+                        </Border>
                         <TextBlock Grid.Column="2" Text="{Binding Level, StringFormat={} Lv.{0}}" FontSize="11" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                     </Grid>
 

@@ -275,30 +275,19 @@ namespace TamaPoke.Models
 
         #region 상태이상 관리 (Ailments & Battle Logic)
         private SkillAilment _playerAilment = SkillAilment.None;
-        [JsonIgnore] public SkillAilment PlayerAilment
-        {
-            get => _playerAilment;
-            set
-            {
-                if (SetProperty(ref _playerAilment, value))
-                    OnPropertyChanged(nameof(PlayerAilmentUI));
-            }
-        }
-        [JsonIgnore] public string PlayerAilmentUI => PlayerAilment != SkillAilment.None ? AilmentHelper.GetAilmentIcon(PlayerAilment) : "";
+        // 배지/효과 표시는 BattleView에서 AilmentStyleConverter로 변환합니다.
+        [JsonIgnore] public SkillAilment PlayerAilment { get => _playerAilment; set => SetProperty(ref _playerAilment, value); }
         private int _playerAilmentTurns = 0;
         private int _playerBadPoisonTurnCount = 0;
 
         private SkillAilment _enemyAilment = SkillAilment.None;
-        [JsonIgnore] public SkillAilment EnemyAilment
-        {
-            get => _enemyAilment;
-            set
-            {
-                if (SetProperty(ref _enemyAilment, value))
-                    OnPropertyChanged(nameof(EnemyAilmentUI));
-            }
-        }
-        [JsonIgnore] public string EnemyAilmentUI => EnemyAilment != SkillAilment.None ? AilmentHelper.GetAilmentIcon(EnemyAilment) : "";
+        [JsonIgnore] public SkillAilment EnemyAilment { get => _enemyAilment; set => SetProperty(ref _enemyAilment, value); }
+
+        // 상태이상이 막 걸린 순간 배지를 깜빡이게 하는 신호
+        private bool _isPlayerAilmentFlash;
+        [JsonIgnore] public bool IsPlayerAilmentFlash { get => _isPlayerAilmentFlash; set => SetProperty(ref _isPlayerAilmentFlash, value); }
+        private bool _isEnemyAilmentFlash;
+        [JsonIgnore] public bool IsEnemyAilmentFlash { get => _isEnemyAilmentFlash; set => SetProperty(ref _isEnemyAilmentFlash, value); }
         private int _enemyAilmentTurns = 0;
         private int _enemyBadPoisonTurnCount = 0;
 
@@ -602,7 +591,9 @@ namespace TamaPoke.Models
 
             if (!isStatusMove) await Task.Delay(1000);
             BattleMessage = $"{targetName}은(는) {AilmentHelper.GetAilmentIcon(skill.Ailment)} 상태가 되었다!";
+            if (targetIsEnemy) IsEnemyAilmentFlash = true; else IsPlayerAilmentFlash = true;
             await Task.Delay(1500);
+            IsEnemyAilmentFlash = false; IsPlayerAilmentFlash = false;
             return true;
         }
 
