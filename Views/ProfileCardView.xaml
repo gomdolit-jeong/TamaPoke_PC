@@ -482,14 +482,28 @@
                     </StackPanel>
 
                     <TextBlock Text="다음 레벨까지" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
-                    <ProgressBar Value="{Binding AgeMinutes}" Maximum="60" Height="10" Foreground="#4CAF50" Margin="0,4,0,10"/>
+                    <ProgressBar Value="{Binding LevelProgressMinutes, Mode=OneWay}" Maximum="60" Height="10" Foreground="#4CAF50" Margin="0,4,0,10"/>
 
                     <TextBlock Text="진화 조건" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
                     <ProgressBar Value="{Binding EvolveProgressPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="#8E24AA" Margin="0,4,0,2"/>
                     <TextBlock Text="{Binding EvolveProgressText}" FontSize="11" Foreground="#8E24AA" HorizontalAlignment="Center" Margin="0,0,0,12"/>
 
-                    <TextBlock Text="돌봄 실수 (진화 지연)" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding CareMistakes, StringFormat={}{0} 회}" FontSize="13" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Center"/>
+                    <!-- 돌봄 실수 / 몸무게 (퍼펙트 바디 조건) -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="돌봄 실수" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding CareMistakes, StringFormat={}{0} 회}" FontSize="13" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="몸무게" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Weight}" FontSize="13" FontWeight="Bold" Foreground="#1976D2" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="퍼펙트 바디: Lv.5 · 실수 0 · 몸무게 0" FontSize="9" Foreground="#999" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Grid>
 

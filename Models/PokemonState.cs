@@ -431,6 +431,7 @@ namespace TamaPoke.Models
                     OnPropertyChanged(nameof(CanShowEvolvePrompt));
                     OnPropertyChanged(nameof(EvolveProgressText));
                     OnPropertyChanged(nameof(EvolveProgressPercent));
+                    OnPropertyChanged(nameof(LevelProgressMinutes));
                     CheckMedals();
                 }
             }
@@ -496,6 +497,9 @@ namespace TamaPoke.Models
                 return Math.Min(100.0, (double)Level / targetLv * 100.0);
             }
         }
+
+        // 현재 레벨 안에서 지난 시간(분). 프로필의 "다음 레벨까지" 막대용 (0~59)
+        [JsonIgnore] public int LevelProgressMinutes => AgeMinutes % MINUTES_PER_LEVEL;
 
         [JsonIgnore] public bool HasMedalLv10 => (Medals & MED_LV10) != 0;
         [JsonIgnore] public bool HasMedalLv25 => (Medals & MED_LV25) != 0;
