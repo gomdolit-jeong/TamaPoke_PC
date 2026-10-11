@@ -14,14 +14,15 @@ namespace TamaPoke.Models
     public partial class PokemonState
     {
         #region 실전 전투 능력치 계산 (Combat Stats)
+        // 적(야생/관장) 포켓몬의 능력치: 유전자 15 고정
+        private int WildStat(int? baseStat) => BattleCalculator.Stat(baseStat ?? 50, BattleCalculator.WILD_GENE, EnemyLevel);
+
         [JsonIgnore]
         public int CombatMaxHp
         {
             get
             {
-                var p = PokemonDex.Get(SpeciesId);
-                int baseHp = p?.BaseHp ?? 50;
-                return (((baseHp * 2 + Genes.HpGene + (TrDef / 4)) * Level) / 100) + Level + 10;
+                return BattleCalculator.MaxHp(PokemonDex.Get(SpeciesId)?.BaseHp ?? 50, Genes.HpGene + (TrDef / 4), Level);
             }
         }
 
@@ -30,8 +31,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                var p = PokemonDex.Get(SpeciesId);
-                return CalculateStat(p?.BaseAtk ?? 50, Genes.AtkGene, TrAtk, Level);
+                return BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseAtk ?? 50, Genes.AtkGene + (TrAtk / 4), Level);
             }
         }
 
@@ -40,8 +40,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                var p = PokemonDex.Get(SpeciesId);
-                return CalculateStat(p?.BaseDef ?? 50, Genes.DefGene, TrDef, Level);
+                return BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseDef ?? 50, Genes.DefGene + (TrDef / 4), Level);
             }
         }
 
@@ -50,16 +49,13 @@ namespace TamaPoke.Models
         {
             get
             {
-                var p = PokemonDex.Get(SpeciesId);
-                int baseSpe = p?.BaseSpeed ?? 50;
-                return (((baseSpe * 2 + Genes.SpeGene + (TrSpeed / 4)) * Level) / 100) + 5;
+                return BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseSpeed ?? 50, Genes.SpeGene + (TrSpeed / 4), Level);
             }
         }
 
-        private int CalculateStat(int baseStat, int gene, int effortValue, int currentLevel)
-        {
-            return (((baseStat * 2 + gene + (effortValue / 4)) * currentLevel) / 100) + 5;
-        }
+        // 특수 기술용 능력치 (특수공격은 노력치 그대로, 특수방어는 노력치 절반을 더함)
+        [JsonIgnore] public int CombatSpAtk => BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseSpA ?? 50, Genes.AtkGene - 80, Level) + TrAtk;
+        [JsonIgnore] public int CombatSpDef => BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseSpD ?? 50, Genes.DefGene - 80, Level) + (TrDef / 2);
         #endregion
 
         #region 배틀 시스템 UI 상태 (Battle System UI)
@@ -241,16 +237,10 @@ namespace TamaPoke.Models
                 }
                 else
                 {
-                    PokemonType myType1 = myInfo?.Type1 ?? PokemonType.Normal;
-                    PokemonType myType2 = myInfo?.Type2 ?? PokemonType.None;
-
-                    double typeMult = TypeMatchupHelper.GetMultiplier(m.Type, myType1) * (myType2 != PokemonType.None ? TypeMatchupHelper.GetMultiplier(m.Type, myType2) : 1.0);
-                    double stabMult = (enemyInfo != null && (enemyInfo.Type1 == m.Type || enemyInfo.Type2 == m.Type)) ? 1.5 : 1.0;
-
-                    int enemyAtk = (((enemyInfo?.BaseAtk ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
-                    if (m.Category == SkillCategory.Special) enemyAtk = (((enemyInfo?.BaseSpA ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
-
-                    int expectedDamage = (int)(Math.Max(2, enemyAtk - (CombatDef / 2)) * typeMult * stabMult * (m.Power / 50.0));
+                    double typeMult = BattleCalculator.TypeMultiplier(m.Type, myInfo);
+                    double stabMult = BattleCalculator.StabMultiplier(m.Type, enemyInfo);
+                    int enemyAtk = WildStat(m.Category == SkillCategory.Special ? enemyInfo?.BaseSpA : enemyInfo?.BaseAtk);
+                    int expectedDamage = BattleCalculator.RawDamage(enemyAtk, CombatDef, typeMult, stabMult, m.Power);
 
                     score = expectedDamage;
                     if (expectedDamage >= PlayerHp) score += 1000;
@@ -325,7 +315,7 @@ namespace TamaPoke.Models
 
             var enemyInfo = PokemonDex.Get(EnemySpeciesId);
             int enemyBaseHp = enemyInfo != null ? enemyInfo.BaseHp : 50;
-            EnemyMaxHp = ((enemyBaseHp * 2 + 15) * EnemyLevel / 100) + EnemyLevel + 10;
+            EnemyMaxHp = BattleCalculator.MaxHp(enemyBaseHp, BattleCalculator.WILD_GENE, EnemyLevel);
             EnemyHp = EnemyMaxHp;
 
             GenerateEnemySkills();
@@ -429,25 +419,15 @@ namespace TamaPoke.Models
 
             if (isHit && playerSkill.Power > 0)
             {
-                PokemonType enemyType1 = enemyInfo?.Type1 ?? PokemonType.Normal;
-                PokemonType enemyType2 = enemyInfo?.Type2 ?? PokemonType.None;
+                bool special = playerSkill.Category == SkillCategory.Special;
+                double typeMultiplier = BattleCalculator.TypeMultiplier(playerSkill.Type, enemyInfo);
+                double stabMultiplier = BattleCalculator.StabMultiplier(playerSkill.Type, myInfo);
 
-                double typeMultiplier = TypeMatchupHelper.GetMultiplier(playerSkill.Type, enemyType1) * (enemyType2 != PokemonType.None ? TypeMatchupHelper.GetMultiplier(playerSkill.Type, enemyType2) : 1.0);
-                double stabMultiplier = (myInfo != null && (myInfo.Type1 == playerSkill.Type || myInfo.Type2 == playerSkill.Type)) ? 1.5 : 1.0;
+                int myCombatAtk = special ? CombatSpAtk : CombatAtk;
+                int enemyCombatDef = WildStat(special ? enemyInfo?.BaseSpD : enemyInfo?.BaseDef);
+                if (IsGymBattle) enemyCombatDef = (int)(enemyCombatDef * BattleCalculator.GYM_BONUS);
 
-                int enemyCombatDef = (((enemyInfo?.BaseDef ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
-                int myCombatAtk = CombatAtk;
-
-                if (playerSkill.Category == SkillCategory.Special)
-                {
-                    enemyCombatDef = (((enemyInfo?.BaseSpD ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
-                    myCombatAtk = (((myInfo?.BaseSpA ?? 50) * 2 + (Genes.AtkGene - 80)) * Level / 100) + 5 + TrAtk;
-                }
-
-                if (IsGymBattle) enemyCombatDef = (int)(enemyCombatDef * 1.1);
-
-                int baseDamage = Math.Max(2, myCombatAtk - (enemyCombatDef / 2));
-                int damage = (int)(baseDamage * typeMultiplier * stabMultiplier * (playerSkill.Power / 50.0));
+                int damage = BattleCalculator.RawDamage(myCombatAtk, enemyCombatDef, typeMultiplier, stabMultiplier, playerSkill.Power);
 
                 if (_isCounterReady) { damage *= 2; _isCounterReady = false; }
                 damage = Math.Max(1, damage);
@@ -455,8 +435,7 @@ namespace TamaPoke.Models
                 IsEnemyTakingDamage = true;
                 EnemyHp = Math.Max(0, EnemyHp - damage);
 
-                string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
-                BattleMessage = $"{extraMsg}적에게 {damage} 데미지를 입혔다!";
+                BattleMessage = $"{BattleCalculator.EffectivenessText(typeMultiplier)}적에게 {damage} 데미지를 입혔다!";
 
                 await TryInflictAilmentAsync(playerSkill, targetIsEnemy: true, isStatusMove: false);
 
@@ -615,32 +594,20 @@ namespace TamaPoke.Models
 
             if (!playerDodged && enemyHits && enemySkill.Power > 0)
             {
-                PokemonType myType1 = myInfo?.Type1 ?? PokemonType.Normal;
-                PokemonType myType2 = myInfo?.Type2 ?? PokemonType.None;
+                bool special = enemySkill.Category == SkillCategory.Special;
+                double typeMultiplier = BattleCalculator.TypeMultiplier(enemySkill.Type, myInfo);
+                double stabMultiplier = BattleCalculator.StabMultiplier(enemySkill.Type, enemyInfo);
 
-                double typeMultiplier = TypeMatchupHelper.GetMultiplier(enemySkill.Type, myType1) * (myType2 != PokemonType.None ? TypeMatchupHelper.GetMultiplier(enemySkill.Type, myType2) : 1.0);
-                double stabMultiplier = (enemyInfo != null && (enemyInfo.Type1 == enemySkill.Type || enemyInfo.Type2 == enemySkill.Type)) ? 1.5 : 1.0;
+                int enemyCombatAtk = WildStat(special ? enemyInfo?.BaseSpA : enemyInfo?.BaseAtk);
+                if (IsGymBattle) enemyCombatAtk = (int)(enemyCombatAtk * BattleCalculator.GYM_BONUS);
+                int myCombatDef = special ? CombatSpDef : CombatDef;
 
-                int enemyCombatAtk = (((enemyInfo?.BaseAtk ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
-                int myCombatDef = CombatDef;
-
-                if (enemySkill.Category == SkillCategory.Special)
-                {
-                    enemyCombatAtk = (((enemyInfo?.BaseSpA ?? 50) * 2 + 15) * EnemyLevel / 100) + 5;
-                    myCombatDef = (((myInfo?.BaseSpD ?? 50) * 2 + (Genes.DefGene - 80)) * Level / 100) + 5 + (TrDef / 2);
-                }
-
-                if (IsGymBattle) enemyCombatAtk = (int)(enemyCombatAtk * 1.1);
-
-                int baseEnemyDamage = Math.Max(2, enemyCombatAtk - (myCombatDef / 2));
-                int enemyDamage = (int)(baseEnemyDamage * typeMultiplier * stabMultiplier * (enemySkill.Power / 50.0));
-                enemyDamage = Math.Max(1, enemyDamage);
+                int enemyDamage = Math.Max(1, BattleCalculator.RawDamage(enemyCombatAtk, myCombatDef, typeMultiplier, stabMultiplier, enemySkill.Power));
 
                 IsPlayerTakingDamage = true;
                 PlayerHp = Math.Max(0, PlayerHp - enemyDamage);
 
-                string extraMsg = typeMultiplier >= 2.0 ? "효과가 굉장했다!\n" : (typeMultiplier > 0 && typeMultiplier <= 0.5 ? "효과가 별로인 듯하다...\n" : (typeMultiplier == 0 ? "효과가 없는 것 같다...\n" : ""));
-                BattleMessage = $"{extraMsg}{Name}(은)는 {enemyDamage} 데미지를 입었다!";
+                BattleMessage = $"{BattleCalculator.EffectivenessText(typeMultiplier)}{Name}(은)는 {enemyDamage} 데미지를 입었다!";
 
                 await TryInflictAilmentAsync(enemySkill, targetIsEnemy: false, isStatusMove: false);
 
@@ -975,8 +942,7 @@ namespace TamaPoke.Models
             var enemyInfo = PokemonDex.Get(EnemySpeciesId);
             int enemyBaseHp = enemyInfo != null ? enemyInfo.BaseHp : 50;
 
-            int baseGymHp = (((enemyBaseHp * 2 + 31) * EnemyLevel) / 100) + EnemyLevel + 10;
-            EnemyMaxHp = (int)(baseGymHp * 1.1);
+            EnemyMaxHp = (int)(BattleCalculator.MaxHp(enemyBaseHp, BattleCalculator.GYM_GENE, EnemyLevel) * BattleCalculator.GYM_BONUS);
             EnemyHp = EnemyMaxHp;
 
             EnemySkills = (int[])(leader.SpecificSkills?.Clone() ?? new int[4]);
