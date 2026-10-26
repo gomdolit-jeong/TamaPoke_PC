@@ -301,8 +301,10 @@ namespace TamaPoke.Models
             EnemyAilment = SkillAilment.None; _enemyAilmentTurns = 0; _enemyBadPoisonTurnCount = 0;
 
             Random rand = new Random();
-            if (rand.Next(100) < 1) { EnemySpeciesId = LegendaryIds[rand.Next(LegendaryIds.Length)]; }
-            else { var ids = PokemonDex.AllPokemons.Where(p => p.Id <= 493 && !LegendaryIds.Contains(p.Id)).Select(p => p.Id).ToList(); EnemySpeciesId = ids.Count > 0 ? ids[rand.Next(ids.Count)] : 1; }
+            // 야생 상대도 기본 이미지가 있는 포켓몬만 나옵니다.
+            var legendaries = LegendaryIds.Where(SpriteForms.IsUsable).ToArray();
+            if (rand.Next(100) < 1 && legendaries.Length > 0) { EnemySpeciesId = legendaries[rand.Next(legendaries.Length)]; }
+            else { var ids = PokemonDex.AllPokemons.Where(p => p.Id <= 493 && !LegendaryIds.Contains(p.Id) && SpriteForms.IsUsable(p.Id)).Select(p => p.Id).ToList(); EnemySpeciesId = ids.Count > 0 ? ids[rand.Next(ids.Count)] : 1; }
 
             EnemyLevel = Math.Max(1, Level + rand.Next(-2, 3));
             PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;

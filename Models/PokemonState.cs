@@ -460,6 +460,7 @@ namespace TamaPoke.Models
                 if (!DexTable.ContainsKey(SpeciesId)) return false;
 
                 if (SpeciesId == 415 && !IsFemale) return false;
+                if (GetEvolutionTargets().Length == 0) return false; // 진화할 포켓몬의 이미지가 없음
 
                 return Level >= (DexTable[SpeciesId].EvolveLevel + CareMistakes) && LowestStat >= 40;
             }

@@ -540,5 +540,9 @@
   "resource.firstRun": "Welcome to TamaPoke!\n\nThis is your first run. The files below are needed for Pokémon to appear on screen.\n{0}\n\nOpen the update window and download them now?\n(An internet connection is required and it takes a few minutes.\nYou can also do this later with Update (Ctrl+U) in the tray menu.)",
   "resource.missing": "Some files needed by the game are missing or damaged.\n{0}\n\nOpen the update window and download them again now?\n(You can also overwrite the Data folder with the one from the release zip.)",
   "resource.sprites.none": "Pokémon images (missing)",
-  "resource.sprites.partial": "Pokémon images (partly missing: {0}/{1})"
+  "resource.sprites.partial": "Pokémon images (partly missing: {0}/{1})",
+  "form.mega.name": "Mega {0} {1}",
+  "form.primal.name": "Primal {0}",
+  "update.mega.start": "Downloading Mega Evolution forms...",
+  "update.mega.done": "Saved {0} Mega Evolution forms"
 }

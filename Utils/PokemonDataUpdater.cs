@@ -14,7 +14,8 @@ namespace TamaPoke.Utils
     {
         private static readonly HttpClient client = new HttpClient();
 
-        private class ApiPokemon { public List<ApiStat> stats { get; set; } = new(); public List<ApiTypeSlot> types { get; set; } = new(); }
+        private class ApiPokemon { public List<ApiStat> stats { get; set; } = new(); public List<ApiTypeSlot> types { get; set; } = new(); public ApiNamedResource species { get; set; } = new(); }
+        private class ApiPokemonList { public List<ApiNamedResource> results { get; set; } = new(); }
         private class ApiStat { public int base_stat { get; set; } public ApiNamedResource stat { get; set; } = new(); }
         private class ApiTypeSlot { public int slot { get; set; } public ApiNamedResource type { get; set; } = new(); }
         private class ApiNamedResource { public string name { get; set; } = ""; public string url { get; set; } = ""; }
@@ -111,6 +112,84 @@ namespace TamaPoke.Utils
 
             PokemonDex.LoadPokemonData();
             progress?.Report(Loc.T("update.data.done"));
+
+            await GenerateMegaFormsJsonAsync(progress);
+        }
+
+        // PokeAPI 폼 이름 중 이미지 파일 접미사가 규칙(charizard-mega-x → Mega_X)과 다른 것. null이면 제외
+        private static readonly Dictionary<string, string?> MegaFormOverrides = new()
+        {
+            ["meowstic-male-mega"] = "Mega",
+            ["meowstic-female-mega"] = null,   // 암컷은 Mega 폼의 _Female 이미지로 표시
+            ["tatsugiri-curly-mega"] = "Mega",
+        };
+
+        // 메가진화/원시회귀 폼 목록을 받아 Data/mega_forms.json에 저장합니다.
+        public static async Task GenerateMegaFormsJsonAsync(IProgress<string>? progress = null)
+        {
+            progress?.Report(Loc.T("update.mega.start"));
+            var forms = new List<MegaFormInfo>();
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            try
+            {
+                var listJson = await client.GetStringAsync("https://pokeapi.co/api/v2/pokemon?limit=3000");
+                var names = (JsonSerializer.Deserialize<ApiPokemonList>(listJson, jsonOptions)?.results ?? new())
+                    .Select(r => r.name)
+                    .Where(n => n.Contains("-mega") || n.EndsWith("-primal"))
+                    .ToList();
+
+                foreach (string apiName in names)
+                {
+                    try
+                    {
+                        var response = await client.GetAsync($"https://pokeapi.co/api/v2/pokemon/{apiName}");
+                        if (!response.IsSuccessStatusCode) continue;
+                        var info = JsonSerializer.Deserialize<ApiPokemon>(await response.Content.ReadAsStringAsync(), jsonOptions);
+                        if (info == null) continue;
+
+                        string? form = MegaFormOverrides.TryGetValue(apiName, out var custom) ? custom : ToSpriteSuffix(apiName, info.species.name);
+                        if (form == null) continue;
+
+                        forms.Add(new MegaFormInfo
+                        {
+                            SpeciesId = ExtractIdFromUrl(info.species.url),
+                            Form = form,
+                            ApiName = apiName,
+                            Type1 = MapTypeToEnum(info.types.FirstOrDefault(t => t.slot == 1)?.type.name),
+                            Type2 = MapTypeToEnum(info.types.FirstOrDefault(t => t.slot == 2)?.type.name),
+                            BaseHp = GetStat(info, "hp"),
+                            BaseAtk = GetStat(info, "attack"),
+                            BaseDef = GetStat(info, "defense"),
+                            BaseSpeed = GetStat(info, "speed"),
+                            BaseSpA = GetStat(info, "special-attack"),
+                            BaseSpD = GetStat(info, "special-defense"),
+                        });
+                    }
+                    catch (Exception) { }
+                }
+            }
+            catch (Exception) { }
+
+            // 네트워크 오류 등으로 받아온 목록이 기존보다 적으면 덮어쓰지 않습니다.
+            if (forms.Count == 0 || forms.Count < MegaDex.AllForms.Count)
+            {
+                progress?.Report(Loc.F("update.keepExisting", forms.Count, MegaDex.AllForms.Count));
+                return;
+            }
+
+            var saveOptions = new JsonSerializerOptions { WriteIndented = true, Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
+            File.WriteAllText(Path.Combine(AppPaths.DataFolder, "mega_forms.json"), JsonSerializer.Serialize(forms.OrderBy(f => f.SpeciesId).ThenBy(f => f.Form).ToList(), saveOptions));
+
+            MegaDex.LoadMegaData();
+            progress?.Report(Loc.F("update.mega.done", forms.Count));
+        }
+
+        // charizard-mega-x → Mega_X, kyogre-primal → Primal, tatsugiri-stretchy-mega → Stretchy_Mega
+        private static string ToSpriteSuffix(string apiName, string speciesName)
+        {
+            string rest = apiName.StartsWith(speciesName + "-") ? apiName.Substring(speciesName.Length + 1) : apiName;
+            return string.Join("_", rest.Split('-').Select(t => char.ToUpperInvariant(t[0]) + t.Substring(1)));
         }
 
         private static async Task<Dictionary<int, (int, int)>> FetchAllEvolutionMappingsAsync(IProgress<string>? progress)

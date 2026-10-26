@@ -540,5 +540,9 @@
   "resource.firstRun": "TamaPoke에 오신 것을 환영합니다!\n\n처음 실행이라 아래 파일을 받아야 포켓몬이 화면에 보입니다.\n{0}\n\n지금 업데이트 창을 열어 받으시겠어요?\n(인터넷 연결이 필요하고 몇 분 정도 걸립니다.\n나중에 트레이 메뉴의 업데이트(Ctrl+U)로도 받을 수 있습니다.)",
   "resource.missing": "게임에 필요한 파일이 없거나 손상되었습니다.\n{0}\n\n지금 업데이트 창을 열어 다시 받으시겠어요?\n(Data 폴더는 릴리즈 zip의 파일로 덮어써도 됩니다.)",
   "resource.sprites.none": "포켓몬 이미지 (없음)",
-  "resource.sprites.partial": "포켓몬 이미지 (일부 없음: {0}/{1})"
+  "resource.sprites.partial": "포켓몬 이미지 (일부 없음: {0}/{1})",
+  "form.mega.name": "메가{0}{1}",
+  "form.primal.name": "원시{0}",
+  "update.mega.start": "메가진화 폼 정보를 받는 중...",
+  "update.mega.done": "메가진화 폼 {0}개 저장 완료"
 }

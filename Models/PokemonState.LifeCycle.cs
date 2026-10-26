@@ -13,8 +13,6 @@ namespace TamaPoke.Models
     {
         #region 생애 주기 (Life Cycle)
 
-        private static HashSet<int> MissingSpriteIds = new();
-
         private string _spriteFileName = "p0000.bin";
         public string SpriteFileName
         {
@@ -113,31 +111,9 @@ namespace TamaPoke.Models
 
         #region Hatch() 헬퍼 메서드 모음
 
-        private void ReloadMissingSprites()
-        {
-            try
-            {
-                string path = AppPaths.DataPath("missing_sprites.json");
-                if (File.Exists(path))
-                {
-                    string json = File.ReadAllText(path);
-                    var ids = JsonSerializer.Deserialize<List<int>>(json);
-                    if (ids != null)
-                    {
-                        MissingSpriteIds = new HashSet<int>(ids);
-                    }
-                }
-            }
-            catch
-            {
-            }
-        }
-
         private int DetermineHatchSpecies(Random rand)
         {
             if (DexTable.Count == 0) InitializeEvolutionTable();
-
-            ReloadMissingSprites();
 
             var allEvolvedIds = new HashSet<int>();
 
@@ -158,13 +134,13 @@ namespace TamaPoke.Models
                 .Where(p => Settings.SelectedGenerations.Any(gen => GameRegions.ByGeneration(gen)?.Contains(p.Id) ?? true)
                             && !allEvolvedIds.Contains(p.Id)
                             && !LegendaryIds.Contains(p.Id)
-                            && !MissingSpriteIds.Contains(p.Id))
+                            && SpriteForms.IsUsable(p.Id))
                 .Select(p => p.Id)
                 .ToList();
 
             if (RegisteredCount >= 30 && rand.Next(100) < 3)
             {
-                var validLegendaries = LegendaryIds.Where(id => !MissingSpriteIds.Contains(id)).ToArray();
+                var validLegendaries = LegendaryIds.Where(SpriteForms.IsUsable).ToArray();
                 if (validLegendaries.Length > 0)
                 {
                     return validLegendaries[rand.Next(validLegendaries.Length)];
@@ -288,9 +264,7 @@ namespace TamaPoke.Models
 
         private void ExecuteActualEvolve()
         {
-            if (!DexTable.ContainsKey(SpeciesId)) return;
-
-            int[] possibleNextForms = DexTable[SpeciesId].NextSpeciesIds;
+            int[] possibleNextForms = GetEvolutionTargets();
             int nextSpeciesId = -1;
 
             if (possibleNextForms != null && possibleNextForms.Length > 0)
@@ -325,6 +299,10 @@ namespace TamaPoke.Models
             SyncMainToLeader();
             Save();
         }
+
+        // 이미지가 있는 진화 후보만 돌려줍니다. (이미지가 없는 포켓몬으로는 진화하지 않습니다)
+        private int[] GetEvolutionTargets() =>
+            DexTable.TryGetValue(SpeciesId, out var data) ? data.NextSpeciesIds.Where(SpriteForms.IsUsable).ToArray() : Array.Empty<int>();
 
         public void RefreshSpriteFileName()
         {

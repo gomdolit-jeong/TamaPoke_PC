@@ -117,6 +117,7 @@ namespace TamaPoke.Utils
 
                 string convertResult = SpriteConverter.BatchConvertAll(sourceSpriteFolder, targetResourceDir, targetTrackerPath);
                 BinSpriteReader.ClearCache(); // 새로 만든 bin(재생시간 포함)을 다시 읽도록 캐시 초기화
+                SpriteForms.ResetCache();     // 새로 생긴 포켓몬 이미지를 부화/진화 후보에 반영
                 progress?.Report(convertResult);
             }
             catch (TaskCanceledException)

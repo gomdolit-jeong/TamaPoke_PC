@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -12,7 +13,35 @@ namespace TamaPoke.Utils
 
         public static string BaseFileName(int speciesId) => $"p{speciesId:D4}.bin";
 
-        // 폼이 여러 개면 10% 확률로 특수 폼 하나를 고릅니다. (이로치/암컷 파일은 후보에서 제외)
+        // 배틀 전용 폼(메가/원시회귀/거다이맥스)과 섀도 폼은 태어나거나 야생에서 나오지 않습니다.
+        private static readonly string[] BattleOnlyFormTokens = { "mega", "primal", "gigantamax", "shadow" };
+
+        public static bool IsBattleOnlyForm(string fileName) =>
+            Path.GetFileNameWithoutExtension(fileName).Split('_').Skip(1).Any(t => BattleOnlyFormTokens.Contains(t.ToLowerInvariant()));
+
+        // 기본 이미지(pNNNN.bin)가 있는 도감 번호. 이미지 업데이트 뒤 ResetCache()로 다시 읽습니다.
+        private static HashSet<int>? _baseSpriteIds;
+        private static HashSet<int> BaseSpriteIds => _baseSpriteIds ??= LoadBaseSpriteIds();
+
+        private static HashSet<int> LoadBaseSpriteIds()
+        {
+            var ids = new HashSet<int>();
+            if (!Directory.Exists(AppPaths.SpriteFolder)) return ids;
+            foreach (var file in Directory.EnumerateFiles(AppPaths.SpriteFolder, "p*.bin"))
+            {
+                string name = Path.GetFileNameWithoutExtension(file);
+                if (name.Length == 5 && int.TryParse(name.AsSpan(1), out int id) && id > 0) ids.Add(id);
+            }
+            return ids;
+        }
+
+        public static void ResetCache() => _baseSpriteIds = null;
+
+        // 부화/진화/야생으로 쓸 수 있는 포켓몬인지: 기본 이미지가 있어야 합니다. (없으면 알 이미지로 보임)
+        // 이미지를 아직 하나도 받지 않은 경우(첫 실행)는 거르지 않습니다.
+        public static bool IsUsable(int speciesId) => BaseSpriteIds.Count == 0 || BaseSpriteIds.Contains(speciesId);
+
+        // 폼이 여러 개면 10% 확률로 특수 폼 하나를 고릅니다. (이로치/암컷/배틀 전용 폼은 후보에서 제외)
         public static string PickBaseForm(int speciesId, string[] allForms, Random rand)
         {
             string baseFileName = BaseFileName(speciesId);
@@ -22,7 +51,7 @@ namespace TamaPoke.Utils
                 var specialForms = allForms.Where(f =>
                 {
                     string name = Path.GetFileName(f);
-                    return name != baseFileName && !name.ToLower().Contains("shiny") && !name.ToLower().Contains("female");
+                    return name != baseFileName && !name.ToLower().Contains("shiny") && !name.ToLower().Contains("female") && !IsBattleOnlyForm(name);
                 }).ToArray();
 
                 if (specialForms.Length > 0) return Path.GetFileName(specialForms[rand.Next(specialForms.Length)]);

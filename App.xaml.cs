@@ -18,6 +18,7 @@ namespace TamaPoke
             TamaPoke.Utils.Loc.Instance.SetLanguage(TamaPoke.Utils.Loc.ResolveLanguage(TamaPoke.Utils.SettingsManager.Current.Language));
             PokemonDex.LoadPokemonData();
             TamaPoke.Utils.SkillDex.LoadSkillData();
+            MegaDex.LoadMegaData();
         }
     }
 

@@ -36,6 +36,14 @@ namespace TamaPoke.Models
 
             IsFarewellPostponed = false;
 
+            // 예전 버전에서 메가/거다이맥스 등 배틀 전용 폼으로 태어난 포켓몬은 기본 폼으로 되돌립니다.
+            if (SpeciesId > 0 && SpriteForms.IsBattleOnlyForm(_spriteFileName)) RefreshSpriteFileName();
+            foreach (var member in Party)
+            {
+                if (member.SpeciesId > 0 && SpriteForms.IsBattleOnlyForm(member.SpriteFileName))
+                    member.SpriteFileName = SpriteForms.ApplyVariants(AppPaths.GetSpriteForms(member.SpeciesId), SpriteForms.BaseFileName(member.SpeciesId), member.IsShiny, member.IsFemale);
+            }
+
             if (DexTable.Count == 0)
             {
                 InitializeEvolutionTable();
