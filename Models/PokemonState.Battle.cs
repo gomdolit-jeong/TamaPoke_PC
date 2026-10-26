@@ -183,7 +183,7 @@ namespace TamaPoke.Models
                     if (mv == 0 || EnemySkills.Contains(mv)) continue;
 
                     var m = SkillDex.GetSkill(mv);
-                    if (m == null) continue;
+                    if (m == null || !m.IsSupported) continue; // 일격필살/카운터/회복기 등 효과가 없는 기술 제외
 
                     int sc = (m.Category == SkillCategory.Status) ? 10 : m.Power + 20;
                     if (m.Category != SkillCategory.Status && (m.Type == d.Type1 || m.Type == d.Type2)) sc += 40;
@@ -201,7 +201,7 @@ namespace TamaPoke.Models
             bool hasAttack = false;
             for (int i = 0; i < 4; i++)
             {
-                if (EnemySkills[i] != 0 && SkillDex.GetSkill(EnemySkills[i])?.Category != SkillCategory.Status)
+                if (EnemySkills[i] != 0 && SkillDex.GetSkill(EnemySkills[i])?.Power > 0)
                 {
                     hasAttack = true; break;
                 }
@@ -232,7 +232,7 @@ namespace TamaPoke.Models
             var myInfo = MyBattleInfo;
             Random rand = new Random();
 
-            var availableSkills = EnemySkills.Where(id => id != 0).Select(id => SkillDex.GetSkill(id)).Where(s => s != null).ToList();
+            var availableSkills = EnemySkills.Where(id => id != 0).Select(id => SkillDex.GetSkill(id)).Where(s => s != null && s.IsSupported).ToList();
             if (availableSkills.Count == 0) return SkillDex.GetSkill(1)!;
 
             SkillInfo bestSkill = availableSkills[0]!;
@@ -247,14 +247,21 @@ namespace TamaPoke.Models
                     bool canInflict = m.Ailment != SkillAilment.None && PlayerAilment == SkillAilment.None &&
                                       !AilmentHelper.IsImmune(m.Ailment, myInfo?.Type1 ?? PokemonType.Normal, myInfo?.Type2 ?? PokemonType.None);
                     if (m.Ailment != SkillAilment.None) score = canInflict && rand.Next(100) < 40 ? 500 : -100;
-                    else score = 5;
+                    else if (m.HasStatChanges)
+                    {
+                        // 능력치 변화: 아직 충분히 오르거나(자신) 내려가지(상대) 않았으면 30% 확률로 사용
+                        var stages = m.StatTarget == StatTarget.User ? _enemyStages : _playerStages;
+                        bool useful = m.StatChanges!.Any(c => c.Change > 0 ? stages[(int)c.Stat] < 2 : stages[(int)c.Stat] > -2);
+                        score = useful && rand.Next(100) < 30 ? 300 : -100;
+                    }
+                    else score = -100;
                 }
                 else
                 {
                     double typeMult = BattleCalculator.TypeMultiplier(m.Type, myInfo);
                     double stabMult = BattleCalculator.StabMultiplier(m.Type, enemyInfo);
                     int enemyAtk = WildStat(m.Category == SkillCategory.Special ? enemyInfo?.BaseSpA : enemyInfo?.BaseAtk);
-                    int expectedDamage = BattleCalculator.RawDamage(enemyAtk, CombatDef, typeMult, stabMult, m.Power);
+                    int expectedDamage = BattleCalculator.RawDamage(enemyAtk, m.Category == SkillCategory.Special ? CombatSpDef : CombatDef, typeMult, stabMult, m.Power);
 
                     score = expectedDamage;
                     if (expectedDamage >= PlayerHp) score += 1000;
@@ -315,6 +322,7 @@ namespace TamaPoke.Models
         {
             _battleSerial++;
             _battleAttended = false;
+            ResetStatStages();
         }
 
         private void MarkBattleAttended() => _battleAttended = true;
@@ -428,8 +436,6 @@ namespace TamaPoke.Models
             {
                 if (!await PlayerCanActThisTurnAsync())
                 {
-                    await ProcessPlayerTurnEndAilment();
-                    if (PlayerHp <= 0) { await CheckBattleEndAsync(); return; }
                     await EnemyTurnAction(false);
                     return;
                 }
@@ -448,6 +454,7 @@ namespace TamaPoke.Models
             await EnemyTurnAction(playerDodged);
         }
 
+        // 기술 턴: 기술을 고르는 순간 상대도 기술을 정하고, 스피드로 먼저 움직일 쪽을 정합니다. (회피/아이템/포획/도망은 항상 먼저)
         public async Task ExecuteSkillTurnAsync(SkillInfo playerSkill)
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
@@ -455,13 +462,25 @@ namespace TamaPoke.Models
             IsPlayerTurn = false; IsAttackMenuOpen = false;
             Random rand = new Random();
 
-            if (!await PlayerCanActThisTurnAsync())
+            SkillInfo enemySkill = ChooseEnemySkill();
+            if (DecidePlayerFirst(rand))
             {
-                await ProcessPlayerTurnEndAilment();
-                if (PlayerHp <= 0) { await CheckBattleEndAsync(); return; }
-                await EnemyTurnAction(false);
-                return;
+                await PlayerActAsync(playerSkill, rand);
+                await EnemyActAsync(enemySkill, playerDodged: false, rand);
             }
+            else
+            {
+                await EnemyActAsync(enemySkill, playerDodged: false, rand);
+                await PlayerActAsync(playerSkill, rand);
+            }
+            await FinishTurnAsync();
+        }
+
+        // 내 포켓몬의 기술 사용 (먼저 쓰러졌거나 상태이상으로 못 움직이면 아무것도 하지 않음)
+        private async Task PlayerActAsync(SkillInfo playerSkill, Random rand)
+        {
+            if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0) return;
+            if (!await PlayerCanActThisTurnAsync()) return;
 
             var myInfo = MyBattleInfo;
             var enemyInfo = PokemonDex.Get(EnemySpeciesId);
@@ -469,7 +488,7 @@ namespace TamaPoke.Models
             BattleMessage = Loc.F("battle.used", PlayerBattleName, playerSkill.Name);
             await Task.Delay(1000);
 
-            bool isHit = playerSkill.Accuracy == 0 || rand.Next(100) < playerSkill.Accuracy;
+            bool isHit = RollHit(playerSkill, _playerStages, _enemyStages, rand);
 
             if (isHit && playerSkill.Power > 0)
             {
@@ -477,11 +496,12 @@ namespace TamaPoke.Models
                 double typeMultiplier = BattleCalculator.TypeMultiplier(playerSkill.Type, enemyInfo);
                 double stabMultiplier = BattleCalculator.StabMultiplier(playerSkill.Type, myInfo);
 
-                int myCombatAtk = special ? CombatSpAtk : CombatAtk;
-                int enemyCombatDef = WildStat(special ? enemyInfo?.BaseSpD : enemyInfo?.BaseDef);
-                if (IsGymBattle) enemyCombatDef = (int)(enemyCombatDef * BattleCalculator.GYM_BONUS);
+                double myCombatAtk = (special ? CombatSpAtk : CombatAtk) * Stage(_playerStages, special ? BattleStat.SpAttack : BattleStat.Attack);
+                double enemyCombatDef = WildStat(special ? enemyInfo?.BaseSpD : enemyInfo?.BaseDef);
+                if (IsGymBattle) enemyCombatDef *= BattleCalculator.GYM_BONUS;
+                enemyCombatDef *= Stage(_enemyStages, special ? BattleStat.SpDefense : BattleStat.Defense);
 
-                int damage = BattleCalculator.RawDamage(myCombatAtk, enemyCombatDef, typeMultiplier, stabMultiplier, playerSkill.Power);
+                int damage = BattleCalculator.RawDamage((int)myCombatAtk, (int)enemyCombatDef, typeMultiplier, stabMultiplier, playerSkill.Power);
 
                 if (_isCounterReady) { damage *= 2; _isCounterReady = false; }
                 damage = Math.Max(1, damage);
@@ -500,23 +520,35 @@ namespace TamaPoke.Models
                 _enemyTempActionTimer = 15; UpdateEnemyAnimation(6);
 
                 await Task.Delay(600); IsEnemyTakingDamage = false; await Task.Delay(900);
+
+                await ApplyStatChangesAsync(playerSkill, userIsPlayer: true, isStatusMove: false);
             }
             else if (isHit)
             {
-                // 위력 0인 변화 기술 (전기자석파, 수면가루 등)
+                // 위력 0인 변화 기술 (전기자석파, 칼춤, 울음소리 등)
                 PlayTempAction(ANIM_POSE, 30); UpdateAnimation(ANIM_POSE);
-                await TryInflictAilmentAsync(playerSkill, targetIsEnemy: true, isStatusMove: true);
+                await UseStatusMoveAsync(playerSkill, userIsPlayer: true);
             }
             else
             {
                 _isCounterReady = false;
-                BattleMessage = Loc.F("battle.missed", Name);
+                BattleMessage = Loc.F("battle.missed", PlayerBattleName);
                 await Task.Delay(1500);
             }
+        }
 
-            if (EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
+        // 턴 마무리: 상태이상 데미지 → 승패 확인 → 다음 행동 선택
+        private async Task FinishTurnAsync()
+        {
+            if (PlayerHp <= 0 || EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
 
-            await EnemyTurnAction(false);
+            await ProcessEnemyTurnEndAilment();
+            await ProcessPlayerTurnEndAilment();
+
+            if (PlayerHp <= 0 || EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
+
+            BattleMessage = Loc.T("battle.choose");
+            IsPlayerTurn = true;
         }
 
         public async Task ExecuteItemTurnAsync(ItemInfo selectedItem)
@@ -608,13 +640,21 @@ namespace TamaPoke.Models
             }
         }
 
+        // 회피/아이템 뒤의 상대 차례 (회피·아이템은 항상 먼저 처리됩니다)
         private async Task EnemyTurnAction(bool playerDodged)
+        {
+            if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || IsBattleResolved) return;
+            await EnemyActAsync(ChooseEnemySkill(), playerDodged, new Random());
+            await FinishTurnAsync();
+        }
+
+        // 상대 포켓몬의 기술 사용 (먼저 쓰러졌거나 상태이상으로 못 움직이면 아무것도 하지 않음)
+        private async Task EnemyActAsync(SkillInfo enemySkill, bool playerDodged, Random rand)
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || IsBattleResolved) return;
 
             var myInfo = MyBattleInfo;
             var enemyInfo = PokemonDex.Get(EnemySpeciesId);
-            Random rand = new Random();
 
             if (EnemyAilment != SkillAilment.None)
             {
@@ -627,25 +667,15 @@ namespace TamaPoke.Models
                     BattleMessage = statusMsg;
                     await Task.Delay(1500);
                 }
-
-                if (!canAct)
-                {
-                    await ProcessEnemyTurnEndAilment();
-                    await ProcessPlayerTurnEndAilment();
-
-                    if (PlayerHp <= 0 || EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
-
-                    BattleMessage = Loc.T("battle.choose");
-                    IsPlayerTurn = true;
-                    return;
-                }
+                if (!canAct) return;
             }
 
-            SkillInfo enemySkill = ChooseEnemySkill();
             BattleMessage = Loc.F("battle.used", Loc.F("battle.wildName", EnemyName), enemySkill.Name);
             await Task.Delay(1000);
 
-            bool enemyHits = enemySkill.Accuracy == 0 || rand.Next(100) < enemySkill.Accuracy;
+            // 자기 능력치만 올리는 기술(칼춤 등)은 회피와 상관없이 성공합니다.
+            if (playerDodged && IsSelfTargetingStatusMove(enemySkill)) playerDodged = false;
+            bool enemyHits = RollHit(enemySkill, _enemyStages, _playerStages, rand);
 
             if (!playerDodged && enemyHits && enemySkill.Power > 0)
             {
@@ -653,16 +683,17 @@ namespace TamaPoke.Models
                 double typeMultiplier = BattleCalculator.TypeMultiplier(enemySkill.Type, myInfo);
                 double stabMultiplier = BattleCalculator.StabMultiplier(enemySkill.Type, enemyInfo);
 
-                int enemyCombatAtk = WildStat(special ? enemyInfo?.BaseSpA : enemyInfo?.BaseAtk);
-                if (IsGymBattle) enemyCombatAtk = (int)(enemyCombatAtk * BattleCalculator.GYM_BONUS);
-                int myCombatDef = special ? CombatSpDef : CombatDef;
+                double enemyCombatAtk = WildStat(special ? enemyInfo?.BaseSpA : enemyInfo?.BaseAtk);
+                if (IsGymBattle) enemyCombatAtk *= BattleCalculator.GYM_BONUS;
+                enemyCombatAtk *= Stage(_enemyStages, special ? BattleStat.SpAttack : BattleStat.Attack);
+                double myCombatDef = (special ? CombatSpDef : CombatDef) * Stage(_playerStages, special ? BattleStat.SpDefense : BattleStat.Defense);
 
-                int enemyDamage = Math.Max(1, BattleCalculator.RawDamage(enemyCombatAtk, myCombatDef, typeMultiplier, stabMultiplier, enemySkill.Power));
+                int enemyDamage = Math.Max(1, BattleCalculator.RawDamage((int)enemyCombatAtk, (int)myCombatDef, typeMultiplier, stabMultiplier, enemySkill.Power));
 
                 IsPlayerTakingDamage = true;
                 PlayerHp = Math.Max(0, PlayerHp - enemyDamage);
 
-                BattleMessage = Loc.F("battle.damage.taken", BattleCalculator.EffectivenessText(typeMultiplier), Name, enemyDamage);
+                BattleMessage = Loc.F("battle.damage.taken", BattleCalculator.EffectivenessText(typeMultiplier), PlayerBattleName, enemyDamage);
 
                 await TryInflictAilmentAsync(enemySkill, targetIsEnemy: false, isStatusMove: false);
 
@@ -670,23 +701,17 @@ namespace TamaPoke.Models
                 PlayTempAction(6, 15); UpdateAnimation(6);
 
                 await Task.Delay(600); IsPlayerTakingDamage = false; await Task.Delay(900);
+
+                await ApplyStatChangesAsync(enemySkill, userIsPlayer: false, isStatusMove: false);
             }
             else if (!playerDodged && enemyHits)
             {
                 // 위력 0인 변화 기술
                 _enemyTempActionId = ANIM_POSE; _enemyTempActionTimer = 30; UpdateEnemyAnimation(ANIM_POSE);
-                await TryInflictAilmentAsync(enemySkill, targetIsEnemy: false, isStatusMove: true);
+                await UseStatusMoveAsync(enemySkill, userIsPlayer: false);
             }
-            else if (playerDodged) { BattleMessage = Loc.F("battle.dodged", Name); await Task.Delay(1500); }
-            else if (!enemyHits) { BattleMessage = Loc.F("battle.missed", Loc.F("battle.wildName", EnemyName)); await Task.Delay(1500); }
-
-            await ProcessEnemyTurnEndAilment();
-            await ProcessPlayerTurnEndAilment();
-
-            if (PlayerHp <= 0 || EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
-
-            BattleMessage = Loc.T("battle.choose");
-            IsPlayerTurn = true;
+            else if (playerDodged) { BattleMessage = Loc.F("battle.dodged", PlayerBattleName); await Task.Delay(1500); }
+            else { BattleMessage = Loc.F("battle.missed", Loc.F("battle.wildName", EnemyName)); await Task.Delay(1500); }
         }
 
         private async Task ProcessEnemyTurnEndAilment()
@@ -779,7 +804,7 @@ namespace TamaPoke.Models
             var availableSkills = activeMoves
                 .Where(m => m.Level <= Level && !KnowsSkill(m.MoveId))
                 .Select(m => new { m.Level, Skill = SkillDex.GetSkill(m.MoveId) })
-                .Where(x => x.Skill != null)
+                .Where(x => x.Skill != null && x.Skill.IsSupported)
                 .ToList();
 
             if (availableSkills.Count > 0)

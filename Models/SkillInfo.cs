@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using TamaPoke.Utils;
 
 namespace TamaPoke.Models
@@ -40,5 +41,33 @@ namespace TamaPoke.Models
 
         // 🌟 상태이상이 터질 확률 (예: 10, 30, 100)
         public int AilmentChance { get; set; } = 0;
+
+        // 능력치 변화 (예: 칼춤 = 사용자 공격 +2, 울음소리 = 상대 공격 -1, 깨물어부수기 = 20% 확률로 상대 방어 -1)
+        public List<StatChange>? StatChanges { get; set; }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public StatTarget StatTarget { get; set; } = StatTarget.Opponent;
+
+        // 공격 기술의 능력치 변화 확률(%). 변화 기술은 항상 적용됩니다.
+        public int StatChance { get; set; } = 0;
+
+        [JsonIgnore] public bool HasStatChanges => StatChanges is { Count: > 0 };
+
+        // 이 게임에서 효과를 낼 수 있는 기술인지: 데미지가 있거나, 지원하는 상태이상/능력치 변화가 있음
+        // (일격필살, 카운터, 회복기, 고정 데미지 기술 등은 제외 → 배울 기술/상대 기술 후보에서 빠짐)
+        [JsonIgnore] public bool IsSupported => Power > 0 || Ailment != SkillAilment.None || HasStatChanges;
+    }
+
+    // 배틀 중에만 유지되는 능력치 단계(-6 ~ +6)의 종류
+    public enum BattleStat { Attack, Defense, SpAttack, SpDefense, Speed, Accuracy, Evasion }
+
+    // 능력치 변화를 받는 쪽: 상대 / 기술을 쓴 포켓몬 자신
+    public enum StatTarget { Opponent, User }
+
+    public class StatChange
+    {
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public BattleStat Stat { get; set; }
+        public int Change { get; set; }   // +2: 크게 올라감, -1: 떨어짐
     }
 }

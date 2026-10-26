@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
@@ -37,6 +37,15 @@ namespace TamaPoke.Utils
 
         public static string T(string key) => Instance.Get(key);
         public static string F(string key, params object?[] args) => string.Format(T(key), args);
+
+        // 한국어 조사: 마지막 글자에 받침이 있으면 withBatchim(이/은), 없으면 withoutBatchim(가/는)
+        public static string Josa(string word, string withBatchim, string withoutBatchim)
+        {
+            if (string.IsNullOrEmpty(word)) return withBatchim;
+            char last = word[^1];
+            if (last < '가' || last > '힣') return withBatchim;
+            return (last - 0xAC00) % 28 != 0 ? withBatchim : withoutBatchim;
+        }
 
         // 저장된 설정 값이 없거나 지원하지 않는 언어면 윈도우 언어를 따라갑니다. (한국어 윈도우 → 한국어, 그 외 → 영어)
         public static string ResolveLanguage(string? saved)

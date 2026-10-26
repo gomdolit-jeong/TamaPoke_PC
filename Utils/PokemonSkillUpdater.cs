@@ -31,12 +31,46 @@ namespace TamaPoke.Utils
             public ApiNamedResource damage_class { get; set; } = new();
             public List<ApiName> names { get; set; } = new();
             public ApiMoveMeta? meta { get; set; }
+            public List<ApiStatChange> stat_changes { get; set; } = new();
+            public ApiNamedResource target { get; set; } = new();
         }
 
         private class ApiMoveMeta
         {
             public ApiNamedResource ailment { get; set; } = new();
             public int ailment_chance { get; set; }
+            public ApiNamedResource category { get; set; } = new();
+            public int stat_chance { get; set; }
+        }
+
+        private class ApiStatChange { public int change { get; set; } public ApiNamedResource stat { get; set; } = new(); }
+
+        private static readonly Dictionary<string, BattleStat> ApiStats = new()
+        {
+            ["attack"] = BattleStat.Attack, ["defense"] = BattleStat.Defense,
+            ["special-attack"] = BattleStat.SpAttack, ["special-defense"] = BattleStat.SpDefense,
+            ["speed"] = BattleStat.Speed, ["accuracy"] = BattleStat.Accuracy, ["evasion"] = BattleStat.Evasion,
+        };
+
+        // 능력치 변화는 세 종류만 지원합니다: 공격 후 내 능력치(damage-raise), 공격 후 상대 능력치(damage-lower), 변화 기술(net-good-stats)
+        // (뻐기기처럼 혼란과 함께 상대 능력치를 올리는 기술 등은 제외)
+        private static (List<StatChange>? Changes, StatTarget Target, int Chance) ParseStatChanges(ApiMoveDetail detail)
+        {
+            string category = detail.meta?.category.name ?? "";
+            if (category is not ("net-good-stats" or "damage-raise" or "damage-lower")) return (null, StatTarget.Opponent, 0);
+
+            var changes = detail.stat_changes.Where(c => ApiStats.ContainsKey(c.stat.name))
+                .Select(c => new StatChange { Stat = ApiStats[c.stat.name], Change = c.change }).ToList();
+            if (changes.Count == 0) return (null, StatTarget.Opponent, 0);
+
+            StatTarget target = category switch
+            {
+                "damage-raise" => StatTarget.User,
+                "damage-lower" => StatTarget.Opponent,
+                _ => detail.target.name is "user" or "user-and-allies" or "users-field" or "user-or-ally" ? StatTarget.User : StatTarget.Opponent,
+            };
+            int chance = category == "net-good-stats" || detail.meta!.stat_chance == 0 ? 100 : detail.meta.stat_chance;
+            return (changes, target, chance);
         }
 
         private class ApiNamedResource { public string name { get; set; } = ""; }
@@ -185,6 +219,8 @@ namespace TamaPoke.Utils
                     };
                 }
 
+                var (statChanges, statTarget, statChance) = ParseStatChanges(detail);
+
                 return new SkillInfo
                 {
                     Id = detail.id,
@@ -195,7 +231,10 @@ namespace TamaPoke.Utils
                     Power = detail.power ?? 0,
                     Accuracy = detail.accuracy ?? 0,
                     Ailment = parsedAilment,
-                    AilmentChance = parsedAilmentChance
+                    AilmentChance = parsedAilmentChance,
+                    StatChanges = statChanges,
+                    StatTarget = statTarget,
+                    StatChance = statChance
                 };
             }
             catch

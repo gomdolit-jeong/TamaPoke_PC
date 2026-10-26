@@ -66,7 +66,7 @@ namespace TamaPoke.Models
                     if (mv == 0 || KnowsSkill(mv)) continue; // 🌟 MoveTable.Length 검사 삭제!
 
                     var m = SkillDex.GetSkill(mv);
-                    if (m == null) continue; // 여기서 스킬이 도감에 있는지 완벽하게 검사합니다.
+                    if (m == null || !m.IsSupported) continue; // 도감에 없거나 이 게임에서 효과가 없는 기술(일격필살 등)은 제외
 
                     int sc = (m.Category == SkillCategory.Status) ? 10 : m.Power + 20;
 
@@ -95,7 +95,7 @@ namespace TamaPoke.Models
             bool hasAttack = false;
             for (int i = 0; i < 4; i++)
             {
-                if (Skills[i] != 0 && SkillDex.GetSkill(Skills[i])?.Category != SkillCategory.Status)
+                if (Skills[i] != 0 && SkillDex.GetSkill(Skills[i])?.Power > 0)
                 {
                     hasAttack = true; break;
                 }
