@@ -17,12 +17,15 @@ namespace TamaPoke.Models
         // 적(야생/관장) 포켓몬의 능력치: 유전자 15 고정
         private int WildStat(int? baseStat) => BattleCalculator.Stat(baseStat ?? 50, BattleCalculator.WILD_GENE, EnemyLevel);
 
+        // 배틀 중 내 포켓몬의 종족값/타입: 메가진화 중이면 메가 폼 값
+        private PokemonInfo? MyBattleInfo => ActiveMegaForm?.ToPokemonInfo() ?? PokemonDex.Get(SpeciesId);
+
         [JsonIgnore]
         public int CombatMaxHp
         {
             get
             {
-                return BattleCalculator.MaxHp(PokemonDex.Get(SpeciesId)?.BaseHp ?? 50, Genes.HpGene + (TrDef / 4), Level);
+                return BattleCalculator.MaxHp(MyBattleInfo?.BaseHp ?? 50, Genes.HpGene + (TrDef / 4), Level);
             }
         }
 
@@ -31,7 +34,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                return BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseAtk ?? 50, Genes.AtkGene + (TrAtk / 4), Level);
+                return BattleCalculator.Stat(MyBattleInfo?.BaseAtk ?? 50, Genes.AtkGene + (TrAtk / 4), Level);
             }
         }
 
@@ -40,7 +43,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                return BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseDef ?? 50, Genes.DefGene + (TrDef / 4), Level);
+                return BattleCalculator.Stat(MyBattleInfo?.BaseDef ?? 50, Genes.DefGene + (TrDef / 4), Level);
             }
         }
 
@@ -49,18 +52,18 @@ namespace TamaPoke.Models
         {
             get
             {
-                return BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseSpeed ?? 50, Genes.SpeGene + (TrSpeed / 4), Level);
+                return BattleCalculator.Stat(MyBattleInfo?.BaseSpeed ?? 50, Genes.SpeGene + (TrSpeed / 4), Level);
             }
         }
 
         // 특수 기술용 능력치 (특수공격은 노력치 그대로, 특수방어는 노력치 절반을 더함)
-        [JsonIgnore] public int CombatSpAtk => BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseSpA ?? 50, Genes.AtkGene - 80, Level) + TrAtk;
-        [JsonIgnore] public int CombatSpDef => BattleCalculator.Stat(PokemonDex.Get(SpeciesId)?.BaseSpD ?? 50, Genes.DefGene - 80, Level) + (TrDef / 2);
+        [JsonIgnore] public int CombatSpAtk => BattleCalculator.Stat(MyBattleInfo?.BaseSpA ?? 50, Genes.AtkGene - 80, Level) + TrAtk;
+        [JsonIgnore] public int CombatSpDef => BattleCalculator.Stat(MyBattleInfo?.BaseSpD ?? 50, Genes.DefGene - 80, Level) + (TrDef / 2);
         #endregion
 
         #region 배틀 시스템 UI 상태 (Battle System UI)
         private bool _isBattleOpen = false;
-        [JsonIgnore] public bool IsBattleOpen { get => _isBattleOpen; set { if (SetProperty(ref _isBattleOpen, value)) { OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        [JsonIgnore] public bool IsBattleOpen { get => _isBattleOpen; set { if (SetProperty(ref _isBattleOpen, value)) { OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); OnPropertyChanged(nameof(CanMegaEvolveNow)); ReloadSprite(); } } } // 배틀 시작/종료 시 내 포켓몬 방향(뒷모습 ↔ 정면) 전환
 
         private bool _isDefeatedFadeOut = false;
         [JsonIgnore] public bool IsDefeatedFadeOut { get => _isDefeatedFadeOut; set => SetProperty(ref _isDefeatedFadeOut, value); }
@@ -215,7 +218,7 @@ namespace TamaPoke.Models
         private SkillInfo ChooseEnemySkill()
         {
             var enemyInfo = PokemonDex.Get(EnemySpeciesId);
-            var myInfo = PokemonDex.Get(SpeciesId);
+            var myInfo = MyBattleInfo;
             Random rand = new Random();
 
             var availableSkills = EnemySkills.Where(id => id != 0).Select(id => SkillDex.GetSkill(id)).Where(s => s != null).ToList();
@@ -296,6 +299,7 @@ namespace TamaPoke.Models
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
             IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
             IsGymBattle = false;
+            ResetMegaForBattle();
 
             PlayerAilment = SkillAilment.None; _playerAilmentTurns = 0; _playerBadPoisonTurnCount = 0;
             EnemyAilment = SkillAilment.None; _enemyAilmentTurns = 0; _enemyBadPoisonTurnCount = 0;
@@ -335,6 +339,7 @@ namespace TamaPoke.Models
 
         public void CloseBattle()
         {
+            EndMegaEvolution();
             IsBattleOpen = false;
             IsGymBattle = false;
             BattleMessage = "";
@@ -411,10 +416,10 @@ namespace TamaPoke.Models
                 return;
             }
 
-            var myInfo = PokemonDex.Get(SpeciesId);
+            var myInfo = MyBattleInfo;
             var enemyInfo = PokemonDex.Get(EnemySpeciesId);
 
-            BattleMessage = Loc.F("battle.used", Name, playerSkill.Name);
+            BattleMessage = Loc.F("battle.used", PlayerBattleName, playerSkill.Name);
             await Task.Delay(1000);
 
             bool isHit = playerSkill.Accuracy == 0 || rand.Next(100) < playerSkill.Accuracy;
@@ -559,7 +564,7 @@ namespace TamaPoke.Models
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || IsBattleResolved) return;
 
-            var myInfo = PokemonDex.Get(SpeciesId);
+            var myInfo = MyBattleInfo;
             var enemyInfo = PokemonDex.Get(EnemySpeciesId);
             Random rand = new Random();
 
@@ -962,6 +967,7 @@ namespace TamaPoke.Models
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
             IsSkillLearnMenuOpen = false; IsSkillReplaceMenuOpen = false;
             IsGymBattle = true;
+            ResetMegaForBattle();
 
             PlayerAilment = SkillAilment.None;
             _playerAilmentTurns = 0;
@@ -972,6 +978,7 @@ namespace TamaPoke.Models
             _enemyBadPoisonTurnCount = 0;
 
             EnemySpeciesId = leader.PokemonSpeciesId;
+            _enemySpriteFileName = SpriteForms.BaseFileName(EnemySpeciesId); // 관장 포켓몬은 기본 모습
             EnemyLevel = leader.Level;
             PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;
 

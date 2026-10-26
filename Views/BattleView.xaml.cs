@@ -52,6 +52,16 @@ namespace TamaPoke.Views
             if (pet != null) pet.IsAttackMenuOpen = false;
         }
 
+        // 메가진화: 버튼 → (폼이 여러 개면 선택 창) → 연출
+        private void MegaEvolve_Click(object sender, RoutedEventArgs e) => GetPet()?.RequestMegaEvolution();
+
+        private void MegaChoice_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is MegaFormInfo form) GetPet()?.ChooseMegaForm(form);
+        }
+
+        private void MegaCancel_Click(object sender, RoutedEventArgs e) => GetPet()?.CancelMegaChoice();
+
         private async void SkillButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is System.Windows.Controls.Button btn && btn.DataContext is SkillInfo selectedSkill)
@@ -141,6 +151,10 @@ namespace TamaPoke.Views
         // ==========================================
         // 전투 종료 및 포획 애니메이션 관련 이벤트
         // ==========================================
+        private const double BALL_START_ABOVE_PLATFORM = 40; // 던지는 위치: 내 발판 중심에서 위로 (몸통 높이)
+        private const double BALL_REST_ABOVE_PLATFORM = 8;   // 떨어진 볼이 놓이는 위치: 적 발판 중심에서 위로
+        private const double BALL_ARC_HEIGHT = 12;           // 포물선 꼭대기 높이 (적 이름 패널 아래로 지나가도록)
+
         private async void Catch_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
@@ -177,16 +191,24 @@ namespace TamaPoke.Views
 
             if (rotTransform == null || transTransform == null) return;
 
-            transTransform.X = 0;
-            transTransform.Y = 0;
+            // 내 포켓몬 몸통에서 출발해 포물선을 그리며 적 발판 위에 떨어집니다. (발판 위치로 계산하므로 배치가 바뀌어도 맞음)
+            System.Windows.Point Center(FrameworkElement el) => el.TranslatePoint(new System.Windows.Point(el.ActualWidth / 2, el.ActualHeight / 2), BattleArea);
+            double half = PokeballIcon.Width / 2;
+            System.Windows.Point from = Center(PlayerPlatform), to = Center(EnemyPlatform);
+            double startX = from.X - half, startY = from.Y - BALL_START_ABOVE_PLATFORM - half;
+            double finalX = to.X - half, finalY = to.Y - BALL_REST_ABOVE_PLATFORM - half;
+            double peakY = Math.Min(startY, finalY) - BALL_ARC_HEIGHT;
+
+            transTransform.X = startX;
+            transTransform.Y = startY;
             rotTransform.Angle = 0;
 
-            double finalX = 140;
-            var animX = new DoubleAnimation(0, finalX, TimeSpan.FromMilliseconds(500));
+            var animX = new DoubleAnimation(startX, finalX, TimeSpan.FromMilliseconds(500));
 
             var animY = new DoubleAnimationUsingKeyFrames();
-            animY.KeyFrames.Add(new EasingDoubleKeyFrame(-90, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(250)), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
-            animY.KeyFrames.Add(new EasingDoubleKeyFrame(-65, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(500)), new QuadraticEase { EasingMode = EasingMode.EaseIn }));
+            animY.KeyFrames.Add(new DiscreteDoubleKeyFrame(startY, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            animY.KeyFrames.Add(new EasingDoubleKeyFrame(peakY, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(250)), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
+            animY.KeyFrames.Add(new EasingDoubleKeyFrame(finalY, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(500)), new QuadraticEase { EasingMode = EasingMode.EaseIn }));
 
             var animRot = new DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(500));
 

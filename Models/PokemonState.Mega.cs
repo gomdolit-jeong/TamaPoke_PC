@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using TamaPoke.Utils;
 
 namespace TamaPoke.Models
@@ -108,6 +109,116 @@ namespace TamaPoke.Models
             OnPropertyChanged(nameof(MegaRingText));
             OnPropertyChanged(nameof(MegaStoneRows));
         }
+
+        #endregion
+
+        #region 배틀 메가진화 (Battle Mega Evolution)
+        // 배틀마다 한 번, 턴을 쓰지 않고 메가진화합니다. 배틀이 끝나면 원래 모습으로 돌아옵니다. (저장하지 않음)
+
+        private MegaFormInfo? _activeMegaForm;
+        [JsonIgnore]
+        public MegaFormInfo? ActiveMegaForm
+        {
+            get => _activeMegaForm;
+            private set
+            {
+                if (SetProperty(ref _activeMegaForm, value))
+                {
+                    OnPropertyChanged(nameof(PlayerBattleName));
+                    OnPropertyChanged(nameof(CanMegaEvolveNow));
+                }
+            }
+        }
+
+        private bool _megaUsedThisBattle;
+
+        private bool _isMegaEvolving;
+        [JsonIgnore] public bool IsMegaEvolving { get => _isMegaEvolving; private set { if (SetProperty(ref _isMegaEvolving, value)) OnPropertyChanged(nameof(CanMegaEvolveNow)); } }
+
+        // 메가 폼이 둘 이상일 때(리자몽 X/Y 등) 고르는 창
+        private bool _isMegaChoiceOpen;
+        [JsonIgnore] public bool IsMegaChoiceOpen { get => _isMegaChoiceOpen; private set => SetProperty(ref _isMegaChoiceOpen, value); }
+        [JsonIgnore] public List<MegaFormInfo> MegaChoices { get; private set; } = new();
+
+        // 배틀 화면의 내 포켓몬 이름 (메가진화 중이면 메가리자몽X 등)
+        [JsonIgnore] public string PlayerBattleName => ActiveMegaForm?.DisplayName ?? Name;
+
+        // 메가진화 버튼 표시 조건 (내 턴 메인 메뉴가 보일 때만 버튼이 보이도록 화면에서 한 번 더 감쌉니다)
+        [JsonIgnore]
+        public bool CanMegaEvolveNow => IsBattleOpen && !_megaUsedThisBattle && !IsMegaEvolving && ActiveMegaForm == null
+                                        && GetUsableMegaForms(SpeciesId).Count > 0;
+
+        // 메가진화 중이면 메가 이미지 파일 (이로치/암컷 변형 포함), 아니면 null
+        private string? MegaSpriteFileName => ActiveMegaForm == null ? null
+            : SpriteForms.ApplyVariants(AppPaths.GetSpriteForms(SpeciesId), ActiveMegaForm.SpriteFileName, IsShiny, IsFemale);
+
+        private void ResetMegaForBattle()
+        {
+            _megaUsedThisBattle = false;
+            IsMegaChoiceOpen = false;
+            IsMegaEvolving = false;
+            ActiveMegaForm = null;
+            OnPropertyChanged(nameof(CanMegaEvolveNow));
+        }
+
+        // 배틀 종료: 원래 모습으로 되돌립니다.
+        private void EndMegaEvolution()
+        {
+            IsMegaChoiceOpen = false;
+            IsMegaEvolving = false;
+            if (ActiveMegaForm == null) return;
+            ActiveMegaForm = null;
+            ReloadSprite();
+        }
+
+        public void RequestMegaEvolution()
+        {
+            if (!CanMegaEvolveNow || !IsPlayerTurn) return;
+
+            var forms = GetUsableMegaForms(SpeciesId);
+            if (forms.Count == 1)
+            {
+                _ = MegaEvolveAsync(forms[0]);
+                return;
+            }
+            MegaChoices = forms;
+            OnPropertyChanged(nameof(MegaChoices));
+            IsMegaChoiceOpen = true;
+        }
+
+        public void ChooseMegaForm(MegaFormInfo form)
+        {
+            IsMegaChoiceOpen = false;
+            if (CanMegaEvolveNow && IsPlayerTurn) _ = MegaEvolveAsync(form);
+        }
+
+        public void CancelMegaChoice() => IsMegaChoiceOpen = false;
+
+        private async Task MegaEvolveAsync(MegaFormInfo form)
+        {
+            _megaUsedThisBattle = true;
+            IsAttackMenuOpen = false;
+            IsPlayerTurn = false;
+            IsMegaEvolving = true;
+
+            BattleMessage = string.IsNullOrEmpty(form.StoneId)
+                ? Loc.F("mega.battle.reactNoStone", Name)
+                : Loc.F("mega.battle.react", Name, form.StoneName);
+            await Task.Delay(MEGA_GLOW_MS);
+
+            ActiveMegaForm = form;
+            ReloadSprite();
+            BattleMessage = form.IsPrimal ? Loc.F("mega.battle.primal", Name) : Loc.F("mega.battle.done", Name, form.DisplayName);
+            await Task.Delay(MEGA_MESSAGE_MS);
+
+            IsMegaEvolving = false;
+            if (!IsBattleOpen) return;
+            BattleMessage = Loc.T("battle.choose");
+            IsPlayerTurn = true;
+        }
+
+        private const int MEGA_GLOW_MS = 2000;     // 메가링 반응 연출 시간
+        private const int MEGA_MESSAGE_MS = 1800;  // 메가진화 완료 메시지 표시 시간
 
         #endregion
     }

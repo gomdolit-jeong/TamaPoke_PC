@@ -554,5 +554,11 @@
   "bag.mega.ring.has": "💍 메가링 보유 · 완성한 스톤 {0}개",
   "bag.mega.ring.hint": "체육관 배지 {0}개를 모으면\n메가링을 받아요.",
   "bag.mega.complete": "완성",
-  "battle.gym.rematchWon": "{0}와(과)의 재대결에서 승리했다!"
+  "battle.gym.rematchWon": "{0}와(과)의 재대결에서 승리했다!",
+  "battle.ui.mega": "메가진화",
+  "mega.battle.choose": "어떤 모습으로 메가진화할까?",
+  "mega.battle.react": "{0}의 {1}와(과)\n메가링이 반응했다!",
+  "mega.battle.reactNoStone": "{0}이(가)\n메가링에 반응했다!",
+  "mega.battle.done": "{0}은(는) {1}(으)로\n메가진화했다!",
+  "mega.battle.primal": "{0}의 원시회귀!\n원시의 모습을 되찾았다!"
 }

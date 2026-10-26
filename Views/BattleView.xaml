@@ -100,7 +100,27 @@
         </Grid.RowDefinitions>
 
         <!-- 1. 상단 배틀 화면 영역 -->
-        <Grid Grid.Row="0">
+        <Grid x:Name="BattleArea" Grid.Row="0">
+            <!-- 발판: 적은 오른쪽 위, 내 포켓몬은 왼쪽 아래. 포켓몬의 발이 발판 중앙에 오도록 배치합니다. -->
+            <Ellipse x:Name="EnemyPlatform" Width="96" Height="22" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="160,87,0,0" IsHitTestVisible="False">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#55788C4A" Offset="0"/>
+                        <GradientStop Color="#33788C4A" Offset="0.7"/>
+                        <GradientStop Color="#00788C4A" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+            <Ellipse x:Name="PlayerPlatform" Width="130" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,154,0,0" IsHitTestVisible="False">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#55788C4A" Offset="0"/>
+                        <GradientStop Color="#33788C4A" Offset="0.7"/>
+                        <GradientStop Color="#00788C4A" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+
             <Border Margin="60,25,0,0" Background="#FAFAFA" CornerRadius="8" Padding="8,4" BorderBrush="#555" BorderThickness="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="120">
                 <StackPanel>
                     <!-- 🌟 적 이름, 상태이상, 레벨 패널 -->
@@ -153,23 +173,135 @@
                 </StackPanel>
             </Border>
 
-            <Image Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,35,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+            <Image x:Name="EnemySprite" Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="178,54,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
-            <emoji:TextBlock Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,30,40,0" Panel.ZIndex="5"
+            <emoji:TextBlock Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,49,43,0" Panel.ZIndex="5"
                              Text="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"
                              Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}"/>
 
-            <!-- 🌟 플레이어 이미지 (앞모습에 거울 반전을 적용해 적을 바라보게 함) -->
-            <Image Source="{Binding CurrentFrame}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="40,0,0,10" RenderOptions.BitmapScalingMode="NearestNeighbor">
-                <Image.RenderTransform>
-                    <ScaleTransform ScaleX="-1" ScaleY="1" CenterX="36" CenterY="36"/>
-                </Image.RenderTransform>
-            </Image>
+            <!-- 💎 메가진화 연출: 메가링 반응(빛 + 무지개 고리) → 흰 섬광과 함께 메가 모습으로 -->
+            <!-- 뒷모습은 이미지 칸보다 왼쪽에 그려지므로, 몸통 중심(64, 134)에 맞춰 체력 패널/메시지 창에 덜 가리게 합니다. -->
+            <Grid Width="100" Height="100" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="14,84,0,0" IsHitTestVisible="False"
+                  Visibility="{Binding IsMegaEvolving, Converter={StaticResource BoolToVis}}">
+                <Ellipse>
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#CCFFFFFF" Offset="0"/>
+                            <GradientStop Color="#66FFD54F" Offset="0.5"/>
+                            <GradientStop Color="#00FFFFFF" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMegaEvolving}" Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard Name="MegaGlowAnim">
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:0.35" AutoReverse="True"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <StopStoryboard BeginStoryboardName="MegaGlowAnim"/>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <Ellipse Margin="10" StrokeThickness="5" RenderTransformOrigin="0.5,0.5">
+                    <Ellipse.Stroke>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FF5252" Offset="0"/>
+                            <GradientStop Color="#FFD740" Offset="0.25"/>
+                            <GradientStop Color="#69F0AE" Offset="0.5"/>
+                            <GradientStop Color="#40C4FF" Offset="0.75"/>
+                            <GradientStop Color="#E040FB" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Ellipse.Stroke>
+                    <Ellipse.RenderTransform>
+                        <RotateTransform/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMegaEvolving}" Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard Name="MegaRingAnim">
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:0.8"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <StopStoryboard BeginStoryboardName="MegaRingAnim"/>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+            </Grid>
 
-            <emoji:TextBlock Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="92,0,0,72" Panel.ZIndex="5"
+            <!-- 🌟 플레이어 이미지: 뒷모습(오른쪽 위를 바라봄)을 1.5배로, 발이 메시지 창 경계에 오도록 (화면 앞쪽에 있는 느낌) -->
+            <Image x:Name="PlayerSprite" Source="{Binding CurrentFrame}" Width="108" Height="108" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,105,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+
+            <emoji:TextBlock Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="112,0,0,60" Panel.ZIndex="5"
                              Text="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"/>
 
-            <Grid x:Name="PokeballIcon" Width="24" Height="24" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="70,0,0,40" Visibility="Collapsed" Panel.ZIndex="10">
+            <!-- 메가진화 순간의 흰 섬광 (메가링 반응 연출이 끝날 때) -->
+            <Rectangle Fill="White" Opacity="0" IsHitTestVisible="False" Panel.ZIndex="20">
+                <Rectangle.Style>
+                    <Style TargetType="Rectangle">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMegaEvolving}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                                <LinearDoubleKeyFrame Value="0" KeyTime="0:0:1.85"/>
+                                                <LinearDoubleKeyFrame Value="0.9" KeyTime="0:0:2.0"/>
+                                                <LinearDoubleKeyFrame Value="0" KeyTime="0:0:2.5"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Rectangle.Style>
+            </Rectangle>
+
+            <!-- 💎 메가진화 버튼: 내 턴 메인 메뉴가 보이고, 이번 배틀에서 아직 메가진화하지 않았을 때 -->
+            <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Margin="30,84,0,0" Panel.ZIndex="15"
+                  Visibility="{Binding IsMainMenuVisible, Converter={StaticResource BoolToVis}}">
+                <Button Visibility="{Binding CanMegaEvolveNow, Converter={StaticResource BoolToVis}}" Click="MegaEvolve_Click" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" CornerRadius="10" Padding="7,2" BorderBrush="#FFFFFF" BorderThickness="1.5">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#7C4DFF" Offset="0"/>
+                                        <GradientStop Color="#E040FB" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <StackPanel Orientation="Horizontal">
+                                    <emoji:TextBlock Text="💎" FontSize="10" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{u:T battle.ui.mega}" Foreground="White" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+
+            <Grid x:Name="PokeballIcon" Width="24" Height="24" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Collapsed" Panel.ZIndex="10">
                 <Grid.RenderTransform>
                     <TransformGroup>
                         <RotateTransform x:Name="PokeballRotate" Angle="0" CenterX="12" CenterY="12"/>
@@ -191,7 +323,10 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
+                        <!-- 긴 이름(Mega Charizard X 등)은 잘리지 않게 글자를 줄여 맞춥니다. -->
+                        <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding PlayerBattleName}" FontSize="12" FontWeight="Bold" Foreground="#333"/>
+                        </Viewbox>
                         <TextBlock Grid.Column="1" Text="{Binding Level, StringFormat={} Lv.{0}}" FontSize="11" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                     </Grid>
 
@@ -253,6 +388,28 @@
                         <Button Content="{u:T battle.ui.catch}" Width="90" Height="35" Margin="0,0,10,0" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="Catch_Click"/>
                         <Button Content="{u:T battle.ui.moveOn}" Width="90" Height="35" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="Leave_Click"/>
                     </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- 메가 폼 선택 창 (리자몽 X/Y처럼 메가 폼이 둘 이상일 때) -->
+        <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsMegaChoiceOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="105">
+            <Border Background="#FAFAFA" CornerRadius="15" Padding="16" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
+                <StackPanel>
+                    <TextBlock Text="{u:T mega.battle.choose}" FontSize="13" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <ItemsControl ItemsSource="{Binding MegaChoices}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding DisplayName}" MinWidth="90" Height="32" Margin="4,0" Background="#8E24AA" Style="{StaticResource RoundedButtonStyle}" Click="MegaChoice_Click"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="{u:T common.cancel}" Width="120" Height="28" Margin="0,10,0,0" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="MegaCancel_Click"/>
                 </StackPanel>
             </Border>
         </Grid>

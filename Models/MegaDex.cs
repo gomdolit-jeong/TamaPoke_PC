@@ -32,6 +32,13 @@ namespace TamaPoke.Models
             (Loc.Instance.IsEnglish ? StoneNameEn ?? StoneNameKo : StoneNameKo ?? StoneNameEn) ?? StoneId;
 
         [JsonIgnore] public string SpriteFileName => $"p{SpeciesId:D4}_{Form}.bin";
+
+        // 배틀 계산용: 메가 폼의 종족값/타입을 PokemonInfo 형태로
+        public PokemonInfo ToPokemonInfo() => new()
+        {
+            Id = SpeciesId, Type1 = Type1, Type2 = Type2,
+            BaseHp = BaseHp, BaseAtk = BaseAtk, BaseDef = BaseDef, BaseSpeed = BaseSpeed, BaseSpA = BaseSpA, BaseSpD = BaseSpD,
+        };
         [JsonIgnore] public bool IsPrimal => Form.StartsWith("Primal", StringComparison.OrdinalIgnoreCase);
 
         // 이미지가 있어야 실제로 메가진화할 수 있습니다. (이미지 업데이트로 새로 생기면 자동으로 가능해짐)

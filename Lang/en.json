@@ -554,5 +554,11 @@
   "bag.mega.ring.has": "💍 Mega Ring · Stones completed: {0}",
   "bag.mega.ring.hint": "Earn {0} gym badges\nto get a Mega Ring.",
   "bag.mega.complete": "Done",
-  "battle.gym.rematchWon": "You won the rematch against {0}!"
+  "battle.gym.rematchWon": "You won the rematch against {0}!",
+  "battle.ui.mega": "Mega Evolve",
+  "mega.battle.choose": "Which form will it Mega Evolve into?",
+  "mega.battle.react": "{0}'s {1} is reacting\nto the Mega Ring!",
+  "mega.battle.reactNoStone": "{0} is reacting\nto the Mega Ring!",
+  "mega.battle.done": "{0} has Mega Evolved\ninto {1}!",
+  "mega.battle.primal": "{0}'s Primal Reversion!\nIt reverted to its primal form!"
 }

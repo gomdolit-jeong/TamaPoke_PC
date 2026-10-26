@@ -264,6 +264,10 @@ namespace TamaPoke.Models
             ANIM_TUMBLE, ANIM_HURT, ANIM_PAIN, ANIM_CRINGE, ANIM_FAINT
         };
 
+        // 스프라이트 시트의 방향 줄: 0 아래(정면), 1 오른쪽 아래, 2 오른쪽, 3 오른쪽 위(뒷모습), 4 위, 5 왼쪽 위, 6 왼쪽, 7 왼쪽 아래
+        private const int BATTLE_PLAYER_ROW = 3; // 배틀 중 내 포켓몬: 뒷모습으로 상대(오른쪽 위)를 바라봄
+        private const int BATTLE_ENEMY_ROW = 7;  // 상대 포켓몬: 앞모습으로 나(왼쪽 아래)를 바라봄
+
         private void UpdateAnimation(int actionToLoad)
         {
             _currentActionId = actionToLoad;
@@ -278,7 +282,7 @@ namespace TamaPoke.Models
             }
             else
             {
-                string targetPath = Path.Combine(spriteFolder, SpriteFileName);
+                string targetPath = Path.Combine(spriteFolder, MegaSpriteFileName ?? SpriteFileName);
                 if (!File.Exists(targetPath)) targetPath = Path.Combine(spriteFolder, $"p{SpeciesId:D4}.bin");
 
                 if (File.Exists(targetPath))
@@ -300,7 +304,11 @@ namespace TamaPoke.Models
                 {
                     int directionRow = Direction;
 
-                    if (!IsFreeRoaming)
+                    if (IsBattleOpen)
+                    {
+                        directionRow = BATTLE_PLAYER_ROW;
+                    }
+                    else if (!IsFreeRoaming)
                     {
                         // 애니메이션을 강제하는 코드를 빼고 깔끔하게 복구!
                         directionRow = SideViewActions.Contains(actionToLoad) ? 6 : 0;
@@ -328,13 +336,9 @@ namespace TamaPoke.Models
         {
             _enemyTempActionId = actionToLoad;
             string spriteFolder = AppPaths.SpriteFolder;
-            string enemyPath = Path.Combine(spriteFolder, $"p{EnemySpeciesId:D4}.bin");
-
-            if (Directory.Exists(spriteFolder))
-            {
-                var matchedFiles = Directory.GetFiles(spriteFolder, $"p{EnemySpeciesId:D4}*.bin");
-                if (matchedFiles.Length > 0) enemyPath = matchedFiles[0];
-            }
+            // 야생은 배틀 시작 때 정한 이미지(이로치/특수 폼 포함)를 그대로 보여줍니다. 잡으면 같은 이미지로 파티에 들어갑니다.
+            string enemyPath = Path.Combine(spriteFolder, string.IsNullOrEmpty(_enemySpriteFileName) ? $"p{EnemySpeciesId:D4}.bin" : _enemySpriteFileName);
+            if (!File.Exists(enemyPath)) enemyPath = Path.Combine(spriteFolder, $"p{EnemySpeciesId:D4}.bin");
 
             if (File.Exists(enemyPath))
             {
@@ -348,7 +352,7 @@ namespace TamaPoke.Models
                     var targetData = rawStrips[stripIndex];
                     if (targetData != null && targetData.Image != null)
                     {
-                        int directionRow = 6;
+                        int directionRow = BATTLE_ENEMY_ROW;
 
                         List<BitmapSource> slicedFrames = SliceStripIntoFrames(targetData.Image, targetData.FrameWidth, targetData.FrameHeight, directionRow);
                         if (slicedFrames.Count > 0) EnemyCurrentFrame = slicedFrames[0];
