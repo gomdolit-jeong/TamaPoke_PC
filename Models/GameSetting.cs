@@ -5,6 +5,9 @@ namespace TamaPoke.Models
 {
     public class GameSettings
     {
+        // 표시 언어 ("ko" / "en"). 비어 있으면 윈도우 언어를 따라갑니다. (Loc.ResolveLanguage)
+        public string? Language { get; set; }
+
         // 시스템 트레이 알림 사용 유무
         public bool UseTrayNotifications { get; set; } = true;
 

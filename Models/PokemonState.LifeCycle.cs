@@ -193,11 +193,11 @@ namespace TamaPoke.Models
 
             if (SpriteFileName.ToLower().Contains("shiny") && Settings.UseTrayNotifications)
             {
-                TrayNotificationRequested?.Invoke("✨ 반짝반짝!", "색이 다른(이로치) 포켓몬이 태어났어요!");
+                TrayNotificationRequested?.Invoke(Loc.T("notify.shiny.title"), Loc.T("notify.shiny.message"));
             }
             else if (SpriteFileName != baseFileName && !SpriteFileName.ToLower().Contains("female") && Settings.UseTrayNotifications)
             {
-                TrayNotificationRequested?.Invoke("✨ 특별한 탄생!", "평소와 다른 특별한 모습의 포켓몬이 태어났어요!");
+                TrayNotificationRequested?.Invoke(Loc.T("notify.special.title"), Loc.T("notify.special.message"));
             }
         }
 
@@ -260,12 +260,12 @@ namespace TamaPoke.Models
             string oldName = Name;
             ResetPosition();
 
-            EvolutionMessage = "오잉!?";
+            EvolutionMessage = Loc.T("evolve.what");
             PlayTempAction(17, 90);
             CheckStateAndAnimate();
             await Task.Delay(1500);
 
-            EvolutionMessage = $"{oldName}의 상태가...?!";
+            EvolutionMessage = Loc.F("evolve.happening", oldName);
             IsEvolvingFlash = true;
             PosY = -20;
             CheckStateAndAnimate();
@@ -279,7 +279,7 @@ namespace TamaPoke.Models
             PlayTempAction(10, 60);
             CheckStateAndAnimate();
 
-            EvolutionMessage = $"축하합니다! {oldName}은(는)\n{Name}(으)로 진화했습니다!";
+            EvolutionMessage = Loc.F("evolve.done", oldName, Name);
             await Task.Delay(3500);
 
             Ceremony = 0;

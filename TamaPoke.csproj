@@ -81,6 +81,11 @@
     <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
   </ItemGroup>
 
+  <!-- 다국어 문구 (Utils/Loc.cs에서 "Lang.{언어}.json" 이름으로 읽음) -->
+  <ItemGroup>
+    <EmbeddedResource Include="Lang\*.json" LogicalName="Lang.%(Filename).json" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Update="Assets\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -23,14 +23,34 @@ namespace TamaPoke
 
         public MainWindow()
         {
-            try { InitializeComponent(); } catch (Exception ex) { System.Windows.MessageBox.Show($"XAML 로드 에러: {ex.InnerException?.Message ?? ex.Message}", "에러 추적기"); }
-            try { SetupSystemTray(); } catch (Exception ex) { System.Windows.MessageBox.Show($"트레이 설정 에러: {ex.Message}", "에러 추적기"); }
+            try { InitializeComponent(); } catch (Exception ex) { System.Windows.MessageBox.Show(Loc.F("app.error.xaml", ex.InnerException?.Message ?? ex.Message), Loc.T("app.error.title")); }
+            try { SetupSystemTray(); } catch (Exception ex) { System.Windows.MessageBox.Show(Loc.F("app.error.tray", ex.Message), Loc.T("app.error.title")); }
 
             this.Topmost = false;
 
             this.Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
             this.KeyDown += MainWindow_KeyDown;
+
+            // 언어가 바뀌면 트레이 메뉴와 코드에서 만든 문구(기분 등)를 다시 그립니다.
+            Loc.LanguageChanged += () =>
+            {
+                ApplyTrayTexts();
+                MyPet?.RefreshLocalizedTexts();
+            };
+        }
+
+        private System.Windows.Forms.ToolStripMenuItem? _openMenuItem, _settingsMenuItem, _updateMenuItem, _exitMenuItem;
+
+        private void ApplyTrayTexts()
+        {
+            if (_notifyIcon == null) return;
+            _notifyIcon.Text = Loc.T("app.name");
+            if (_openMenuItem != null) _openMenuItem.Text = Loc.T("tray.open");
+            if (_walkModeMenuItem != null) _walkModeMenuItem.Text = Loc.T("tray.walk");
+            if (_settingsMenuItem != null) _settingsMenuItem.Text = Loc.T("tray.settings");
+            if (_updateMenuItem != null) _updateMenuItem.Text = Loc.T("tray.update");
+            if (_exitMenuItem != null) _exitMenuItem.Text = Loc.T("tray.exit");
         }
 
         private void SetupSystemTray()
@@ -40,17 +60,17 @@ namespace TamaPoke
 
             if (System.IO.File.Exists(iconPath)) _notifyIcon.Icon = new System.Drawing.Icon(iconPath);
 
-            _notifyIcon.Text = "다마포케 (TamaPoke)";
+
             _notifyIcon.Visible = true;
             _notifyIcon.DoubleClick += (s, e) => ShowMainWindow();
 
             var contextMenu = new System.Windows.Forms.ContextMenuStrip();
 
-            var openMenuItem = new System.Windows.Forms.ToolStripMenuItem("다마포케 화면에 띄우기");
+            var openMenuItem = _openMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             openMenuItem.Click += (s, e) => ShowMainWindow();
 
             // 🌟 산책 모드 메뉴 설정
-            _walkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem("산책 모드");
+            _walkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             _walkModeMenuItem.ShortcutKeyDisplayString = "Ctrl+W";
             _walkModeMenuItem.CheckOnClick = true;
             _walkModeMenuItem.CheckedChanged += (s, e) =>
@@ -59,16 +79,16 @@ namespace TamaPoke
                 if (_isWalkModeActive) StartWalk(); else StopWalk();
             };
 
-            var settingsMenuItem = new System.Windows.Forms.ToolStripMenuItem("게임 설정");
+            var settingsMenuItem = _settingsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             settingsMenuItem.ShortcutKeyDisplayString = "Ctrl+O"; // 👈 우측에 단축키 텍스트를 예쁘게 띄워줍니다.
             settingsMenuItem.Click += (s, e) => OpenSettingsWindow();
 
             // 🌟 [통합 업데이트 메뉴] 하나의 버튼으로 두 기능을 순차적으로 실행합니다!
-            var updateMenuItem = new System.Windows.Forms.ToolStripMenuItem("다마포케 통합 업데이트");
+            var updateMenuItem = _updateMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             updateMenuItem.ShortcutKeyDisplayString = "Ctrl+U"; // 👈 우측에 단축키 텍스트를 예쁘게 띄워줍니다.
             updateMenuItem.Click += (s, e) => OpenUpdateWindow();
 
-            var exitMenuItem = new System.Windows.Forms.ToolStripMenuItem("완전히 종료하기");
+            var exitMenuItem = _exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             exitMenuItem.Click += (s, e) => ConfirmAndExit();
 
             contextMenu.Items.Add(openMenuItem);
@@ -81,6 +101,7 @@ namespace TamaPoke
             contextMenu.Items.Add(exitMenuItem);
 
             _notifyIcon.ContextMenuStrip = contextMenu;
+            ApplyTrayTexts();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -130,7 +151,7 @@ namespace TamaPoke
 
         public void ConfirmAndExit()
         {
-            var result = System.Windows.MessageBox.Show("정말로 다마포케를 종료하시겠습니까?", "다마포케 종료", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var result = System.Windows.MessageBox.Show(Loc.T("exit.confirm.message"), Loc.T("exit.confirm.title"), MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) return;
 
             _notifyIcon?.Dispose();
@@ -205,7 +226,7 @@ namespace TamaPoke
 
             if (MyPet != null && MyPet.Settings.UseTrayNotifications && _notifyIcon != null && _notifyIcon.Visible)
             {
-                _notifyIcon.ShowBalloonTip(3000, "산책 중 발견!", $"{item.Name}을(를) 주웠어요!", System.Windows.Forms.ToolTipIcon.Info);
+                _notifyIcon.ShowBalloonTip(3000, Loc.T("walk.found.title"), Loc.F("walk.found.message", item.Name), System.Windows.Forms.ToolTipIcon.Info);
             }
         }
 

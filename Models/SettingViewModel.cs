@@ -28,6 +28,9 @@ namespace TamaPoke.ViewModels
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
+    // 언어 선택 콤보박스 항목 (WPF 바인딩은 튜플 필드를 읽지 못하므로 속성을 가진 레코드로)
+    public record LanguageOption(string Code, string Name);
+
     public class SettingsViewModel : INotifyPropertyChanged
     {
         private GameSettings _settings = new GameSettings();
@@ -58,6 +61,15 @@ namespace TamaPoke.ViewModels
         }
 
         public ObservableCollection<GenerationOption> Generations { get; set; }
+
+        // 언어 선택 (저장하면 즉시 적용)
+        public IReadOnlyList<LanguageOption> Languages { get; } = Loc.Supported.Select(l => new LanguageOption(l.Code, l.Name)).ToList();
+        private string _selectedLanguage = Loc.Korean;
+        public string SelectedLanguage
+        {
+            get => _selectedLanguage;
+            set { _selectedLanguage = value; OnPropertyChanged(); }
+        }
         public ICommand SaveCommand { get; }
         public event Action? RequestClose;
 
@@ -77,24 +89,18 @@ namespace TamaPoke.ViewModels
                 Settings.RoamingPokemonCount = 1;
             }
 
-            // 1~9세대 지방명 매핑 초기화
-            var genNames = new Dictionary<int, string>
-            {
-                { 1, "1세대 (관동 지방)" }, { 2, "2세대 (성도 지방)" }, { 3, "3세대 (호연 지방)" },
-                { 4, "4세대 (신오 지방)" }, { 5, "5세대 (하나 지방)" }, { 6, "6세대 (칼로스 지방)" },
-                { 7, "7세대 (알로라 지방)" }, { 8, "8세대 (가라르 지방)" }, { 9, "9세대 (팔데아 지방)" }
-            };
-
             Generations = new ObservableCollection<GenerationOption>();
-            foreach (var kvp in genNames)
+            for (int gen = 1; gen <= 9; gen++)
             {
                 Generations.Add(new GenerationOption
                 {
-                    GenNumber = kvp.Key,
-                    DisplayText = kvp.Value,
-                    IsSelected = Settings.SelectedGenerations.Contains(kvp.Key)
+                    GenNumber = gen,
+                    DisplayText = Loc.T($"gen.{gen}"),
+                    IsSelected = Settings.SelectedGenerations.Contains(gen)
                 });
             }
+
+            _selectedLanguage = Loc.Instance.Language;
 
             SaveCommand = new RelayCommand(SaveSettings);
         }
@@ -111,7 +117,9 @@ namespace TamaPoke.ViewModels
                 Settings.SelectedGenerations.Add(1);
             }
 
+            Settings.Language = SelectedLanguage;
             SettingsManager.Save(Settings);
+            if (Loc.Instance.Language != SelectedLanguage) Loc.Instance.SetLanguage(SelectedLanguage);
             RequestClose?.Invoke();
         }
 

@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TamaPoke.Models;
 using TamaPoke.Utils.Service;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Views
 {
@@ -290,8 +291,8 @@ namespace TamaPoke.Views
             if (DataContext is PokemonState pet && pet.IsAlive && !pet.IsEgg && !pet.IsSleeping)
             {
                 MessageBoxResult result = System.Windows.MessageBox.Show(
-                    "정말로 포켓몬을 자연으로 놔주시겠습니까?\n이 결정은 되돌릴 수 없습니다.",
-                    "자연으로 놔주기",
+                    Loc.T("release.confirm.message"),
+                    Loc.T("release.confirm.title"),
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 

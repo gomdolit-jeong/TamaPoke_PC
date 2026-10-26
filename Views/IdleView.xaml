@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="TamaPoke.Views.IdleView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:u="clr-namespace:TamaPoke.Utils"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:conv="clr-namespace:TamaPoke.Converters"
@@ -161,12 +162,12 @@
 
                 <Grid.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="📖 포켓몬 도감 열기" Click="MenuDex_Click"/>
-                        <MenuItem Header="📋 상세 프로필 열기" Click="MenuProfile_Click"/>
-                        <MenuItem Header="📂 파티 보기" Click="MenuItem_OpenParty_Click"/>
-                        <MenuItem Header="🎒 가방 열기" Click="MenuInventory_Click"/>
+                        <MenuItem Header="{u:T idle.menu.dex}" Click="MenuDex_Click"/>
+                        <MenuItem Header="{u:T idle.menu.profile}" Click="MenuProfile_Click"/>
+                        <MenuItem Header="{u:T idle.menu.party}" Click="MenuItem_OpenParty_Click"/>
+                        <MenuItem Header="{u:T idle.menu.bag}" Click="MenuInventory_Click"/>
                         <Separator/>
-                        <MenuItem Header="🍃 자연으로 놔주기" Click="MenuRelease_Click"/>
+                        <MenuItem Header="{u:T idle.menu.release}" Click="MenuRelease_Click"/>
                     </ContextMenu>
                 </Grid.ContextMenu>
 
@@ -289,14 +290,14 @@
 
                         <Grid Visibility="{Binding CanShowEvolvePrompt, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
                             <StackPanel Orientation="Horizontal">
-                                <Button Content="✨ 진화하기 ✨" FontSize="14" FontWeight="Bold" Background="#E53935" Foreground="#FFFFFF" Padding="15,8" BorderThickness="0" Cursor="Hand" Click="Evolve_Click" Margin="0,0,5,0">
+                                <Button Content="{u:T idle.evolve}" FontSize="14" FontWeight="Bold" Background="#E53935" Foreground="#FFFFFF" Padding="15,8" BorderThickness="0" Cursor="Hand" Click="Evolve_Click" Margin="0,0,5,0">
                                     <Button.Resources>
                                         <Style TargetType="Border">
                                             <Setter Property="CornerRadius" Value="15"/>
                                         </Style>
                                     </Button.Resources>
                                 </Button>
-                                <Button Content="💤 다음에" FontSize="12" FontWeight="Bold" Background="#757575" Foreground="#FFFFFF" Padding="10,8" BorderThickness="0" Cursor="Hand" Click="PostponeEvolve_Click">
+                                <Button Content="{u:T idle.later}" FontSize="12" FontWeight="Bold" Background="#757575" Foreground="#FFFFFF" Padding="10,8" BorderThickness="0" Cursor="Hand" Click="PostponeEvolve_Click">
                                     <Button.Resources>
                                         <Style TargetType="Border">
                                             <Setter Property="CornerRadius" Value="15"/>
@@ -308,14 +309,14 @@
 
                         <Grid Visibility="{Binding CanShowFarewellPrompt, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
                             <StackPanel Orientation="Horizontal">
-                                <Button Content="⭐ 작별하기 ⭐" FontSize="12" FontWeight="Bold" Background="#FFD54F" Foreground="#4E342E" Padding="12,8" BorderThickness="0" Cursor="Hand" Click="StartFarewell_Click" Margin="0,0,5,0">
+                                <Button Content="{u:T idle.farewell}" FontSize="12" FontWeight="Bold" Background="#FFD54F" Foreground="#4E342E" Padding="12,8" BorderThickness="0" Cursor="Hand" Click="StartFarewell_Click" Margin="0,0,5,0">
                                     <Button.Resources>
                                         <Style TargetType="Border">
                                             <Setter Property="CornerRadius" Value="15"/>
                                         </Style>
                                     </Button.Resources>
                                 </Button>
-                                <Button Content="💤 다음에" FontSize="12" FontWeight="Bold" Background="#757575" Foreground="#FFFFFF" Padding="10,8" BorderThickness="0" Cursor="Hand" Click="PostponeFarewell_Click">
+                                <Button Content="{u:T idle.later}" FontSize="12" FontWeight="Bold" Background="#757575" Foreground="#FFFFFF" Padding="10,8" BorderThickness="0" Cursor="Hand" Click="PostponeFarewell_Click">
                                     <Button.Resources>
                                         <Style TargetType="Border">
                                             <Setter Property="CornerRadius" Value="15"/>
@@ -326,7 +327,7 @@
                         </Grid>
 
                         <Grid Visibility="{Binding CanRunawayNow, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
-                            <Button Content="🌧️ 포켓몬이 떠나려 합니다..." FontSize="14" FontWeight="Bold" Background="#78909C" Foreground="#FFFFFF" Padding="15,10" BorderThickness="0" Cursor="Hand" Click="StartRunaway_Click">
+                            <Button Content="{u:T idle.runaway}" FontSize="14" FontWeight="Bold" Background="#78909C" Foreground="#FFFFFF" Padding="15,10" BorderThickness="0" Cursor="Hand" Click="StartRunaway_Click">
                                 <Button.Resources>
                                     <Style TargetType="Border">
                                         <Setter Property="CornerRadius" Value="20"/>
@@ -348,13 +349,13 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="포만" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{u:T stat.fullness}" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
                         <ProgressBar Grid.Row="0" Grid.Column="1" Value="{Binding Fullness}" Foreground="{Binding Fullness, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Fullness, StringFormat={}{0} / 100}"/>
-                        <TextBlock Grid.Row="0" Grid.Column="2" Text="행복" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="15,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="{u:T stat.joy}" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="15,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
                         <ProgressBar Grid.Row="0" Grid.Column="3" Value="{Binding Joy}" Foreground="{Binding Joy, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Joy, StringFormat={}{0} / 100}"/>
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="기력" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{u:T stat.energy}" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
                         <ProgressBar Grid.Row="1" Grid.Column="1" Value="{Binding Energy}" Foreground="{Binding Energy, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Energy, StringFormat={}{0} / 100}"/>
-                        <TextBlock Grid.Row="1" Grid.Column="2" Text="청결" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="15,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="{u:T stat.hygiene}" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="15,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
                         <ProgressBar Grid.Row="1" Grid.Column="3" Value="{Binding Hygiene}" Foreground="{Binding Hygiene, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Hygiene, StringFormat={}{0} / 100}"/>
                     </Grid>
 
@@ -365,16 +366,16 @@
                                 HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" 
                                 Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Button Style="{StaticResource PhysicalButton}" ToolTip="빨간 열매" Click="FeedItem_Click" Tag="0">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T food.red}" Click="FeedItem_Click" Tag="0">
                                     <emoji:TextBlock Text="🍒" FontSize="16" Foreground="#E53935"/>
                                 </Button>
-                                <Button Style="{StaticResource PhysicalButton}" ToolTip="파란 열매" Click="FeedItem_Click" Tag="1">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T food.blue}" Click="FeedItem_Click" Tag="1">
                                     <emoji:TextBlock Text="🫐" FontSize="16" Foreground="#1E88E5"/>
                                 </Button>
-                                <Button Style="{StaticResource PhysicalButton}" ToolTip="초록 열매" Click="FeedItem_Click" Tag="2">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T food.green}" Click="FeedItem_Click" Tag="2">
                                     <emoji:TextBlock Text="🍏" FontSize="16" Foreground="#43A047"/>
                                 </Button>
-                                <Button Style="{StaticResource PhysicalButton}" ToolTip="사탕 (비만 주의!)" Click="FeedItem_Click" Tag="3">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T food.candy}" Click="FeedItem_Click" Tag="3">
                                     <emoji:TextBlock Text="🍬" FontSize="16" Foreground="#F06292"/>
                                 </Button>
                             </StackPanel>
@@ -385,16 +386,16 @@
                                 HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" 
                                 Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Button Style="{StaticResource PhysicalButton}" ToolTip="BALL: 공 튕기기" Click="PlayBall_Click">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T game.ball}" Click="PlayBall_Click">
                                     <emoji:TextBlock Text="⚽" FontSize="14" Foreground="#1E88E5"/>
                                 </Button>
-                                <Button Style="{StaticResource PhysicalButton}" ToolTip="CATCH: 과일 받기" Click="PlayCatch_Click">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T game.catch}" Click="PlayCatch_Click">
                                     <emoji:TextBlock Text="🍎" FontSize="14" Foreground="#E53935"/>
                                 </Button>
-                                <Button Style="{StaticResource PhysicalButton}" ToolTip="MEMO: 리듬 메모리" Click="PlayMemo_Click">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T game.memo}" Click="PlayMemo_Click">
                                     <emoji:TextBlock Text="🎹" FontSize="14" Foreground="#8E24AA"/>
                                 </Button>
-                                <Button Style="{StaticResource PhysicalButton}" ToolTip="CLEAN: 오염 청소" Click="PlayClean_Click">
+                                <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T game.clean}" Click="PlayClean_Click">
                                     <emoji:TextBlock Text="✨" FontSize="14" Foreground="#00ACC1"/>
                                 </Button>
                             </StackPanel>
@@ -412,19 +413,19 @@
                                 </Style.Triggers>
                             </Style>
                         </StackPanel.Style>
-                        <Button Style="{StaticResource PhysicalButton}" ToolTip="밥 주기 메뉴" Click="ToggleFeedMenu_Click" IsEnabled="{Binding IsAlive}">
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.feed}" Click="ToggleFeedMenu_Click" IsEnabled="{Binding IsAlive}">
                             <emoji:TextBlock Text="🍎" FontSize="13" Foreground="#E53935"/>
                         </Button>
-                        <Button Style="{StaticResource PhysicalButton}" ToolTip="미니게임 선택" Click="TogglePlayMenu_Click" IsEnabled="{Binding IsAlive}">
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.play}" Click="TogglePlayMenu_Click" IsEnabled="{Binding IsAlive}">
                             <emoji:TextBlock Text="🎮" FontSize="13" Foreground="#8E24AA"/>
                         </Button>
-                        <Button Style="{StaticResource PhysicalButton}" ToolTip="수면" Click="SleepButton_Click" IsEnabled="{Binding IsAlive}">
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.sleep}" Click="SleepButton_Click" IsEnabled="{Binding IsAlive}">
                             <emoji:TextBlock Text="🌙" FontSize="13" Foreground="#FBC02D"/>
                         </Button>
-                        <Button Style="{StaticResource PhysicalButton}" ToolTip="목욕" Click="CleanButton_Click" IsEnabled="{Binding IsAlive}">
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.bath}" Click="CleanButton_Click" IsEnabled="{Binding IsAlive}">
                             <emoji:TextBlock Text="🫧" FontSize="13" Foreground="#4DD0E1"/>
                         </Button>
-                        <Button Style="{StaticResource PhysicalButton}" ToolTip="시간 가속" Click="SkipTimeButton_Click" IsEnabled="{Binding IsAlive}"
+                        <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.skip}" Click="SkipTimeButton_Click" IsEnabled="{Binding IsAlive}"
                             Visibility="{Binding IsDebugMode, Converter={StaticResource BoolToVis}}">
                             <emoji:TextBlock Text="⏩" FontSize="13" Foreground="#8E24AA"/>
                         </Button>
@@ -487,7 +488,7 @@
         </Border>
 
         <!-- 소리 설정 및 투명도 슬라이더 -->
-        <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,-15,0" Width="40" Height="40" Click="MuteButton_Click" ToolTip="소리 설정" Cursor="Hand">
+        <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,35,-15,0" Width="40" Height="40" Click="MuteButton_Click" ToolTip="{u:T idle.btn.sound}" Cursor="Hand">
             <Button.Style>
                 <Style TargetType="Button">
                     <Setter Property="Template">
@@ -519,7 +520,7 @@
         Margin="264, 50, 0, 0" 
         Height="100" Width="22" 
         IsMoveToPointEnabled="True"
-        ToolTip="몰래 하기 (투명도 조절)">
+        ToolTip="{u:T idle.btn.stealth}">
             <Slider.RenderTransform>
                 <RotateTransform Angle="-24.5" CenterX="11" CenterY="50"/>
             </Slider.RenderTransform>

@@ -1,8 +1,9 @@
 ﻿<Window x:Class="TamaPoke.Views.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:u="clr-namespace:TamaPoke.Utils"
         xmlns:viewmodels="clr-namespace:TamaPoke.ViewModels"
-        Title="게임 설정" Height="600" Width="400"
+        Title="{u:T settings.title}" Height="640" Width="400"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
 
     <Window.DataContext>
@@ -11,6 +12,8 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <!-- 언어 선택 -->
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -20,59 +23,68 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- 0. 언어 선택 (저장하면 즉시 적용) -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+            <TextBlock Text="{u:T settings.language}" VerticalAlignment="Center" Width="120"/>
+            <ComboBox ItemsSource="{Binding Languages}" SelectedValue="{Binding SelectedLanguage}"
+                      SelectedValuePath="Code" DisplayMemberPath="Name" Width="175" VerticalAlignment="Center"/>
+        </StackPanel>
+
         <!-- 1. 트레이 알림 설정 -->
-        <CheckBox Grid.Row="0" Content="시스템 트레이 알림 사용" 
+        <CheckBox Grid.Row="1" Content="{u:T settings.tray}" 
                   IsChecked="{Binding UseTrayNotifications}" 
                   VerticalContentAlignment="Center" Margin="0,0,0,15"/>
 
         <!-- 2. 이별 기준일 설정 -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,20">
+        <StackPanel Grid.Row="2" Margin="0,0,0,20">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="이별 기준일 (일):" VerticalAlignment="Center" Width="120"/>
+                <TextBlock Text="{u:T settings.farewell}" VerticalAlignment="Center" Width="120"/>
                 <Slider Minimum="1" Maximum="30" Value="{Binding Settings.FarewellAgeDays, Mode=TwoWay}" Width="120" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
                 <TextBox Text="{Binding Settings.FarewellAgeDays, UpdateSourceTrigger=PropertyChanged}" Width="45" Margin="10,0,0,0" TextAlignment="Center" VerticalAlignment="Center"/>
             </StackPanel>
-            <TextBlock Text="💡 추천은 최소 3일 이상입니다." FontSize="11" Foreground="#757575" Margin="120,4,0,0"/>
+            <TextBlock Text="{u:T settings.farewell.hint}" FontSize="11" Foreground="#757575" Margin="120,4,0,0"/>
         </StackPanel>
 
         <!-- 🌟 3. 바탕화면 포켓몬 설정 그룹 (수 조절 + 크기 조절 통합) -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,20">
+        <StackPanel Grid.Row="3" Margin="0,0,0,20">
 
             <!-- 포켓몬 수 설정 영역 -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="바탕화면 포켓몬 수:" VerticalAlignment="Center" Width="120"/>
+                <TextBlock Text="{u:T settings.roamCount}" VerticalAlignment="Center" Width="120"/>
                 <Slider Minimum="1" Maximum="6" 
                         Value="{Binding RoamingPokemonCount, Mode=TwoWay}" 
                         Width="120" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
                 <TextBox Text="{Binding Settings.RoamingPokemonCount, UpdateSourceTrigger=PropertyChanged}" 
                          Width="45" Margin="10,0,0,0" TextAlignment="Center" VerticalAlignment="Center"/>
             </StackPanel>
-            <TextBlock Text="💡 파티에 있는 포켓몬 수만큼만 등장합니다." FontSize="11" Foreground="#757575" Margin="120,4,0,15"/>
+            <TextBlock Text="{u:T settings.roamCount.hint}" FontSize="11" Foreground="#757575" Margin="120,4,0,15"/>
 
             <!-- 🌟 [새로 추가된 코드] 포켓몬 크기 설정 영역 -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="포켓몬 크기 (배율):" VerticalAlignment="Center" Width="120"/>
+                <TextBlock Text="{u:T settings.scale}" VerticalAlignment="Center" Width="120"/>
                 <!-- 1배부터 3배까지 0.5 단위로 조절되도록 구성했습니다. -->
                 <Slider Minimum="1.0" Maximum="3.0" 
                         Value="{Binding Settings.RoamingPetScale, Mode=TwoWay}" 
                         Width="120" TickFrequency="0.5" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding Settings.RoamingPetScale, StringFormat={}{0:F1} 배}" 
-                           Width="50" Margin="10,0,0,0" TextAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                <StackPanel Orientation="Horizontal" Width="50" Margin="10,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding Settings.RoamingPetScale, StringFormat={}{0:F1}}" FontWeight="Bold"/>
+                    <TextBlock Text="{u:T settings.scale.unit}" FontWeight="Bold" Margin="2,0,0,0"/>
+                </StackPanel>
             </StackPanel>
-            <TextBlock Text="💡 산책 모드의 픽셀 크기를 조절합니다." FontSize="11" Foreground="#757575" Margin="120,4,0,15"/>
+            <TextBlock Text="{u:T settings.scale.hint}" FontSize="11" Foreground="#757575" Margin="120,4,0,15"/>
 
             <!-- 작업표시줄 설정 영역 -->
-            <CheckBox Content="작업표시줄 위에서만 놀기" 
+            <CheckBox Content="{u:T settings.taskbar}" 
                       IsChecked="{Binding IsTaskbarMode}" 
                       VerticalContentAlignment="Center" Margin="0,0,0,0"/>
 
         </StackPanel>
 
         <!-- 4. 부화 세대 안내 텍스트 -->
-        <TextBlock Grid.Row="3" Text="부화 대상 세대 선택 (지방별)" FontWeight="Bold" Margin="0,0,0,10"/>
+        <TextBlock Grid.Row="4" Text="{u:T settings.generations}" FontWeight="Bold" Margin="0,0,0,10"/>
 
         <!-- 5. 세대별 체크박스 목록 -->
-        <ItemsControl Grid.Row="4" ItemsSource="{Binding Generations}" Margin="0,0,0,15">
+        <ItemsControl Grid.Row="5" ItemsSource="{Binding Generations}" Margin="0,0,0,15">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <StackPanel Orientation="Vertical"/>
@@ -88,16 +100,16 @@
         </ItemsControl>
 
         <!-- 6. 하단 버튼 영역 (초기화 및 저장) -->
-        <Grid Grid.Row="5" Margin="0,10,0,0">
+        <Grid Grid.Row="6" Margin="0,10,0,0">
             <!-- 🌟 왼쪽: 빨간색 공장 초기화 버튼 (Click 이벤트로 변경) -->
-            <Button Content="공장 초기화" 
+            <Button Content="{u:T settings.reset}" 
                     Click="FactoryReset_Click" 
                     Width="110" Height="32" HorizontalAlignment="Left"
                     Background="#D32F2F" Foreground="White" FontWeight="Bold"
-                    ToolTip="모든 포켓몬 데이터와 설정이 초기화됩니다."/>
+                    ToolTip="{u:T settings.reset.tooltip}"/>
 
             <!-- 오른쪽: 저장 및 닫기 버튼 -->
-            <Button Content="저장 및 닫기" 
+            <Button Content="{u:T settings.save}" 
                     Command="{Binding SaveCommand}" 
                     Width="110" Height="32" HorizontalAlignment="Right"/>
         </Grid>

@@ -15,6 +15,7 @@ namespace TamaPoke
             base.OnStartup(e);
 
             // 앱이 시작될 때 포켓몬/기술 데이터를 가장 먼저 메모리에 로드합니다.
+            TamaPoke.Utils.Loc.Instance.SetLanguage(TamaPoke.Utils.Loc.ResolveLanguage(TamaPoke.Utils.SettingsManager.Current.Language));
             PokemonDex.LoadPokemonData();
             TamaPoke.Utils.SkillDex.LoadSkillData();
         }

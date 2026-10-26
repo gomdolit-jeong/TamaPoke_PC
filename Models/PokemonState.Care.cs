@@ -100,7 +100,7 @@ namespace TamaPoke.Models
                 Hygiene = Clamp100(Hygiene - (10 * Poops));
 
                 if (Settings.UseTrayNotifications)
-                    TrayNotificationRequested?.Invoke("화장실 알림", "💩");
+                    TrayNotificationRequested?.Invoke(Loc.T("notify.poop.title"), "💩");
             }
 
             if (AgeMinutes % 10 == 0) { int dJoy = 0; if (Fullness < 30) dJoy -= 2; if (Hygiene < 30) dJoy -= 3; Joy = Clamp100(Joy + dJoy); }
@@ -125,7 +125,7 @@ namespace TamaPoke.Models
 
             if (Fullness < 30 && !_notifiedHunger)
             {
-                if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke("배고픔 알림", "🍚");
+                if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke(Loc.T("notify.hunger.title"), "🍚");
                 _notifiedHunger = true;
             }
             else if (Fullness >= 30)
@@ -135,7 +135,7 @@ namespace TamaPoke.Models
 
             if (Joy < 30 && !_notifiedSadness)
             {
-                if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke("우울함 알림", "🥹");
+                if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke(Loc.T("notify.sad.title"), "🥹");
                 _notifiedSadness = true;
             }
             else if (Joy >= 30)

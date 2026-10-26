@@ -215,7 +215,7 @@ namespace TamaPoke.Models
             get
             {
                 if (_overrideName != null) return _overrideName;
-                if (IsEgg) return "알";
+                if (IsEgg) return Loc.T("pokemon.egg");
 
                 string baseName = PokemonDex.GetName(SpeciesId).Replace("♀", "").Replace("♂", "");
 
@@ -356,30 +356,30 @@ namespace TamaPoke.Models
         {
             get
             {
-                if (Ceremony == 4) return string.IsNullOrEmpty(EvolutionMessage) ? "✨ 진화하는 중입니다... ✨" : EvolutionMessage;
+                if (Ceremony == 4) return string.IsNullOrEmpty(EvolutionMessage) ? Loc.T("mood.evolving") : EvolutionMessage;
 
                 // 잠깐 보여주는 이벤트 메시지 (기술 습득 결과, 산책 요약 등)
                 if (!string.IsNullOrEmpty(_eventMessage)) return _eventMessage;
 
-                if (IsBattleOpen) return "야생 포켓몬과 배틀 중!";
-                if (IsProfileOpen) return "프로필 확인 중...";
-                if (IsBallGameOpen) return "집중해서 공을 튕기세요!";
-                if (IsCatchGameOpen) return "과일을 빠르게 받으세요!";
-                if (IsMemoGameOpen) return "순서를 잘 기억하세요!";
-                if (IsCleanGameOpen) return "먼지를 깨끗하게 청소하세요!";
-                if (Ceremony == 1) return "마지막 인사를 하고 있어요...";
-                if (Ceremony == 2) return "너무 슬퍼서 집을 나갔어요...";
-                if (Ceremony == 3) return "자연으로 돌아가고 있어요...\n안녕!";
-                if (IsEgg) return "부화를 기다리는 중...";
-                if (IsSleeping) return "쿨쿨 자고 있어요";
-                if (CanRunawayNow) return "아무도 돌봐주지 않아\n외로워요...";
-                if (CanFarewellNow) return "당신에게 할 말이 있나 봐요!";
-                if (Poops > 0) return "응가를 했어요!\n청소해줘";
-                if (Hygiene < 30) return "몸이 더러워서 가려워요";
-                if (LowestStat < 30) return "기분이 아주 안 좋아요...";
-                if (LowestStat < 50) return "조금 기운이 없어요";
-                if (Fullness > 80 && Joy > 80) return "정말 행복해요!";
-                return "기분이 좋아요";
+                if (IsBattleOpen) return Loc.T("mood.battle");
+                if (IsProfileOpen) return Loc.T("mood.profile");
+                if (IsBallGameOpen) return Loc.T("mood.game.ball");
+                if (IsCatchGameOpen) return Loc.T("mood.game.catch");
+                if (IsMemoGameOpen) return Loc.T("mood.game.memo");
+                if (IsCleanGameOpen) return Loc.T("mood.game.clean");
+                if (Ceremony == 1) return Loc.T("mood.farewell");
+                if (Ceremony == 2) return Loc.T("mood.runaway");
+                if (Ceremony == 3) return Loc.T("mood.release");
+                if (IsEgg) return Loc.T("mood.egg");
+                if (IsSleeping) return Loc.T("mood.sleeping");
+                if (CanRunawayNow) return Loc.T("mood.lonely");
+                if (CanFarewellNow) return Loc.T("mood.wantsToTalk");
+                if (Poops > 0) return Loc.T("mood.poop");
+                if (Hygiene < 30) return Loc.T("mood.dirty");
+                if (LowestStat < 30) return Loc.T("mood.veryBad");
+                if (LowestStat < 50) return Loc.T("mood.tired");
+                if (Fullness > 80 && Joy > 80) return Loc.T("mood.veryHappy");
+                return Loc.T("mood.good");
             }
         }
         #endregion
@@ -404,12 +404,12 @@ namespace TamaPoke.Models
 
         private int _profilePage = 0;
         [JsonIgnore] public int ProfilePage { get => _profilePage; set { SetProperty(ref _profilePage, value); OnPropertyChanged(nameof(ProfilePageDisplay)); } }
-        [JsonIgnore] public string ProfilePageDisplay => $"페이지 {ProfilePage + 1} / 6";
+        [JsonIgnore] public string ProfilePageDisplay => Loc.F("profile.page", ProfilePage + 1);
 
         private bool _berryKnown = false;
         public bool BerryKnown { get => _berryKnown; set { if (SetProperty(ref _berryKnown, value)) CheckMedals(); } }
         [JsonIgnore] public int FavoriteBerry => Math.Abs(SpeciesId) % 3;
-        [JsonIgnore] public string FavoriteBerryName => !BerryKnown ? "???" : (FavoriteBerry == 0 ? "🍒 빨간 열매" : FavoriteBerry == 1 ? "🫐 파란 열매" : "🍏 초록 열매");
+        [JsonIgnore] public string FavoriteBerryName => !BerryKnown ? "???" : (FavoriteBerry == 0 ? Loc.T("berry.red") : FavoriteBerry == 1 ? Loc.T("berry.blue") : Loc.T("berry.green"));
 
         #endregion
 
@@ -479,11 +479,11 @@ namespace TamaPoke.Models
             get
             {
                 if (IsEgg) return "";
-                if (IsFinalEvolution) return "최종 진화 형태 달성";
-                if (!DexTable.ContainsKey(SpeciesId)) return "진화 정보 없음";
+                if (IsFinalEvolution) return Loc.T("evolve.progress.final");
+                if (!DexTable.ContainsKey(SpeciesId)) return Loc.T("evolve.progress.noInfo");
                 int targetLv = DexTable[SpeciesId].EvolveLevel + CareMistakes;
                 int remaining = targetLv - Level;
-                return remaining <= 0 ? (LowestStat >= 40 ? "진화 조건 충족!" : "컨디션(40) 부족으로 보류됨") : $"진화까지 {remaining} 레벨 남음";
+                return remaining <= 0 ? (LowestStat >= 40 ? Loc.T("evolve.progress.ready") : Loc.T("evolve.progress.lowCondition")) : Loc.F("evolve.progress.remaining", remaining);
             }
         }
 
@@ -611,6 +611,9 @@ namespace TamaPoke.Models
 
         #region 🌟 INotifyPropertyChanged 구현 (UI Update Notifications)
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        // 언어가 바뀌었을 때: 모든 바인딩을 다시 읽게 해서 코드에서 만든 문구(기분, 진화 진행 등)를 새 언어로 갱신
+        public void RefreshLocalizedTexts() => OnPropertyChanged(string.Empty);
 
         public void OnPropertyChanged([CallerMemberName] string? propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -87,13 +88,13 @@ namespace TamaPoke.Models
 
             // 메인 화면 문구 영역이 좁으므로 최대 두 줄로 요약합니다.
             string summary = Level > _walkStartLevel
-                ? $"산책에서 돌아왔어요! Lv.{_walkStartLevel} → Lv.{Level}"
-                : $"산책에서 돌아왔어요! ({_walkMinutes}분)";
+                ? Loc.F("walk.summary.levelup", _walkStartLevel, Level)
+                : Loc.F("walk.summary.minutes", _walkMinutes);
             if (_walkFoundItems.Count > 0)
             {
                 summary += _walkFoundItems.Count == 1
-                    ? $"\n🎁 {_walkFoundItems[0]}을(를) 주웠어요"
-                    : $"\n🎁 {_walkFoundItems[0]} 외 {_walkFoundItems.Count - 1}개를 주웠어요";
+                    ? Loc.F("walk.summary.item.one", _walkFoundItems[0])
+                    : Loc.F("walk.summary.item.many", _walkFoundItems[0], _walkFoundItems.Count - 1);
             }
             _ = ShowEventMessageAsync(summary, 6);
         }
