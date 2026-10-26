@@ -121,7 +121,7 @@ namespace TamaPoke
             Dispatcher.BeginInvoke(ShowStartupWarnings, DispatcherPriority.ApplicationIdle);
         }
 
-        // 세이브 복구/손상, 게임 데이터(Data 폴더) 손상을 알립니다.
+        // 세이브 복구/손상, 필요한 리소스(Data 파일, 포켓몬 이미지)가 없거나 깨진 경우를 알립니다.
         private void ShowStartupWarnings()
         {
             string corruptName = PokemonState.CorruptSaveFileName ?? "-";
@@ -130,14 +130,24 @@ namespace TamaPoke
             else if (PokemonState.LastLoadResult == PokemonState.SaveLoadResult.Corrupted)
                 System.Windows.MessageBox.Show(this, Loc.F("save.corrupted", corruptName), Loc.T("common.error"), MessageBoxButton.OK, MessageBoxImage.Error);
 
-            var broken = new List<string>();
-            if (!PokemonDex.IsLoaded) broken.Add("pokemon_data.json");
-            if (!SkillDex.IsMoveDbLoaded) broken.Add("pokemon_movedb.json");
-            if (!SkillDex.IsLearnsetLoaded) broken.Add("pokemon_skills.json");
-            if (broken.Count == 0) return;
+            var broken = ResourceCheck.FindBrokenDataFiles();
+            var sprites = ResourceCheck.GetSpriteState(out int present, out int expected);
+            if (broken.Count == 0 && sprites == ResourceCheck.SpriteState.Ok) return;
 
-            var result = System.Windows.MessageBox.Show(this, Loc.F("data.broken", string.Join("\n", broken)), Loc.T("common.error"), MessageBoxButton.YesNo, MessageBoxImage.Error);
-            if (result == MessageBoxResult.Yes) OpenUpdateWindow();
+            var lines = new List<string>(broken);
+            if (sprites == ResourceCheck.SpriteState.None) lines.Add(Loc.T("resource.sprites.none"));
+            else if (sprites == ResourceCheck.SpriteState.Partial) lines.Add(Loc.F("resource.sprites.partial", present, expected));
+            string list = string.Join("\n", lines.Select(l => "• " + l));
+
+            // 세이브도 이미지도 없으면 처음 실행으로 보고 환영 안내를 띄웁니다.
+            bool firstRun = PokemonState.LastLoadResult == PokemonState.SaveLoadResult.NewGame && sprites == ResourceCheck.SpriteState.None;
+            var result = firstRun
+                ? System.Windows.MessageBox.Show(this, Loc.F("resource.firstRun", list), Loc.T("common.notice"), MessageBoxButton.YesNo, MessageBoxImage.Information)
+                : System.Windows.MessageBox.Show(this, Loc.F("resource.missing", list), Loc.T("common.error"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return;
+
+            bool skillBroken = broken.Contains("pokemon_movedb.json") || broken.Contains("pokemon_skills.json");
+            OpenUpdateWindow(broken.Contains("pokemon_data.json"), skillBroken, sprites != ResourceCheck.SpriteState.Ok);
         }
 
         // ==========================================
@@ -170,6 +180,7 @@ namespace TamaPoke
 
         public void OpenSettingsWindow() => Dispatcher.Invoke(() => ShowDialogOverMain(new SettingsWindow()));
         public void OpenUpdateWindow() => Dispatcher.Invoke(() => ShowDialogOverMain(new UpdateProgressWindow()));
+        public void OpenUpdateWindow(bool data, bool skill, bool sprite) => Dispatcher.Invoke(() => ShowDialogOverMain(new UpdateProgressWindow(data, skill, sprite)));
 
         public void ConfirmAndExit()
         {

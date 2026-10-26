@@ -26,6 +26,15 @@ namespace TamaPoke.Views
             this.Closed += UpdateProgressWindow_Closed;
         }
 
+        // 필요한 항목만 체크된 상태로 엽니다. (시작할 때 리소스 안내에서 사용)
+        public UpdateProgressWindow(bool data, bool skill, bool sprite) : this()
+        {
+            chkData.IsChecked = data;
+            chkSkill.IsChecked = skill;
+            chkSprite.IsChecked = sprite;
+            chkProgram.IsChecked = false;
+        }
+
         private async void btnStartUpdate_Click(object? sender, RoutedEventArgs e)
         {
             if (chkData.IsChecked != true && chkSkill.IsChecked != true && chkSprite.IsChecked != true && chkProgram.IsChecked != true)
