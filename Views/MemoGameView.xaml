@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="TamaPoke.Views.MemoGameView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:u="clr-namespace:TamaPoke.Utils"
              Height="320" Width="350">
 
     <!-- 투명한 버튼 템플릿 -->
@@ -127,7 +128,7 @@
                 </Grid>
 
                 <!-- 그만하기 버튼 -->
-                <Button Content="그만하기" Width="70" Height="22" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15" Click="QuitGame_Click" Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11" Cursor="Hand">
+                <Button Content="{u:T game.quit}" Width="70" Height="22" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15" Click="QuitGame_Click" Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11" Cursor="Hand">
                     <Button.Resources>
                         <Style TargetType="Border">
                             <Setter Property="CornerRadius" Value="4"/>

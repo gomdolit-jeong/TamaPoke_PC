@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Views
 {
@@ -28,7 +29,7 @@ namespace TamaPoke.Views
                 {
                     if (clickedItem.Quantity <= 0)
                     {
-                        pet.BattleMessage = $"{clickedItem.Name}이(가) 부족합니다!";
+                        pet.BattleMessage = Loc.F("battle.notEnough", clickedItem.Name);
                         return;
                     }
 
@@ -37,7 +38,7 @@ namespace TamaPoke.Views
                     {
                         if (!pet.IsBattleOpen || pet.IsGymBattle)
                         {
-                            pet.BattleMessage = "야생 배틀 중에만 사용할 수 있습니다!";
+                            pet.BattleMessage = Loc.T("battle.onlyWild");
                             return;
                         }
                         pet.IsInventoryOpen = false;
@@ -50,7 +51,7 @@ namespace TamaPoke.Views
                     {
                         if (!pet.IsBattleOpen || !pet.IsPlayerTurn)
                         {
-                            pet.BattleMessage = "자신의 턴에만 사용할 수 있습니다!";
+                            pet.BattleMessage = Loc.T("battle.onlyMyTurn");
                             return;
                         }
 
@@ -58,7 +59,7 @@ namespace TamaPoke.Views
                         if (pet.PlayerHp >= pet.PlayerMaxHp)
                         {
                             // 턴 소모 방지 및 경고 메시지 출력
-                            pet.BattleMessage = "체력이 이미 가득 차 있습니다!";
+                            pet.BattleMessage = Loc.T("battle.hpFull");
                             return;
                         }
 

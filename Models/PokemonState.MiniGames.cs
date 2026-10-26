@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 using TamaPoke.Utils.Service;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -203,24 +204,24 @@ namespace TamaPoke.Models
         public async void StartMemoGame()
         {
             if (!CanStartActivity) return; // 🌟 통일된 조건문 적용
-            IsPlayMenuOpen = false; IsMemoGameOpen = true; MemoScore = 0; _memoSequence.Clear(); _memoSequence.Add(new Random().Next(4)); TargetPosX = 0; PosX = 0; FlipX = 1; MemoStatusText = "준비... 시작! 🎮"; CheckStateAndAnimate(); await Task.Delay(2000); await PlayMemoSequence();
+            IsPlayMenuOpen = false; IsMemoGameOpen = true; MemoScore = 0; _memoSequence.Clear(); _memoSequence.Add(new Random().Next(4)); TargetPosX = 0; PosX = 0; FlipX = 1; MemoStatusText = Loc.T("memo.start"); CheckStateAndAnimate(); await Task.Delay(2000); await PlayMemoSequence();
         }
         private async Task PlayMemoSequence()
         {
-            _isMemoShowingSequence = true; MemoStatusText = "잘 보고 기억하세요! 👀"; await Task.Delay(500);
+            _isMemoShowingSequence = true; MemoStatusText = Loc.T("memo.watch"); await Task.Delay(500);
             foreach (int btnIndex in _memoSequence) { if (!IsMemoGameOpen) return; SetMemoBtnState(btnIndex, true); await Task.Delay(400); SetMemoBtnState(btnIndex, false); await Task.Delay(200); }
-            _memoInputIndex = 0; _isMemoShowingSequence = false; MemoStatusText = "이제 직접 눌러보세요! ✨";
+            _memoInputIndex = 0; _isMemoShowingSequence = false; MemoStatusText = Loc.T("memo.yourTurn");
         }
         private void SetMemoBtnState(int index, bool isLit) { if (index == 0) IsMemoBtn0Lit = isLit; else if (index == 1) IsMemoBtn1Lit = isLit; else if (index == 2) IsMemoBtn2Lit = isLit; else if (index == 3) IsMemoBtn3Lit = isLit; }
         public async void SubmitMemoInput(int btnIndex)
         {
             if (_isMemoShowingSequence || !IsMemoGameOpen) return; _isMemoShowingSequence = true; SetMemoBtnState(btnIndex, true); await Task.Delay(200); SetMemoBtnState(btnIndex, false);
-            if (_memoSequence[_memoInputIndex] == btnIndex) { _memoInputIndex++; if (_memoInputIndex >= _memoSequence.Count) { MemoScore++; _memoSequence.Add(new Random().Next(4)); MemoStatusText = "정답! 다음 라운드! 👏"; await Task.Delay(1000); await PlayMemoSequence(); } else { _isMemoShowingSequence = false; } }
+            if (_memoSequence[_memoInputIndex] == btnIndex) { _memoInputIndex++; if (_memoInputIndex >= _memoSequence.Count) { MemoScore++; _memoSequence.Add(new Random().Next(4)); MemoStatusText = Loc.T("memo.correct"); await Task.Delay(1000); await PlayMemoSequence(); } else { _isMemoShowingSequence = false; } }
             else { EndMemoGame(); }
         }
         private void EndMemoGame()
         {
-            MemoStatusText = "앗, 틀렸어요! 😢"; IsMemoGameOpen = false; if (MemoScore > MemoHighScore) MemoHighScore = MemoScore; Bond = Clamp100(Bond + 5 + (MemoScore * 2)); Energy = Math.Max(Energy - 5, 5); Fullness = Math.Max(Fullness - 2, 5);
+            MemoStatusText = Loc.T("memo.wrong"); IsMemoGameOpen = false; if (MemoScore > MemoHighScore) MemoHighScore = MemoScore; Bond = Clamp100(Bond + 5 + (MemoScore * 2)); Energy = Math.Max(Energy - 5, 5); Fullness = Math.Max(Fullness - 2, 5);
 
             EndMiniGameRoutine(17, 90); // 🌟 통합 초기화 로직 적용
         }
@@ -265,11 +266,11 @@ namespace TamaPoke.Models
         {
             if (DirtItems.Count >= 3)
             {
-                CleanStatusText = "세균이 너무 많아요! 😭";
+                CleanStatusText = Loc.T("clean.tooMany");
             }
             else
             {
-                CleanStatusText = "청소를 완료했습니다! ✨";
+                CleanStatusText = Loc.T("clean.done");
             }
 
             IsCleanGameOpen = false;

@@ -1,4 +1,5 @@
 ﻿using System;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -43,10 +44,10 @@ namespace TamaPoke.Models
                     if (turnsLeft <= 0)
                     {
                         cured = true;
-                        message = $"{name}은(는) 잠에서 깨어났다!";
+                        message = Loc.F("ailment.wake", name);
                         return true;
                     }
-                    message = $"{name}은(는) 쿨쿨 잠들어 있다...";
+                    message = Loc.F("ailment.asleep", name);
                     return false;
 
                 case SkillAilment.Freeze:
@@ -54,16 +55,16 @@ namespace TamaPoke.Models
                     {
                         turnsLeft = 0;
                         cured = true;
-                        message = $"{name}의 얼음이 녹았다!";
+                        message = Loc.F("ailment.thaw", name);
                         return true;
                     }
-                    message = $"{name}은(는) 얼어붙어서 움직일 수 없다!";
+                    message = Loc.F("ailment.frozen", name);
                     return false;
 
                 case SkillAilment.Paralysis:
                     if (rand.Next(100) < 25) // 25% 확률로 마비 행동 불가
                     {
-                        message = $"{name}은(는) 몸이 저려서 움직일 수 없다!";
+                        message = Loc.F("ailment.paralyzed", name);
                         return false;
                     }
                     return true;
@@ -83,18 +84,18 @@ namespace TamaPoke.Models
             {
                 case SkillAilment.Burn:
                     damage = Math.Max(1, maxHp / 16);
-                    message = "화상 데미지를 입었다!";
+                    message = Loc.T("ailment.tick.burn");
                     break;
 
                 case SkillAilment.Poison:
                     damage = Math.Max(1, maxHp / 8);
-                    message = "독 데미지를 입었다!";
+                    message = Loc.T("ailment.tick.poison");
                     break;
 
                 case SkillAilment.BadPoison:
                     int multiplier = Math.Max(1, ailmentTurnCount);
                     damage = Math.Max(1, (maxHp * multiplier) / 16);
-                    message = "맹독의 데미지가 점점 커진다!";
+                    message = Loc.T("ailment.tick.badPoison");
                     break;
             }
 
@@ -106,12 +107,12 @@ namespace TamaPoke.Models
         {
             return ailment switch
             {
-                SkillAilment.Burn => "🔥 화상",
-                SkillAilment.Poison => "☠️ 독",
-                SkillAilment.BadPoison => "💀 맹독",
-                SkillAilment.Paralysis => "⚡ 마비",
-                SkillAilment.Sleep => "💤 수면",
-                SkillAilment.Freeze => "❄️ 얼음",
+                SkillAilment.Burn => Loc.T("ailment.name.burn"),
+                SkillAilment.Poison => Loc.T("ailment.name.poison"),
+                SkillAilment.BadPoison => Loc.T("ailment.name.badPoison"),
+                SkillAilment.Paralysis => Loc.T("ailment.name.paralysis"),
+                SkillAilment.Sleep => Loc.T("ailment.name.sleep"),
+                SkillAilment.Freeze => Loc.T("ailment.name.freeze"),
                 _ => ""
             };
         }

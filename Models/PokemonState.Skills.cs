@@ -166,13 +166,13 @@ namespace TamaPoke.Models
                     if (Skills[i] == 0) { Skills[i] = _skillToLearn.Id; break; }
                 }
                 OnPropertyChanged(nameof(CurrentSkills));
-                FinishSkillLearning($"{_skillToLearn.Name}을(를) 깨우쳤다!");
+                FinishSkillLearning(Loc.F("skill.learned", _skillToLearn.Name));
             }
             else
             {
                 IsSkillLearnMenuOpen = false;
                 IsSkillReplaceMenuOpen = true;
-                BattleMessage = $"기술이 4개라 꽉 찼다!\n{_skillToLearn.Name}을(를) 위해 어떤 기술을 지울까?";
+                BattleMessage = Loc.F("skill.full", _skillToLearn.Name);
             }
         }
 
@@ -181,17 +181,17 @@ namespace TamaPoke.Models
             if (slotIndex < 0 || slotIndex > 3 || _skillToLearn == null) return;
 
             var oldSkill = SkillDex.GetSkill(Skills[slotIndex]);
-            string oldSkillName = oldSkill?.Name ?? "기술";
+            string oldSkillName = oldSkill?.Name ?? Loc.T("skill.someMove");
 
             Skills[slotIndex] = _skillToLearn.Id;
             OnPropertyChanged(nameof(CurrentSkills));
 
-            FinishSkillLearning($"1, 2, 3... 짠!\n{oldSkillName}을(를) 잊고\n{_skillToLearn.Name}을(를) 배웠다!");
+            FinishSkillLearning(Loc.F("skill.replaced", oldSkillName, _skillToLearn.Name));
         }
 
         public void SkipSkillLearning()
         {
-            FinishSkillLearning("새로운 스킬을 배우는 것을 포기했다.");
+            FinishSkillLearning(Loc.T("skill.gaveUp"));
         }
 
         private async void FinishSkillLearning(string finalMessage)

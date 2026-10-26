@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using TamaPoke.Models;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Views
 {
@@ -100,7 +101,7 @@ namespace TamaPoke.Views
 
                 if (clickedItem.Quantity <= 0)
                 {
-                    pet.BattleMessage = $"{clickedItem.Name}이(가) 부족합니다!";
+                    pet.BattleMessage = Loc.F("battle.notEnough", clickedItem.Name);
                     return;
                 }
 
@@ -108,7 +109,7 @@ namespace TamaPoke.Views
                 {
                     if (pet.IsGymBattle)
                     {
-                        pet.BattleMessage = "관장 배틀에서는\n몬스터볼을 쓸 수 없습니다!";
+                        pet.BattleMessage = Loc.T("battle.noBallInGym");
                         return;
                     }
                     pet.IsBattleInventoryOpen = false;
@@ -122,7 +123,7 @@ namespace TamaPoke.Views
                     if (pet.PlayerHp >= pet.PlayerMaxHp)
                     {
                         // 턴을 넘기지 않고, 아이템도 소모하지 않은 채 경고 메시지만 보냅니다.
-                        pet.BattleMessage = "체력이 이미 가득 차 있습니다!";
+                        pet.BattleMessage = Loc.T("battle.hpFull");
                         return;
                     }
 
@@ -149,11 +150,11 @@ namespace TamaPoke.Views
             if (pet.MonsterBalls <= 0)
             {
                 pet.IsCatchOffered = false;
-                pet.BattleMessage = "몬스터볼이 부족하다! 포획할 수 없다!";
+                pet.BattleMessage = Loc.T("battle.noBalls");
                 await Task.Delay(2000);
 
                 // [시퀀스 5] 다시 포획/그냥가기 선택 창 띄우기
-                pet.BattleMessage = "야생 포켓몬을 포획하시겠습니까?";
+                pet.BattleMessage = Loc.T("battle.askCatch");
                 pet.IsCatchOffered = true;
                 return;
             }
@@ -164,7 +165,7 @@ namespace TamaPoke.Views
             pet.IsPlayerTurn = false;
             pet.IsCatchOffered = false;
 
-            pet.BattleMessage = "가라! 몬스터볼!";
+            pet.BattleMessage = Loc.T("battle.throw");
 
             PokeballIcon.Visibility = Visibility.Visible;
 
@@ -199,7 +200,7 @@ namespace TamaPoke.Views
             int shakes = new Random().Next(2, 4);
             for (int i = 1; i <= shakes; i++)
             {
-                pet.BattleMessage = $"볼이 흔들흔들... ({i})";
+                pet.BattleMessage = Loc.F("battle.wobble", i);
 
                 var shakeAnim = new DoubleAnimation(finalX - 6, finalX + 6, TimeSpan.FromMilliseconds(100))
                 {

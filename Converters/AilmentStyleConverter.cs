@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using TamaPoke.Models;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Converters
 {
@@ -15,12 +16,12 @@ namespace TamaPoke.Converters
 
         private static (string Text, string Fx, string Bg, string Fg, string Border) Style(SkillAilment a) => a switch
         {
-            SkillAilment.Burn => ("화상", "🔥", "#FAECE7", "#712B13", "#D85A30"),
-            SkillAilment.Poison => ("독", "☠️", "#EEEDFE", "#3C3489", "#7F77DD"),
-            SkillAilment.BadPoison => ("맹독", "💀", "#FBEAF0", "#72243E", "#D4537E"),
-            SkillAilment.Paralysis => ("마비", "⚡", "#FAEEDA", "#633806", "#BA7517"),
-            SkillAilment.Sleep => ("잠듦", "💤", "#F1EFE8", "#444441", "#888780"),
-            SkillAilment.Freeze => ("얼음", "❄️", "#E6F1FB", "#0C447C", "#378ADD"),
+            SkillAilment.Burn => (Loc.T("ailment.badge.burn"), "🔥", "#FAECE7", "#712B13", "#D85A30"),
+            SkillAilment.Poison => (Loc.T("ailment.badge.poison"), "☠️", "#EEEDFE", "#3C3489", "#7F77DD"),
+            SkillAilment.BadPoison => (Loc.T("ailment.badge.badPoison"), "💀", "#FBEAF0", "#72243E", "#D4537E"),
+            SkillAilment.Paralysis => (Loc.T("ailment.badge.paralysis"), "⚡", "#FAEEDA", "#633806", "#BA7517"),
+            SkillAilment.Sleep => (Loc.T("ailment.badge.sleep"), "💤", "#F1EFE8", "#444441", "#888780"),
+            SkillAilment.Freeze => (Loc.T("ailment.badge.freeze"), "❄️", "#E6F1FB", "#0C447C", "#378ADD"),
             _ => ("", "", "#00000000", "#00000000", "#00000000")
         };
 

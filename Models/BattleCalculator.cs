@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TamaPoke.Utils;
 
 namespace TamaPoke.Models
@@ -36,9 +36,9 @@ namespace TamaPoke.Models
         // 상성 안내 문구 (메시지 앞에 붙임, 줄바꿈 포함)
         public static string EffectivenessText(double typeMultiplier)
         {
-            if (typeMultiplier >= 2.0) return "효과가 굉장했다!\n";
-            if (typeMultiplier > 0 && typeMultiplier <= 0.5) return "효과가 별로인 듯하다...\n";
-            if (typeMultiplier == 0) return "효과가 없는 것 같다...\n";
+            if (typeMultiplier >= 2.0) return Loc.T("battle.eff.super");
+            if (typeMultiplier > 0 && typeMultiplier <= 0.5) return Loc.T("battle.eff.notVery");
+            if (typeMultiplier == 0) return Loc.T("battle.eff.none");
             return "";
         }
     }

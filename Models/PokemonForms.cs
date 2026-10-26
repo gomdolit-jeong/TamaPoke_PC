@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -95,27 +96,27 @@ namespace TamaPoke.Models
         public static string GetDescription(int speciesId, string? spriteFileName, bool isShiny)
         {
             string formText = "";
-            string shinyText = isShiny ? "✨ 색이 다른 포켓몬" : "";
+            string shinyText = isShiny ? Loc.T("form.shiny") : "";
 
             if (!string.IsNullOrEmpty(spriteFileName))
             {
                 string lowerFile = spriteFileName.ToLower();
 
-                if (lowerFile.Contains("shiny")) shinyText = "✨ 색이 다른 포켓몬";
+                if (lowerFile.Contains("shiny")) shinyText = Loc.T("form.shiny");
 
                 var formKeywords = new Dictionary<string, string>
                 {
-                    { "combat", "팔데아의 모습 (투쟁종)" },
-                    { "_0001", "팔데아의 모습 (투쟁종)" },
-                    { "blaze", "팔데아의 모습 (블레이즈종)" },
-                    { "_0002", "팔데아의 모습 (블레이즈종)" },
-                    { "aqua", "팔데아의 모습 (워터종)" },
-                    { "_0003", "팔데아의 모습 (워터종)" },
-                    { "alola", "알로라의 모습" },
-                    { "galar", "가라르의 모습" },
-                    { "hisui", "히스이의 모습" },
-                    { "paldea", "팔데아의 모습" },
-                    { "mega", "메가진화" }
+                    { "combat", "form.paldea.combat" },
+                    { "_0001", "form.paldea.combat" },
+                    { "blaze", "form.paldea.blaze" },
+                    { "_0002", "form.paldea.blaze" },
+                    { "aqua", "form.paldea.aqua" },
+                    { "_0003", "form.paldea.aqua" },
+                    { "alola", "form.alola" },
+                    { "galar", "form.galar" },
+                    { "hisui", "form.hisui" },
+                    { "paldea", "form.paldea" },
+                    { "mega", "form.mega" }
                 };
 
                 foreach (var pair in formKeywords)
@@ -123,14 +124,14 @@ namespace TamaPoke.Models
                     if (lowerFile.Contains(pair.Key))
                     {
                         if ((pair.Key == "_0001" || pair.Key == "_0002" || pair.Key == "_0003") && speciesId != 128) continue;
-                        formText = pair.Value;
+                        formText = Loc.T(pair.Value);
                         break;
                     }
                 }
 
                 if (string.IsNullOrEmpty(formText) && !lowerFile.Contains("_0000") && !lowerFile.Contains("egg") && !lowerFile.Contains("shiny") && lowerFile.Contains("_"))
                 {
-                    formText = "특수한 모습";
+                    formText = Loc.T("form.special");
                 }
             }
 

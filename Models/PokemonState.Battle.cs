@@ -322,12 +322,12 @@ namespace TamaPoke.Models
             UpdateEnemyAnimation(0);
 
             IsBattleOpen = true; IsPlayerTurn = false;
-            BattleMessage = IsEnemyShiny ? $"앗! 색이 다른 야생 {EnemyName}이(가) 나타났다!" : $"앗! 야생 {EnemyName}이(가) 나타났다!";
+            BattleMessage = Loc.F(IsEnemyShiny ? "battle.appear.shiny" : "battle.appear", EnemyName);
 
-            if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke("야생 포켓몬 출현!", "⚔️");
+            if (Settings.UseTrayNotifications) TrayNotificationRequested?.Invoke(Loc.T("notify.wild.title"), "⚔️");
 
             await Task.Delay(1500);
-            BattleMessage = "행동을 선택하세요.";
+            BattleMessage = Loc.T("battle.choose");
             IsPlayerTurn = true;
         }
 
@@ -363,7 +363,7 @@ namespace TamaPoke.Models
 
             if (playerAction == BattleAction.Run)
             {
-                BattleMessage = "무사히 도망쳤다!";
+                BattleMessage = Loc.T("battle.ran");
                 await Task.Delay(1000);
                 CloseBattle();
                 IsPlayerTurn = true;
@@ -384,9 +384,9 @@ namespace TamaPoke.Models
                 if (rand.Next(100) < 70)
                 {
                     playerDodged = true; _isCounterReady = true;
-                    BattleMessage = "적의 공격을 피할 준비를 했다!\n(카운터 대기)";
+                    BattleMessage = Loc.T("battle.dodge.ready");
                 }
-                else BattleMessage = "회피 준비에 실패했다...";
+                else BattleMessage = Loc.T("battle.dodge.fail");
 
                 await Task.Delay(1500);
             }
@@ -412,7 +412,7 @@ namespace TamaPoke.Models
             var myInfo = PokemonDex.Get(SpeciesId);
             var enemyInfo = PokemonDex.Get(EnemySpeciesId);
 
-            BattleMessage = $"{Name}의 {playerSkill.Name}!";
+            BattleMessage = Loc.F("battle.used", Name, playerSkill.Name);
             await Task.Delay(1000);
 
             bool isHit = playerSkill.Accuracy == 0 || rand.Next(100) < playerSkill.Accuracy;
@@ -435,7 +435,7 @@ namespace TamaPoke.Models
                 IsEnemyTakingDamage = true;
                 EnemyHp = Math.Max(0, EnemyHp - damage);
 
-                BattleMessage = $"{BattleCalculator.EffectivenessText(typeMultiplier)}적에게 {damage} 데미지를 입혔다!";
+                BattleMessage = Loc.F("battle.damage.dealt", BattleCalculator.EffectivenessText(typeMultiplier), damage);
 
                 await TryInflictAilmentAsync(playerSkill, targetIsEnemy: true, isStatusMove: false);
 
@@ -456,7 +456,7 @@ namespace TamaPoke.Models
             else
             {
                 _isCounterReady = false;
-                BattleMessage = $"{Name}의 공격은 빗나갔다!";
+                BattleMessage = Loc.F("battle.missed", Name);
                 await Task.Delay(1500);
             }
 
@@ -476,7 +476,7 @@ namespace TamaPoke.Models
                 if (healAmount < 1) healAmount = 1;
                 PlayerHp = Math.Min(PlayerMaxHp, PlayerHp + healAmount);
 
-                BattleMessage = $"{Name}에게 {selectedItem.Name}을(를) 사용했다!\n체력이 {healAmount} 회복되었다!";
+                BattleMessage = Loc.F("battle.item.used", Name, selectedItem.Name, healAmount);
 
                 PlayTempAction(10, 30); CheckStateAndAnimate();
                 await Task.Delay(1500);
@@ -489,11 +489,11 @@ namespace TamaPoke.Models
         // isStatusMove: 위력 0인 변화 기술이면 실패/무효 메시지도 보여줍니다.
         private async Task<bool> TryInflictAilmentAsync(SkillInfo skill, bool targetIsEnemy, bool isStatusMove)
         {
-            string targetName = targetIsEnemy ? $"야생 {EnemyName}" : Name;
+            string targetName = targetIsEnemy ? Loc.F("battle.wildName", EnemyName) : Name;
 
             if (skill.Ailment == SkillAilment.None)
             {
-                if (isStatusMove) { BattleMessage = "하지만 아무 일도 일어나지 않았다!"; await Task.Delay(1500); }
+                if (isStatusMove) { BattleMessage = Loc.T("battle.nothing"); await Task.Delay(1500); }
                 return false;
             }
 
@@ -505,7 +505,7 @@ namespace TamaPoke.Models
             {
                 if (isStatusMove)
                 {
-                    BattleMessage = immune ? $"{targetName}에게는 효과가 없는 것 같다..." : "하지만 실패했다!";
+                    BattleMessage = immune ? Loc.F("battle.noEffectOn", targetName) : Loc.T("battle.failed");
                     await Task.Delay(1500);
                 }
                 return false;
@@ -513,7 +513,7 @@ namespace TamaPoke.Models
 
             if (new Random().Next(100) >= skill.AilmentChance)
             {
-                if (isStatusMove) { BattleMessage = "하지만 실패했다!"; await Task.Delay(1500); }
+                if (isStatusMove) { BattleMessage = Loc.T("battle.failed"); await Task.Delay(1500); }
                 return false;
             }
 
@@ -531,7 +531,7 @@ namespace TamaPoke.Models
             }
 
             if (!isStatusMove) await Task.Delay(1000);
-            BattleMessage = $"{targetName}은(는) {AilmentHelper.GetAilmentIcon(skill.Ailment)} 상태가 되었다!";
+            BattleMessage = Loc.F("battle.ailment.inflicted", targetName, AilmentHelper.GetAilmentIcon(skill.Ailment));
             if (targetIsEnemy) IsEnemyAilmentFlash = true; else IsPlayerAilmentFlash = true;
             await Task.Delay(1500);
             IsEnemyAilmentFlash = false; IsPlayerAilmentFlash = false;
@@ -547,7 +547,7 @@ namespace TamaPoke.Models
                 if (tickDamage > 0)
                 {
                     PlayerHp = Math.Max(0, PlayerHp - tickDamage);
-                    BattleMessage = $"{Name}(은)는 {ailmentMsg} ({tickDamage} 데미지)";
+                    BattleMessage = Loc.F("battle.ailment.tick", Name, ailmentMsg, tickDamage);
                     await Task.Delay(1500);
                 }
             }
@@ -565,7 +565,7 @@ namespace TamaPoke.Models
             {
                 if (_enemyAilmentTurns > 0) _enemyAilmentTurns--;
 
-                bool canAct = AilmentHelper.CanActThisTurn(EnemyAilment, ref _enemyAilmentTurns, $"야생 {EnemyName}", out string statusMsg, out bool cured);
+                bool canAct = AilmentHelper.CanActThisTurn(EnemyAilment, ref _enemyAilmentTurns, Loc.F("battle.wildName", EnemyName), out string statusMsg, out bool cured);
                 if (cured) EnemyAilment = SkillAilment.None;
                 if (!string.IsNullOrEmpty(statusMsg))
                 {
@@ -580,14 +580,14 @@ namespace TamaPoke.Models
 
                     if (PlayerHp <= 0 || EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
 
-                    BattleMessage = "행동을 선택하세요.";
+                    BattleMessage = Loc.T("battle.choose");
                     IsPlayerTurn = true;
                     return;
                 }
             }
 
             SkillInfo enemySkill = ChooseEnemySkill();
-            BattleMessage = $"야생 {EnemyName}의 {enemySkill.Name}!";
+            BattleMessage = Loc.F("battle.used", Loc.F("battle.wildName", EnemyName), enemySkill.Name);
             await Task.Delay(1000);
 
             bool enemyHits = enemySkill.Accuracy == 0 || rand.Next(100) < enemySkill.Accuracy;
@@ -607,7 +607,7 @@ namespace TamaPoke.Models
                 IsPlayerTakingDamage = true;
                 PlayerHp = Math.Max(0, PlayerHp - enemyDamage);
 
-                BattleMessage = $"{BattleCalculator.EffectivenessText(typeMultiplier)}{Name}(은)는 {enemyDamage} 데미지를 입었다!";
+                BattleMessage = Loc.F("battle.damage.taken", BattleCalculator.EffectivenessText(typeMultiplier), Name, enemyDamage);
 
                 await TryInflictAilmentAsync(enemySkill, targetIsEnemy: false, isStatusMove: false);
 
@@ -622,15 +622,15 @@ namespace TamaPoke.Models
                 _enemyTempActionId = ANIM_POSE; _enemyTempActionTimer = 30; UpdateEnemyAnimation(ANIM_POSE);
                 await TryInflictAilmentAsync(enemySkill, targetIsEnemy: false, isStatusMove: true);
             }
-            else if (playerDodged) { BattleMessage = $"{Name}(은)는 공격을 멋지게 피했다!"; await Task.Delay(1500); }
-            else if (!enemyHits) { BattleMessage = $"야생 {EnemyName}의 공격은 빗나갔다!"; await Task.Delay(1500); }
+            else if (playerDodged) { BattleMessage = Loc.F("battle.dodged", Name); await Task.Delay(1500); }
+            else if (!enemyHits) { BattleMessage = Loc.F("battle.missed", Loc.F("battle.wildName", EnemyName)); await Task.Delay(1500); }
 
             await ProcessEnemyTurnEndAilment();
             await ProcessPlayerTurnEndAilment();
 
             if (PlayerHp <= 0 || EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
 
-            BattleMessage = "행동을 선택하세요.";
+            BattleMessage = Loc.T("battle.choose");
             IsPlayerTurn = true;
         }
 
@@ -643,7 +643,7 @@ namespace TamaPoke.Models
                 if (tickDamage > 0)
                 {
                     EnemyHp = Math.Max(0, EnemyHp - tickDamage);
-                    BattleMessage = $"야생 {EnemyName}은(는) {ailmentMsg} ({tickDamage} 데미지)";
+                    BattleMessage = Loc.F("battle.ailment.tick", Loc.F("battle.wildName", EnemyName), ailmentMsg, tickDamage);
                     await Task.Delay(1500);
                 }
             }
@@ -660,7 +660,7 @@ namespace TamaPoke.Models
             if (PlayerHp <= 0)
             {
                 IsBattleResolved = true;
-                BattleMessage = IsGymBattle ? "관장에게 패배했습니다...\n수행이 더 필요합니다." : "눈앞이 깜깜해졌다...\n배틀에서 패배했습니다.";
+                BattleMessage = Loc.T(IsGymBattle ? "battle.lost.gym" : "battle.lost.wild");
                 Joy = Math.Max(0, Joy - 10);
                 Energy = Math.Max(0, Energy - 20);
 
@@ -683,13 +683,13 @@ namespace TamaPoke.Models
                     if (leader != null)
                     {
                         GymBadges++; Save();
-                        BattleMessage = $"대단한 승부였다!\n{leader.LeaderName}에게서\n[{leader.BadgeName}]을(를) 얻었다!";
+                        BattleMessage = Loc.F("battle.gym.won", leader.LeaderName, leader.BadgeName);
                         await Task.Delay(3000);
                     }
                 }
                 else
                 {
-                    BattleMessage = "배틀에서 승리했다!";
+                    BattleMessage = Loc.T("battle.won");
                     await Task.Delay(2000);
                 }
 
@@ -724,7 +724,7 @@ namespace TamaPoke.Models
                 RecommendedSkill2 = picked.Count > 1 ? picked[1] : null;
 
                 IsSkillLearnMenuOpen = true;
-                BattleMessage = "실전 경험을 통해 새로운 스킬을 떠올렸다!\n어떤 스킬을 배울까?";
+                BattleMessage = Loc.T("battle.newSkill");
             }
             else
             {
@@ -743,7 +743,7 @@ namespace TamaPoke.Models
             else
             {
                 // 야생은 포획 선택 창 오픈!
-                BattleMessage = "야생 포켓몬을 포획하시겠습니까?";
+                BattleMessage = Loc.T("battle.askCatch");
                 IsCatchOffered = true;
             }
         }
@@ -751,18 +751,18 @@ namespace TamaPoke.Models
         // [시퀀스 4-A] 체육관 전용 보상
         private async Task ProcessGymBattleRewardsAsync()
         {
-            BattleMessage = "관장에게 승리하여\n상품을 획득했습니다!";
+            BattleMessage = Loc.T("battle.gym.prize");
             await Task.Delay(2000);
 
             AddItem(ItemDex.HyperPotion, 2);
             AddItem(ItemDex.MonsterBall, 3);
 
-            BattleMessage = "고급상처약 2개와\n몬스터볼 3개를 얻었다!";
+            BattleMessage = Loc.F("battle.gym.prizeItems", ItemDex.Get(ItemDex.HyperPotion).Name, ItemDex.Get(ItemDex.MonsterBall).Name);
             await Task.Delay(2500);
 
             Bond = Math.Min(100, Bond + 10);
 
-            BattleMessage = $"{Name}와(과)의 유대감이 깊어졌다!";
+            BattleMessage = Loc.F("battle.bondUp", Name);
             await Task.Delay(2500);
 
             IsGymBattle = false;
@@ -811,13 +811,13 @@ namespace TamaPoke.Models
                     UpdatePartyFirstFlags();
                     IsPartyOpen = true;
 
-                    BattleMessage = $"{EnemyName}을(를) 잡았지만 파티가 꽉 찼다!\n바꿀 포켓몬을 선택해 주세요.";
+                    BattleMessage = Loc.F("battle.caught.full", EnemyName);
                     await Task.Delay(2500);
                 }
                 else if (Party != null)
                 {
                     Party.Add(newMember);
-                    BattleMessage = $"신난다! {EnemyName}을(를) 잡았다!\n파티에 합류했습니다.";
+                    BattleMessage = Loc.F("battle.caught", EnemyName);
                     await Task.Delay(2000);
                 }
 
@@ -827,14 +827,14 @@ namespace TamaPoke.Models
             else
             {
                 IsEnemyVisible = true;
-                BattleMessage = $"아아! {EnemyName}이(가) 볼에서 빠져나왔다!";
+                BattleMessage = Loc.F("battle.brokeFree", EnemyName);
                 await Task.Delay(2000);
 
                 // 🌟 핵심 분기: 적의 체력에 따라 전투 중인지, 승리 후인지 판단합니다.
                 if (EnemyHp <= 0)
                 {
                     // [승리 후 포획 실패] 다시 포획/그냥가기 선택 창을 띄웁니다.
-                    BattleMessage = "포켓볼을 더 던지겠습니까?";
+                    BattleMessage = Loc.T("battle.throwAgain");
                     IsCatchOffered = true;
                 }
                 else
@@ -849,7 +849,7 @@ namespace TamaPoke.Models
         public async void LeaveWildBattle()
         {
             IsCatchOffered = false;
-            BattleMessage = $"{EnemyName}을(를) 뒤로하고 길을 떠납니다...";
+            BattleMessage = Loc.F("battle.leave", EnemyName);
             await Task.Delay(1500);
 
             // 도망 후 야생 보상으로 이동
@@ -865,13 +865,13 @@ namespace TamaPoke.Models
             if (rand.Next(100) < 50)
             {
                 int itemRoll = rand.Next(100);
-                if (itemRoll < 50) { AddItem(ItemDex.MonsterBall, 1); dropMessage = "몬스터볼 1개를 얻었다!"; }
+                if (itemRoll < 50) { AddItem(ItemDex.MonsterBall, 1); dropMessage = Loc.F("battle.drop", ItemDex.Get(ItemDex.MonsterBall).Name); }
                 else
                 {
                     int potionRoll = rand.Next(100);
-                    if (potionRoll < 60) { AddItem(ItemDex.Potion, 1); dropMessage = "상처약 1개를 얻었다!"; }
-                    else if (potionRoll < 90) { AddItem(ItemDex.SuperPotion, 1); dropMessage = "좋은상처약 1개를 얻었다!"; }
-                    else { AddItem(ItemDex.HyperPotion, 1); dropMessage = "앗! 고급상처약 1개를 얻었다!"; }
+                    if (potionRoll < 60) { AddItem(ItemDex.Potion, 1); dropMessage = Loc.F("battle.drop", ItemDex.Get(ItemDex.Potion).Name); }
+                    else if (potionRoll < 90) { AddItem(ItemDex.SuperPotion, 1); dropMessage = Loc.F("battle.drop", ItemDex.Get(ItemDex.SuperPotion).Name); }
+                    else { AddItem(ItemDex.HyperPotion, 1); dropMessage = Loc.F("battle.drop.rare", ItemDex.Get(ItemDex.HyperPotion).Name); }
                 }
             }
 
@@ -950,10 +950,10 @@ namespace TamaPoke.Models
             UpdateEnemyAnimation(0);
 
             IsBattleOpen = true; IsPlayerTurn = false;
-            BattleMessage = $"체육관 관장 {leader.LeaderName}이(가)\n승부를 걸어왔다!";
+            BattleMessage = Loc.F("battle.gym.intro", leader.LeaderName);
 
             await Task.Delay(2000);
-            BattleMessage = "행동을 선택하세요.";
+            BattleMessage = Loc.T("battle.choose");
             IsPlayerTurn = true;
         }
         #endregion
