@@ -30,7 +30,7 @@ namespace TamaPoke.Views
         {
             if (chkData.IsChecked != true && chkSkill.IsChecked != true && chkSprite.IsChecked != true && chkProgram.IsChecked != true)
             {
-                System.Windows.MessageBox.Show("업데이트할 항목을 최소 하나 이상 선택해 주세요.", "안내", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(Loc.T("update.pickOne"), Loc.T("common.notice"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -65,13 +65,13 @@ namespace TamaPoke.Views
                 lbLogs.ScrollIntoView(lbLogs.Items[lbLogs.Items.Count - 1]);
 
                 // 🌟 [수정됨] 하드코딩된 1025 대신 GameConstants.MAX_POKEMON_ID를 사용합니다.
-                string targetString = $"/{TamaPoke.Models.GameConstants.MAX_POKEMON_ID}";
-                if (message.Contains("도감 번호") && message.Contains(targetString))
+                // 진행 메시지 속 "123/1025" 패턴으로 진행률을 계산합니다. (메시지 언어와 무관)
+                var match = System.Text.RegularExpressions.Regex.Match(message, $@"(\d+)/{TamaPoke.Models.GameConstants.MAX_POKEMON_ID}\b");
+                if (match.Success)
                 {
                     try
                     {
-                        string[] parts = message.Split(new string[] { "도감 번호 ", targetString }, StringSplitOptions.None);
-                        if (parts.Length >= 2 && double.TryParse(parts[1], out double currentId))
+                        if (double.TryParse(match.Groups[1].Value, out double currentId))
                         {
                             // 🌟 [수정됨] 진행률 100% 계산에도 상수를 적용합니다.
                             double phaseProgress = (currentId / TamaPoke.Models.GameConstants.MAX_POKEMON_ID) * _progressPerTask;
@@ -90,7 +90,7 @@ namespace TamaPoke.Views
                 if (chkData.IsChecked == true)
                 {
                     lbLogs.Items.Add("======================================");
-                    lbLogs.Items.Add("[1] 포켓몬 기본 데이터 동기화 시작...");
+                    lbLogs.Items.Add(Loc.T("update.step.data"));
                     await PokemonDataUpdater.GenerateOfflineDataJsonAsync(progress, null);
 
                     _currentTaskIndex++;
@@ -100,7 +100,7 @@ namespace TamaPoke.Views
                 if (chkSkill.IsChecked == true)
                 {
                     lbLogs.Items.Add("======================================");
-                    lbLogs.Items.Add("[2] 포켓몬 스킬 트리 동기화 시작...");
+                    lbLogs.Items.Add(Loc.T("update.step.skill"));
                     await PokemonSkillUpdater.GenerateOfflineSkillJsonAsync(progress, null);
 
                     _currentTaskIndex++;
@@ -110,7 +110,7 @@ namespace TamaPoke.Views
                 if (chkSprite.IsChecked == true)
                 {
                     lbLogs.Items.Add("======================================");
-                    lbLogs.Items.Add("[3] 누락된 포켓몬 스프라이트 다운로드 및 압축 변환 시작...");
+                    lbLogs.Items.Add(Loc.T("update.step.sprite"));
                     await PokemonSpriteUpdater.DownloadAndConvertSpritesAsync(progress);
 
                     _currentTaskIndex++;
@@ -120,17 +120,17 @@ namespace TamaPoke.Views
                 if (chkProgram.IsChecked == true)
                 {
                     lbLogs.Items.Add("======================================");
-                    lbLogs.Items.Add("[4] 다마포케 프로그램 최신 버전 확인 중...");
+                    lbLogs.Items.Add(Loc.T("update.step.program"));
 
                     string localVersion = AppVersionUpdater.GetLocalVersion();
-                    progress?.Report($"- 현재 프로그램 버전: v{localVersion}");
-                    progress?.Report("- 서버에서 최신 버전을 확인하고 있습니다...");
+                    progress?.Report(Loc.F("update.currentVersion", localVersion));
+                    progress?.Report(Loc.T("update.checking"));
 
                     var updateInfo = await AppVersionUpdater.CheckForUpdatesAsync();
 
                     if (updateInfo != null)
                     {
-                        progress?.Report($"✨ 새로운 업데이트가 발견되었습니다! (v{updateInfo.Version})");
+                        progress?.Report(Loc.F("update.found", updateInfo.Version));
 
                         // 🌟 복잡한 다운로드/압축해제 로직은 일꾼에게 전부 위임합니다!
                         bool success = await AppVersionUpdater.DownloadAndPrepareUpdateAsync(updateInfo, progress);
@@ -142,7 +142,7 @@ namespace TamaPoke.Views
                     }
                     else
                     {
-                        progress?.Report("✅ 현재 최신 버전을 사용 중입니다. 업데이트가 필요하지 않습니다.");
+                        progress?.Report(Loc.T("update.upToDate"));
                     }
 
                     _currentTaskIndex++;
@@ -153,19 +153,19 @@ namespace TamaPoke.Views
 
                 if (_requiresRestart)
                 {
-                    lbLogs.Items.Add("🚨 새 버전이 적용되었습니다. 창을 닫으면 프로그램이 재시작됩니다!");
-                    btnClose.Content = "업데이트 적용 및 재시작";
+                    lbLogs.Items.Add(Loc.T("update.applied"));
+                    btnClose.Content = Loc.T("update.btn.restart");
                 }
                 else
                 {
-                    lbLogs.Items.Add("✨ 선택한 모든 업데이트가 성공적으로 완료되었습니다!");
-                    lbLogs.Items.Add("✨ 처음 시작인 경우 공장 초기화가 필요 할 수 있습니다!");
-                    btnClose.Content = "업데이트 완료 (닫기)";
+                    lbLogs.Items.Add(Loc.T("update.allDone"));
+                    lbLogs.Items.Add(Loc.T("update.maybeReset"));
+                    btnClose.Content = Loc.T("update.btn.done");
                 }
             }
             catch (Exception ex)
             {
-                lbLogs.Items.Add($"❌ 업데이트 중 오류가 발생했습니다: {ex.Message}");
+                lbLogs.Items.Add(Loc.F("update.error", ex.Message));
             }
             finally
             {
@@ -206,7 +206,7 @@ namespace TamaPoke.Views
         {
             if (_isUpdating)
             {
-                System.Windows.MessageBox.Show("업데이트가 진행 중입니다. 완료될 때까지 기다려주세요.", "안내", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show(Loc.T("update.busy"), Loc.T("common.notice"), MessageBoxButton.OK, MessageBoxImage.Information);
                 e.Cancel = true;
             }
         }

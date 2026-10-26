@@ -230,7 +230,7 @@ namespace TamaPoke.Models
         public void StartCleanGame()
         {
             if (!CanStartActivity) return; // 🌟 통일된 조건문 적용
-            IsPlayMenuOpen = false; IsCleanGameOpen = true; CleanScore = 0; DirtItems.Clear(); _dirtIdCounter = 0; _dirtSpawnTimer = 0; TargetPosX = 0; TargetPosY = 0; PosX = 0; PosY = 0; FlipX = 1; CleanStatusText = "세균을 클릭해서 청소하세요!"; CheckStateAndAnimate();
+            IsPlayMenuOpen = false; IsCleanGameOpen = true; CleanScore = 0; DirtItems.Clear(); _dirtIdCounter = 0; _dirtSpawnTimer = 0; TargetPosX = 0; TargetPosY = 0; PosX = 0; PosY = 0; FlipX = 1; CleanStatusText = Loc.T("clean.start"); CheckStateAndAnimate();
         }
         private void StepCleanGame()
         {

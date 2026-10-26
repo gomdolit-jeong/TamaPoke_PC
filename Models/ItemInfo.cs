@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -58,6 +58,9 @@ namespace TamaPoke.Models
         // 이전 버전 세이브에 저장된 아이템 이름입니다. 불러온 직후 ItemId로 변환되고, 다시 저장되지 않습니다.
         [JsonInclude, JsonPropertyName("Name"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? LegacyName { get; set; }
+
+        // 언어가 바뀌었을 때 이름/설명 바인딩을 다시 읽게 합니다.
+        public void RefreshTexts() => OnPropertyChanged(string.Empty);
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

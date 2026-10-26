@@ -1,6 +1,8 @@
 ﻿<UserControl x:Class="TamaPoke.Views.InventoryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lc="clr-namespace:TamaPoke.Converters"
+             xmlns:u="clr-namespace:TamaPoke.Utils"
              xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Width="288" Height="288">
 
@@ -16,7 +18,7 @@
             </Grid.RowDefinitions>
 
             <!-- 상단 제목 -->
-            <TextBlock Grid.Row="0" Text="🎒 인벤토리" Foreground="White" 
+            <TextBlock Grid.Row="0" Text="{u:T bag.title}" Foreground="White" 
                        FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
 
             <!-- 🌟 동적으로 아이템을 렌더링하는 ItemsControl (스크롤 지원) -->
@@ -40,7 +42,7 @@
             </ScrollViewer>
 
             <!-- 닫기 버튼 -->
-            <Button Grid.Row="2" Content="닫기" Padding="0,10" Margin="40,10,40,0"
+            <Button Grid.Row="2" Content="{u:T common.close}" Padding="0,10" Margin="40,10,40,0"
                     FontSize="16" FontWeight="Bold" Background="#E53935" Foreground="White" BorderThickness="0"
                     Cursor="Hand" Click="CloseButton_Click">
                 <Button.Resources>

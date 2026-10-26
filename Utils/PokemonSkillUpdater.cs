@@ -92,7 +92,7 @@ namespace TamaPoke.Utils
 
                                         if (!moveDatabase.ContainsKey(moveId))
                                         {
-                                            progress?.Report($"새로운 스킬 발견! 상세 정보 다운로드 중... [{m.move.name}]");
+                                            progress?.Report(Loc.F("update.skill.newMove", m.move.name));
                                             var skillInfo = await FetchMoveDetailAsync(m.move.url);
                                             if (skillInfo != null) moveDatabase[moveId] = skillInfo;
                                         }
@@ -112,7 +112,7 @@ namespace TamaPoke.Utils
                         }
                     }
 
-                    progress?.Report($"도감 번호 {id}/{TamaPoke.Models.GameConstants.MAX_POKEMON_ID} 스킬 데이터 처리 완료...");
+                    progress?.Report(Loc.F("update.skill.progress", id, TamaPoke.Models.GameConstants.MAX_POKEMON_ID));
                 }
                 catch (Exception) { /* 무시 */ }
             }
@@ -135,7 +135,7 @@ namespace TamaPoke.Utils
             File.WriteAllText(movedbPath, JsonSerializer.Serialize(moveDatabase.Values.ToList(), jsonOptions));
 
             SkillDex.LoadSkillData();
-            progress?.Report("✨ 포켓몬 스킬 트리 및 전체 스킬 도감 DB 구축 완료!");
+            progress?.Report(Loc.T("update.skill.done"));
         }
 
         private static async Task<SkillInfo?> FetchMoveDetailAsync(string moveUrl)

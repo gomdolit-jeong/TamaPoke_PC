@@ -28,23 +28,18 @@ namespace TamaPoke.Models
         {
             BadgeGroups.Clear();
 
-            var regions = new (string En, string Ko)[]
+            // 배지 이미지 파일 이름에 쓰는 영어 지방명 + 세대 번호 (제목은 Lang의 gen.{n})
+            var regions = new (string En, int Gen)[]
             {
-                ("Kanto", "1세대 관동지방"),
-                ("Johto", "2세대 성도지방"),
-                ("Hoenn", "3세대 호연지방"),
-                ("Sinnoh", "4세대 신오지방"),
-                ("Unova", "5세대 하나지방"),
-                ("Kalos", "6세대 칼로스지방"),
-                ("Galar", "8세대 가라르지방"),
-                ("Paldea", "9세대 팔데아지방")
+                ("Kanto", 1), ("Johto", 2), ("Hoenn", 3), ("Sinnoh", 4),
+                ("Unova", 5), ("Kalos", 6), ("Galar", 8), ("Paldea", 9)
             };
 
             int globalIndex = 1;
 
             foreach (var region in regions)
             {
-                var group = new BadgeRegionGroup { HeaderText = region.Ko };
+                var group = new BadgeRegionGroup { HeaderText = Loc.T($"gen.{region.Gen}") };
 
                 for (int i = 1; i <= 8; i++)
                 {
@@ -613,7 +608,12 @@ namespace TamaPoke.Models
         public event PropertyChangedEventHandler? PropertyChanged;
 
         // 언어가 바뀌었을 때: 모든 바인딩을 다시 읽게 해서 코드에서 만든 문구(기분, 진화 진행 등)를 새 언어로 갱신
-        public void RefreshLocalizedTexts() => OnPropertyChanged(string.Empty);
+        public void RefreshLocalizedTexts()
+        {
+            OnPropertyChanged(string.Empty);
+            InitializeBadgesList();                          // 배지 지역 제목
+            foreach (var item in Inventory) item.RefreshTexts(); // 아이템 이름/설명
+        }
 
         public void OnPropertyChanged([CallerMemberName] string? propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

@@ -897,7 +897,8 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool IsGymConfirmOpen { get => _isGymConfirmOpen; set => SetProperty(ref _isGymConfirmOpen, value); }
 
         private GymLeaderInfo? _selectedGymLeader;
-        [JsonIgnore] public GymLeaderInfo? SelectedGymLeader { get => _selectedGymLeader; set => SetProperty(ref _selectedGymLeader, value); }
+        [JsonIgnore] public GymLeaderInfo? SelectedGymLeader { get => _selectedGymLeader; set { if (SetProperty(ref _selectedGymLeader, value)) OnPropertyChanged(nameof(GymChallengePrompt)); } }
+        [JsonIgnore] public string GymChallengePrompt => Loc.F("gym.challenge.prompt", SelectedGymLeader?.GymName);
 
         private int _selectedGymIndex;
 

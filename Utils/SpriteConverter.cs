@@ -25,7 +25,7 @@ namespace TamaPoke.Utils
 			if (!Directory.Exists(outputFolder)) Directory.CreateDirectory(outputFolder);
 
 			if (!File.Exists(trackerJsonPath))
-				return $"[에러] tracker.json 파일을 찾을 수 없습니다.\n경로를 다시 확인해주세요:\n{trackerJsonPath}";
+				return Loc.F("update.convert.noTracker", trackerJsonPath);
 
 			JsonElement root;
 			try
@@ -36,12 +36,12 @@ namespace TamaPoke.Utils
 			}
 			catch (Exception ex)
 			{
-				return $"[에러] tracker.json 로드 실패:\n{ex.Message}";
+				return Loc.F("update.convert.trackerError", ex.Message);
 			}
 
 			List<string> allXmlFiles = GetAllXmlFilesSafe(pmdSpriteRootFolder);
 			if (allXmlFiles.Count == 0)
-				return $"[에러] '{pmdSpriteRootFolder}' 내부에 AnimData.xml 파일이 하나도 없습니다!\n경로를 확인해주세요.";
+				return Loc.F("update.convert.noAnimData", pmdSpriteRootFolder);
 
 			int successCount = 0;
 			int skipCount = 0;
@@ -85,7 +85,7 @@ namespace TamaPoke.Utils
 				else failCount++;
 			}
 
-			return $"🎉 변환 완료!\n총 {successCount}개의 에셋을 압축하여 저장했습니다.\n(필터링으로 {skipCount}개의 폼을 걸러냈습니다!)\n(실패: {failCount}개)";
+			return Loc.F("update.convert.done", successCount, skipCount, failCount);
 		}
 
 		/// <summary>

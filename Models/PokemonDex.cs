@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -73,7 +73,7 @@ namespace TamaPoke.Models
 
         public static string GetName(int speciesId)
         {
-            if (speciesId < 0) return "알";
+            if (speciesId < 0) return Loc.T("pokemon.egg");
             return Get(speciesId)?.DisplayName ?? $"MON #{speciesId:D4}";
         }
 

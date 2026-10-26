@@ -1,6 +1,8 @@
 ﻿<UserControl x:Class="TamaPoke.Views.PokemonDexView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lc="clr-namespace:TamaPoke.Converters"
+             xmlns:u="clr-namespace:TamaPoke.Utils"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:TamaPoke.Views"
@@ -76,70 +78,70 @@
             </Grid.RowDefinitions>
 
             <!-- 1. 헤더 영역 -->
-            <TextBlock Grid.Row="0" Text="포켓몬 도감" Foreground="#E53935" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+            <TextBlock Grid.Row="0" Text="{u:T dex.title}" Foreground="#E53935" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,5"/>
 
             <!-- 2. 지방(Region) 선택 탭 메뉴 (1~9세대 전체 확장 및 스크롤 적용) -->
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="5,0,5,5">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" IsChecked="True" Tag="0" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="관동" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.1}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding KantoCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
 
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="1" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="성도" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.2}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding JohtoCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
 
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="2" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="호연" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.3}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding HoennCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
 
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="3" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="신오" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.4}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding SinnohCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
 
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="4" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="하나" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.5}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding UnovaCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
 
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="5" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="칼로스" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.6}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding KalosCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
 
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="6" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="알로라" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.7}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding AlolaCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
 
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="7" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="가라르" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.8}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding GalarCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
 
                     <RadioButton GroupName="Region" Style="{StaticResource RegionTabStyle}" Tag="8" Checked="RegionTab_Checked">
                         <StackPanel>
-                            <TextBlock Text="팔데아" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{u:T region.9}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding PaldeaCountText}" FontWeight="Normal" FontSize="8" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                         </StackPanel>
                     </RadioButton>
@@ -147,7 +149,7 @@
             </ScrollViewer>
 
             <!-- 🌟 2-5. 새로 추가됨: 잡은 포켓몬만 보기 체크박스 -->
-            <CheckBox Grid.Row="2" Content="잡은 포켓몬" IsChecked="{Binding IsShowOnlyUnlocked}" 
+            <CheckBox Grid.Row="2" Content="{u:T dex.caughtOnly}" IsChecked="{Binding IsShowOnlyUnlocked}" 
                       HorizontalAlignment="Right" Margin="0,0,10,0" 
                       Foreground="#666666" FontSize="10" FontWeight="Bold" Cursor="Hand"/>
 
@@ -184,7 +186,7 @@
             </ScrollViewer>
 
             <!-- 4. 하단 닫기 버튼 영역 -->
-            <Button Grid.Row="4" Content="닫기" Style="{StaticResource CloseButtonStyle}" HorizontalAlignment="Center" Margin="0,10,0,0" Click="DexButton_Click"/>
+            <Button Grid.Row="4" Content="{u:T common.close}" Style="{StaticResource CloseButtonStyle}" HorizontalAlignment="Center" Margin="0,10,0,0" Click="DexButton_Click"/>
         </Grid>
     </Border>
 </UserControl>

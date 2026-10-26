@@ -72,7 +72,7 @@ namespace TamaPoke.Utils
 
             try
             {
-                progress?.Report("- 업데이트 파일을 다운로드하는 중입니다... 잠시만 기다려주세요.");
+                progress?.Report(Loc.T("update.app.downloading"));
 
                 using (var response = await _httpClient.GetAsync(updateInfo.DownloadUrl))
                 {
@@ -83,19 +83,19 @@ namespace TamaPoke.Utils
                     }
                 }
 
-                progress?.Report("- 다운로드 완료! 압축을 풀고 적용을 준비합니다...");
+                progress?.Report(Loc.T("update.app.downloaded"));
 
                 if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
                 ZipFile.ExtractToDirectory(tempZipPath, extractPath);
 
                 if (File.Exists(tempZipPath)) File.Delete(tempZipPath);
 
-                progress?.Report("- 업데이트 준비 완료! 창을 닫으면 자동으로 버전이 교체됩니다.");
+                progress?.Report(Loc.T("update.app.ready"));
                 return true;
             }
             catch (Exception ex)
             {
-                progress?.Report($"❌ 다운로드 또는 압축 해제 중 오류 발생: {ex.Message}");
+                progress?.Report(Loc.F("update.app.error", ex.Message));
                 return false;
             }
         }

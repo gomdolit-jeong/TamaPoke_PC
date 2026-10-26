@@ -33,14 +33,14 @@ namespace TamaPoke.Utils
 
             try
             {
-                progress?.Report("[4단계] 대용량 포켓몬 스프라이트 원본(ZIP) 다운로드 시작...");
-                progress?.Report("안내: 원본 파일이 커서 네트워크 환경에 따라 1~5분 정도 소요될 수 있습니다.");
+                progress?.Report(Loc.T("update.sprite.start"));
+                progress?.Report(Loc.T("update.sprite.slow"));
 
                 // 🌟 서버 통신 시작 (전체를 기다리지 않고 응답 헤더만 오면 바로 통과)
                 using HttpResponseMessage response = await client.GetAsync(RepoZipUrl, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
 
-                progress?.Report("✅ 서버 연결 성공! 실시간 다운로드를 시작합니다...");
+                progress?.Report(Loc.T("update.sprite.connected"));
 
                 // 파일 전체 크기 파악 (서버에서 크기 정보를 제공할 경우)
                 long? totalBytes = response.Content.Headers.ContentLength;
@@ -68,17 +68,17 @@ namespace TamaPoke.Utils
                             if (totalBytes.HasValue)
                             {
                                 long totalMB = totalBytes.Value / 1024 / 1024;
-                                progress?.Report($"⬇️ 다운로드 진행 중... {downloadedMB} MB / {totalMB} MB");
+                                progress?.Report(Loc.F("update.sprite.progress", downloadedMB, totalMB));
                             }
                             else
                             {
-                                progress?.Report($"⬇️ 다운로드 진행 중... {downloadedMB} MB 완료");
+                                progress?.Report(Loc.F("update.sprite.progressNoTotal", downloadedMB));
                             }
                         }
                     }
                 }
 
-                progress?.Report("✅ 다운로드 완료! 압축을 해제합니다. 잠시만 기다려주세요...");
+                progress?.Report(Loc.T("update.sprite.unzipping"));
 
                 if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
                 Directory.CreateDirectory(extractPath);
@@ -95,7 +95,7 @@ namespace TamaPoke.Utils
                     File.Copy(sourceTrackerPath, targetTrackerPath, true);
                 }
 
-                progress?.Report("스프라이트 누락 번호를 검사 중입니다...");
+                progress?.Report(Loc.T("update.sprite.scanning"));
                 List<int> missingIds = new List<int>();
 
                 for (int i = 1; i <= GameConstants.MAX_POKEMON_ID; i++)
@@ -112,8 +112,8 @@ namespace TamaPoke.Utils
                 string missingJsonPath = Path.Combine(dataFolderPath, "missing_sprites.json");
                 File.WriteAllText(missingJsonPath, JsonSerializer.Serialize(missingIds, new JsonSerializerOptions { WriteIndented = true }));
 
-                progress?.Report($"[안내] 총 {missingIds.Count}마리의 스프라이트가 없어 알 부화 목록에서 제외됩니다.");
-                progress?.Report("기존 SpriteConverter를 사용해 .bin 파일로 굽기 시작합니다...");
+                progress?.Report(Loc.F("update.sprite.missing", missingIds.Count));
+                progress?.Report(Loc.T("update.sprite.converting"));
 
                 string convertResult = SpriteConverter.BatchConvertAll(sourceSpriteFolder, targetResourceDir, targetTrackerPath);
                 BinSpriteReader.ClearCache(); // 새로 만든 bin(재생시간 포함)을 다시 읽도록 캐시 초기화
@@ -121,19 +121,19 @@ namespace TamaPoke.Utils
             }
             catch (TaskCanceledException)
             {
-                progress?.Report("❌ 다운로드 실패: 10분이 초과되어 통신이 강제 종료되었습니다. 네트워크 상태를 확인해 주세요.");
+                progress?.Report(Loc.T("update.sprite.timeout"));
             }
             catch (Exception ex)
             {
-                progress?.Report($"❌ 스프라이트 다운로드/변환 중 오류 발생: {ex.Message}");
+                progress?.Report(Loc.F("update.sprite.error", ex.Message));
             }
             finally
             {
-                progress?.Report("임시 대용량 다운로드 파일들을 청소합니다...");
+                progress?.Report(Loc.T("update.sprite.cleanup"));
                 if (File.Exists(tempZipPath)) File.Delete(tempZipPath);
                 if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
 
-                progress?.Report("✨ 누락된 포켓몬 검사 및 .bin 굽기 작업이 완벽하게 끝났습니다!");
+                progress?.Report(Loc.T("update.sprite.done"));
             }
         }
     }

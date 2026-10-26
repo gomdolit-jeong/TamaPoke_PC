@@ -40,7 +40,7 @@ namespace TamaPoke.Utils
         {
             var allPokemonData = new List<PokemonInfo>();
 
-            progress?.Report("진화 체인 데이터를 수집하는 중입니다... 잠시만 기다려주세요!");
+            progress?.Report(Loc.T("update.data.evolution"));
             Dictionary<int, (int EvolveTo, int EvolveLevel)> evolutionMap = await FetchAllEvolutionMappingsAsync(progress);
 
             for (int id = 1; id <= GameConstants.MAX_POKEMON_ID; id++)
@@ -81,7 +81,7 @@ namespace TamaPoke.Utils
                         allPokemonData.Add(newPokemon);
                     }
 
-                    progress?.Report($"도감 번호 {id}/{GameConstants.MAX_POKEMON_ID} 기본 데이터 처리 완료...");
+                    progress?.Report(Loc.F("update.data.progress", id, GameConstants.MAX_POKEMON_ID));
                 }
                 catch (Exception) { }
             }
@@ -102,7 +102,7 @@ namespace TamaPoke.Utils
             File.WriteAllText(savePath, finalJson);
 
             PokemonDex.LoadPokemonData();
-            progress?.Report("포켓몬 기본 데이터(pokemon_data.json) 진화 정보 포함 갱신 완료!");
+            progress?.Report(Loc.T("update.data.done"));
         }
 
         private static async Task<Dictionary<int, (int, int)>> FetchAllEvolutionMappingsAsync(IProgress<string>? progress)
@@ -115,7 +115,7 @@ namespace TamaPoke.Utils
                 {
                     if (chainId % 20 == 0 || chainId == 1)
                     {
-                        progress?.Report($"[진화 수집 중] 진화 체인 분석 중... ({chainId}/{GameConstants.MAX_EVOLUTION_CHAIN_ID})");
+                        progress?.Report(Loc.F("update.data.chain", chainId, GameConstants.MAX_EVOLUTION_CHAIN_ID));
                     }
 
                     var response = await client.GetAsync($"https://pokeapi.co/api/v2/evolution-chain/{chainId}");

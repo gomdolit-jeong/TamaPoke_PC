@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using TamaPoke.Models;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Views
 {
@@ -49,7 +50,7 @@ namespace TamaPoke.Views
             {
                 // 🌟 수정: 윈도우 MessageBox 대신 인게임 팝업창을 엽니다!
                 _memberToSwap = selectedMember;
-                ConfirmPopupText.Text = $"{selectedMember.Name} 포켓몬과\n교체하시겠습니까?";
+                ConfirmPopupText.Text = Loc.F("party.swap.with", selectedMember.Name);
                 SwapConfirmOverlay.Visibility = Visibility.Visible;
             }
             else
@@ -85,7 +86,7 @@ namespace TamaPoke.Views
             if (state != null && state.IsSwapMode)
             {
                 state.CancelSwap(); // 대기 중인 새 포켓몬을 포기(방생)합니다!
-                System.Windows.MessageBox.Show("새로 잡은 포켓몬을 자연으로 돌려보냈습니다.", "방생");
+                System.Windows.MessageBox.Show(Loc.T("party.released.message"), Loc.T("party.released.title"));
             }
 
             // 창 닫기 로직 (ViewModel 바인딩을 사용 중이시라면 state.IsPartyOpen = false; 만 하셔도 됩니다)
