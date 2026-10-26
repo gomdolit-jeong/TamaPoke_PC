@@ -563,48 +563,6 @@ namespace TamaPoke.Models
         private int Clamp100(int value) => Math.Max(0, Math.Min(value, 100));
         #endregion
 
-        #region 디버그용 (Debug Tools)
-        [JsonIgnore]
-        public bool IsDebugMode
-        {
-            get
-            {
-#if DEBUG
-                return true;
-#else
-                return false;
-#endif
-            }
-        }
-
-        public void SkipTimeForTest()
-        {
-            if (IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
-
-            _ageSeconds += 3600;
-            AgeMinutes += MINUTES_PER_LEVEL;
-            IsEvolutionPostponed = false;
-            IsFarewellPostponed = false;
-
-            TrAtk = Math.Min(100, TrAtk + 10);
-            TrDef = Math.Min(100, TrDef + 10);
-
-            OnPropertyChanged(nameof(Level));
-            OnPropertyChanged(nameof(LevelDisplay));
-            OnPropertyChanged(nameof(CanEvolveNow));
-            OnPropertyChanged(nameof(CanShowEvolvePrompt));
-            OnPropertyChanged(nameof(EvolveProgressText));
-            OnPropertyChanged(nameof(EvolveProgressPercent));
-
-            if (Party != null && Party.Count > 0)
-            {
-                SyncMainToLeader();
-            }
-
-            CheckStateAndAnimate();
-        }
-        #endregion
-
         #region 🌟 INotifyPropertyChanged 구현 (UI Update Notifications)
         public event PropertyChangedEventHandler? PropertyChanged;
 

@@ -425,10 +425,6 @@
                         <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.bath}" Click="CleanButton_Click" IsEnabled="{Binding IsAlive}">
                             <emoji:TextBlock Text="🫧" FontSize="13" Foreground="#4DD0E1"/>
                         </Button>
-                        <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.skip}" Click="SkipTimeButton_Click" IsEnabled="{Binding IsAlive}"
-                            Visibility="{Binding IsDebugMode, Converter={StaticResource BoolToVis}}">
-                            <emoji:TextBlock Text="⏩" FontSize="13" Foreground="#8E24AA"/>
-                        </Button>
                     </StackPanel>
 
                     <!-- 뷰 컨트롤 영역 -->

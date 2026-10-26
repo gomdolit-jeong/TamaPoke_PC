@@ -174,13 +174,6 @@ namespace TamaPoke.Views
             else pet?.PlaySound(SoundManager.N_DENY);
         }
 
-        private void SkipTimeButton_Click(object sender, RoutedEventArgs e)
-        {
-            var pet = GetPet();
-            pet?.PlaySound(SoundManager.N_TAP);
-            pet?.SkipTimeForTest();
-        }
-
         private void Evolve_Click(object sender, RoutedEventArgs e)
         {
             var pet = GetPet();
