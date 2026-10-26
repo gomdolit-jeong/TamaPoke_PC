@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {
@@ -19,7 +20,10 @@ namespace TamaPoke.Models
     public class SkillInfo
     {
         public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
+        // 이름: 한국어(기존 JSON의 "Name" 필드)와 영어. 화면에는 현재 언어 이름을 씁니다.
+        [JsonPropertyName("Name")] public string NameKo { get; set; } = string.Empty;
+        public string? NameEn { get; set; }
+        [JsonIgnore] public string Name => Loc.Instance.IsEnglish && !string.IsNullOrEmpty(NameEn) ? NameEn : NameKo;
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public PokemonType Type { get; set; }

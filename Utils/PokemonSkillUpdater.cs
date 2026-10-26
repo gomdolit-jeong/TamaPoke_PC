@@ -150,7 +150,8 @@ namespace TamaPoke.Utils
 
                 if (detail == null) return null;
 
-                string koName = detail.names.FirstOrDefault(n => n.language.name == "ko")?.name ?? detail.names.FirstOrDefault(n => n.language.name == "en")?.name ?? "알 수 없음";
+                string? enName = detail.names.FirstOrDefault(n => n.language.name == "en")?.name;
+                string koName = detail.names.FirstOrDefault(n => n.language.name == "ko")?.name ?? enName ?? $"#{detail.id}";
 
                 Enum.TryParse(detail.type.name, true, out PokemonType parsedType);
 
@@ -180,7 +181,8 @@ namespace TamaPoke.Utils
                 return new SkillInfo
                 {
                     Id = detail.id,
-                    Name = koName,
+                    NameKo = koName,
+                    NameEn = enName,
                     Type = parsedType,
                     Category = parsedCategory,
                     Power = detail.power ?? 0,

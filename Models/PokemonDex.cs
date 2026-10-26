@@ -18,7 +18,10 @@ namespace TamaPoke.Models
     public class PokemonInfo
     {
         public int Id { get; set; }
-        public string DisplayName { get; set; } = string.Empty;
+        // 이름: 한국어(기존 JSON의 "DisplayName" 필드)와 영어. 화면에는 현재 언어 이름을 씁니다.
+        [JsonPropertyName("DisplayName")] public string NameKo { get; set; } = string.Empty;
+        public string? NameEn { get; set; }
+        [JsonIgnore] public string DisplayName => Loc.Instance.IsEnglish && !string.IsNullOrEmpty(NameEn) ? NameEn : NameKo;
         public PokemonType Type1 { get; set; }
         public PokemonType Type2 { get; set; }
         public int BaseHp { get; set; }

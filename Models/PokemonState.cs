@@ -613,6 +613,8 @@ namespace TamaPoke.Models
             OnPropertyChanged(string.Empty);
             InitializeBadgesList();                          // 배지 지역 제목
             foreach (var item in Inventory) item.RefreshTexts(); // 아이템 이름/설명
+            foreach (var member in Party) member.RefreshTexts();  // 파티 포켓몬 이름
+            RefreshPokedex();                                     // 도감 종 이름
         }
 
         public void OnPropertyChanged([CallerMemberName] string? propertyName = null)

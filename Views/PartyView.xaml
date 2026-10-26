@@ -79,7 +79,7 @@
 
                                 <!-- 포켓몬 정보 텍스트 -->
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="3,0,0,0">
-                                    <TextBlock Text="{Binding Name}" FontFamily="Consolas" FontWeight="Bold" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding DisplayName}" FontFamily="Consolas" FontWeight="Bold" FontSize="10" TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{Binding LevelDisplay}" FontFamily="Consolas" FontSize="10" Margin="0,0,0,2"/>
 
                                     <!-- 🌟 타입 뱃지 영역: 기존 TextBlock을 Border로 감싸고 색상을 바인딩했습니다 -->

@@ -50,7 +50,7 @@ namespace TamaPoke.Views
             {
                 // 🌟 수정: 윈도우 MessageBox 대신 인게임 팝업창을 엽니다!
                 _memberToSwap = selectedMember;
-                ConfirmPopupText.Text = Loc.F("party.swap.with", selectedMember.Name);
+                ConfirmPopupText.Text = Loc.F("party.swap.with", selectedMember.DisplayName);
                 SwapConfirmOverlay.Visibility = Visibility.Visible;
             }
             else

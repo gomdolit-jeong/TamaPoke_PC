@@ -64,7 +64,8 @@ namespace TamaPoke.Utils
                         var newPokemon = new PokemonInfo
                         {
                             Id = id,
-                            DisplayName = GetKoreanName(speciesInfo) ?? $"포켓몬 {id}",
+                            NameKo = GetName(speciesInfo, "ko") ?? GetName(speciesInfo, "en") ?? $"#{id}",
+                            NameEn = GetName(speciesInfo, "en"),
                             Type1 = MapTypeToEnum(basicInfo.types.FirstOrDefault(t => t.slot == 1)?.type.name),
                             Type2 = MapTypeToEnum(basicInfo.types.FirstOrDefault(t => t.slot == 2)?.type.name),
                             BaseHp = GetStat(basicInfo, "hp"),
@@ -180,7 +181,7 @@ namespace TamaPoke.Utils
             return JsonSerializer.Deserialize<ApiSpecies>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
 
-        private static string? GetKoreanName(ApiSpecies species) => species.names.FirstOrDefault(n => n.language.name == "ko")?.name;
+        private static string? GetName(ApiSpecies species, string language) => species.names.FirstOrDefault(n => n.language.name == language)?.name;
 
         private static int GetStat(ApiPokemon pokemon, string statName) => pokemon.stats.FirstOrDefault(s => s.stat.name == statName)?.base_stat ?? 50;
 

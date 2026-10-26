@@ -11,7 +11,13 @@ namespace TamaPoke.Models
     public class PartyMember : INotifyPropertyChanged
     {
         public int SpeciesId { get; set; }
-        public string Name { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;   // 저장 당시 이름 (호환용)
+
+        // 화면 표시 이름: 도감 번호로 현재 언어 이름을 찾습니다. (데이터가 없으면 저장된 이름)
+        [JsonIgnore] public string DisplayName => SpeciesId > 0 && PokemonDex.Get(SpeciesId) != null ? PokemonDex.GetName(SpeciesId) : Name;
+
+        // 언어가 바뀌었을 때 이름 바인딩을 다시 읽게 합니다.
+        public void RefreshTexts() => OnPropertyChanged(string.Empty);
 
         // 🌟 핵심 추가: 파티에 들어가서도 이로치/특수 폼 파일명을 잊어버리지 않게 저장합니다!
         public string SpriteFileName { get; set; } = string.Empty;
