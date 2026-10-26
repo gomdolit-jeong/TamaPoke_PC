@@ -174,6 +174,7 @@ namespace TamaPoke.Models
         public void RequestMegaEvolution()
         {
             if (!CanMegaEvolveNow || !IsPlayerTurn) return;
+            MarkBattleAttended();
 
             var forms = GetUsableMegaForms(SpeciesId);
             if (forms.Count == 1)

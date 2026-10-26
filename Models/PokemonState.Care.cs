@@ -87,6 +87,7 @@ namespace TamaPoke.Models
             {
                 Energy = Clamp100(Energy + 6);
                 if (AgeMinutes % 30 == 0) Hygiene = Math.Max(0, Hygiene - 1);
+                if (Energy >= 100) WakeUp(); // 기력이 다 차면 스스로 깹니다.
                 return;
             }
 
@@ -181,7 +182,7 @@ namespace TamaPoke.Models
                     {
                         if (moveRand.Next(10000) < 3)
                         {
-                            StartWildBattle();
+                            StartWildBattle(autoEncounter: true);
                         }
                         else
                         {
@@ -277,21 +278,23 @@ namespace TamaPoke.Models
             // 미니게임 중이거나 알 상태일 때는 수면 불가능
             if (IsEgg || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen) return;
 
-            // 수면 상태 반전 (자고 있으면 깨우고, 깨어있으면 재웁니다)
-            IsSleeping = !IsSleeping;
-
-            if (!IsSleeping)
+            if (IsSleeping)
             {
-                // 🌟 잠에서 막 깼을 때: 14번(ANIM_WAKE) 모션을 60틱(약 2초) 동안 재생합니다!
-                PlayTempAction(ANIM_WAKE, 60);
-            }
-            else
-            {
-                // 🌟 잠들었을 때: 진행 중이던 다른 임시 모션을 즉시 취소합니다.
-                _tempActionTimer = 0;
+                WakeUp();
+                return;
             }
 
-            // 상태를 즉시 화면에 반영합니다.
+            // 🌟 잠들었을 때: 진행 중이던 다른 임시 모션을 즉시 취소합니다.
+            IsSleeping = true;
+            _tempActionTimer = 0;
+            CheckStateAndAnimate();
+        }
+
+        // 잠에서 깨어 기지개 모션(ANIM_WAKE, 약 2초)을 재생합니다.
+        private void WakeUp()
+        {
+            IsSleeping = false;
+            PlayTempAction(ANIM_WAKE, 60);
             CheckStateAndAnimate();
         }
 

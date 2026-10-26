@@ -102,10 +102,11 @@ namespace TamaPoke.Models
         // 산책 중 1초마다 호출됩니다. (Tick 대신)
         private void WalkTick()
         {
-            _ageSeconds++;
             if (DateTime.Now.Date > LastPlayedDate.Date) CheckDailyStreak();
+            if (IsEgg) return; // 알은 산책 중에 부화 시간이 흐르지 않습니다.
 
-            if (IsEgg || _ageSeconds % 60 != 0) return; // 알은 산책 중에 부화가 진행되지 않습니다.
+            _ageSeconds++;
+            if (_ageSeconds % 60 != 0) return;
 
             _walkMinutes++;
 

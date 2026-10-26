@@ -559,5 +559,6 @@
   "mega.battle.react": "{0}'s {1} is reacting\nto the Mega Ring!",
   "mega.battle.reactNoStone": "{0} is reacting\nto the Mega Ring!",
   "mega.battle.done": "{0} has Mega Evolved\ninto {1}!",
-  "mega.battle.primal": "{0}'s Primal Reversion!\nIt reverted to its primal form!"
+  "mega.battle.primal": "{0}'s Primal Reversion!\nIt reverted to its primal form!",
+  "battle.autoFled": "You were away, so you got away safely!"
 }

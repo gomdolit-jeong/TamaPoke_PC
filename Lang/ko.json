@@ -559,5 +559,6 @@
   "mega.battle.react": "{0}의 {1}와(과)\n메가링이 반응했다!",
   "mega.battle.reactNoStone": "{0}이(가)\n메가링에 반응했다!",
   "mega.battle.done": "{0}은(는) {1}(으)로\n메가진화했다!",
-  "mega.battle.primal": "{0}의 원시회귀!\n원시의 모습을 되찾았다!"
+  "mega.battle.primal": "{0}의 원시회귀!\n원시의 모습을 되찾았다!",
+  "battle.autoFled": "자리를 비운 사이 무사히 도망쳤다!"
 }

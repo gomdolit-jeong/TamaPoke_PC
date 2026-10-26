@@ -558,6 +558,10 @@ namespace TamaPoke.Models
             LastPlayedDate = today;
         }
 
+        // 설정에서 고른 부화/야생 대상 세대에 속하는 포켓몬인지
+        private bool IsInSelectedGenerations(int speciesId) =>
+            Settings.SelectedGenerations.Any(gen => GameRegions.ByGeneration(gen)?.Contains(speciesId) ?? true);
+
         public int CareBonus() { int s = Streak > 30 ? 30 : Streak; return (s / 3) + (Bond / 25); }
 
         private int Clamp100(int value) => Math.Max(0, Math.Min(value, 100));

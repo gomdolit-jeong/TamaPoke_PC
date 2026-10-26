@@ -131,16 +131,17 @@ namespace TamaPoke.Models
             foreach (var rootId in DexTable.Keys) CollectEvolutions(rootId);
 
             var baseSpeciesIds = PokemonDex.AllPokemons
-                .Where(p => Settings.SelectedGenerations.Any(gen => GameRegions.ByGeneration(gen)?.Contains(p.Id) ?? true)
+                .Where(p => IsInSelectedGenerations(p.Id)
                             && !allEvolvedIds.Contains(p.Id)
                             && !LegendaryIds.Contains(p.Id)
                             && SpriteForms.IsUsable(p.Id))
                 .Select(p => p.Id)
                 .ToList();
 
-            if (RegisteredCount >= 30 && rand.Next(100) < 3)
+            // 전설은 야생에서 얻기 힘들어서 부화로 드물게 나옵니다. (선택한 세대의 전설만)
+            if (RegisteredCount >= GameConstants.LEGENDARY_HATCH_MIN_DEX && rand.Next(100) < GameConstants.LEGENDARY_HATCH_CHANCE_PERCENT)
             {
-                var validLegendaries = LegendaryIds.Where(SpriteForms.IsUsable).ToArray();
+                var validLegendaries = LegendaryIds.Where(id => IsInSelectedGenerations(id) && SpriteForms.IsUsable(id)).ToArray();
                 if (validLegendaries.Length > 0)
                 {
                     return validLegendaries[rand.Next(validLegendaries.Length)];
@@ -152,8 +153,8 @@ namespace TamaPoke.Models
 
         private void ApplyShinyAndSprite(Random rand)
         {
-            int shinyBase = (LastEnd == 1 ? 24 : 48) - CareBonus();
-            if (shinyBase < 8) shinyBase = 8;
+            int shinyBase = (LastEnd == 1 ? GameConstants.SHINY_ODDS_AFTER_FAREWELL : GameConstants.SHINY_ODDS_DEFAULT) - CareBonus();
+            if (shinyBase < GameConstants.SHINY_ODDS_MIN) shinyBase = GameConstants.SHINY_ODDS_MIN;
             IsShiny = (rand.Next(shinyBase) == 0);
 
             Directory.CreateDirectory(AppPaths.SpriteFolder);

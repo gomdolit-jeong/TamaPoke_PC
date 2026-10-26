@@ -125,9 +125,30 @@ namespace TamaPoke.Utils
             return 0;
         }
 
-        public static int GetFallbackMove(PokemonType type)
+        // 타입별 기본 공격기 (자력기가 없거나 자기 타입 기술이 없을 때 채워 넣는 용도). 데이터에 없으면 몸통박치기
+        private static readonly Dictionary<PokemonType, int> FallbackMoves = new()
         {
-            return 33; // 기본 땜빵 스킬 (몸통박치기)
-        }
+            [PokemonType.Normal] = 33,    // 몸통박치기
+            [PokemonType.Fire] = 52,      // 불꽃세례
+            [PokemonType.Water] = 55,     // 물대포
+            [PokemonType.Electric] = 84,  // 전기쇼크
+            [PokemonType.Grass] = 22,     // 덩굴채찍
+            [PokemonType.Ice] = 181,      // 눈싸라기
+            [PokemonType.Fighting] = 2,   // 태권당수
+            [PokemonType.Poison] = 40,    // 독침
+            [PokemonType.Ground] = 189,   // 진흙뿌리기
+            [PokemonType.Flying] = 16,    // 바람일으키기
+            [PokemonType.Psychic] = 93,   // 염동력
+            [PokemonType.Bug] = 522,      // 벌레의저항
+            [PokemonType.Rock] = 88,      // 돌떨구기
+            [PokemonType.Ghost] = 122,    // 핥기
+            [PokemonType.Dragon] = 225,   // 용의숨결
+            [PokemonType.Dark] = 44,      // 물기
+            [PokemonType.Steel] = 232,    // 메탈크로우
+            [PokemonType.Fairy] = 584,    // 요정의바람
+        };
+
+        public static int GetFallbackMove(PokemonType type) =>
+            FallbackMoves.TryGetValue(type, out int id) && MoveDatabase.ContainsKey(id) ? id : 33;
     }
 }

@@ -92,7 +92,7 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool IsCatchOffered { get => _isCatchOffered; set { if (SetProperty(ref _isCatchOffered, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
 
         private bool _isAttackMenuOpen = false;
-        [JsonIgnore] public bool IsAttackMenuOpen { get => _isAttackMenuOpen; set { if (SetProperty(ref _isAttackMenuOpen, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
+        [JsonIgnore] public bool IsAttackMenuOpen { get => _isAttackMenuOpen; set { if (value) MarkBattleAttended(); if (SetProperty(ref _isAttackMenuOpen, value)) { OnPropertyChanged(nameof(IsMainMenuVisible)); OnPropertyChanged(nameof(IsAttackMenuVisible)); } } }
 
         private bool _isBattleInventoryOpen = false;
         [JsonIgnore] public bool IsBattleInventoryOpen
@@ -100,6 +100,7 @@ namespace TamaPoke.Models
             get => _isBattleInventoryOpen;
             set
             {
+                if (value) MarkBattleAttended();
                 if (SetProperty(ref _isBattleInventoryOpen, value))
                 {
                     OnPropertyChanged(nameof(IsMainMenuVisible));
@@ -213,6 +214,16 @@ namespace TamaPoke.Models
                 int fallback = SkillDex.GetFallbackMove(d.Type1);
                 EnemySkills[slotToFill] = fallback > 0 ? fallback : 1;
             }
+
+            // 자기 타입 공격기가 하나도 없으면 그 타입의 기본 기술을 넣습니다. (낮은 레벨의 관장/야생도 자기 타입 기술을 쓰도록)
+            bool hasStab = EnemySkills.Any(id => SkillDex.GetSkill(id) is { } s && s.Power > 0 && (s.Type == d.Type1 || s.Type == d.Type2));
+            int stabMove = SkillDex.GetFallbackMove(d.Type1);
+            if (!hasStab && !EnemySkills.Contains(stabMove))
+            {
+                int slot = Array.IndexOf(EnemySkills, 0);
+                if (slot < 0) slot = 3; // 꽉 찼으면 점수가 가장 낮은 마지막 칸을 바꿉니다.
+                EnemySkills[slot] = stabMove;
+            }
         }
 
         private SkillInfo ChooseEnemySkill()
@@ -291,9 +302,41 @@ namespace TamaPoke.Models
         private bool _isEnemyGenderless = false;
         private string _enemySpriteFileName = "";
 
-        public async void StartWildBattle()
+        // 대기 중 저절로 시작된 배틀은 이 시간 동안 아무 조작이 없으면 자동으로 도망칩니다. (자리를 비운 경우)
+        private const int AUTO_ENCOUNTER_TIMEOUT_SECONDS = 60;
+        private int _battleSerial;      // 배틀마다 바뀌는 번호 (이전 배틀의 대기 작업이 새 배틀을 건드리지 않도록)
+        private bool _battleAttended;   // 이번 배틀에서 플레이어가 조작했는지
+
+        // 체육관 보상 개수 (재도전은 적게)
+        private const int GYM_PRIZE_POTIONS = 2, GYM_PRIZE_BALLS = 3;
+        private const int GYM_REMATCH_PRIZE_POTIONS = 1, GYM_REMATCH_PRIZE_BALLS = 1;
+
+        private void BeginBattleSession()
+        {
+            _battleSerial++;
+            _battleAttended = false;
+        }
+
+        private void MarkBattleAttended() => _battleAttended = true;
+
+        private async void FleeIfUnattendedAsync(int serial)
+        {
+            await Task.Delay(AUTO_ENCOUNTER_TIMEOUT_SECONDS * 1000);
+            if (serial != _battleSerial || !IsBattleOpen || _battleAttended || !IsPlayerTurn || IsBattleResolved) return;
+
+            IsPlayerTurn = false;
+            BattleMessage = Loc.T("battle.autoFled");
+            await Task.Delay(2000);
+            if (serial != _battleSerial) return;
+            CloseBattle();
+            IsPlayerTurn = true;
+        }
+
+        // autoEncounter: 대기 중 저절로 시작된 배틀 (1분 동안 조작이 없으면 자동 도망)
+        public async void StartWildBattle(bool autoEncounter = false)
         {
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
+            BeginBattleSession();
 
             IsProfileOpen = false; _isCounterReady = false;
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
@@ -305,15 +348,15 @@ namespace TamaPoke.Models
             EnemyAilment = SkillAilment.None; _enemyAilmentTurns = 0; _enemyBadPoisonTurnCount = 0;
 
             Random rand = new Random();
-            // 야생 상대도 기본 이미지가 있는 포켓몬만 나옵니다.
-            var legendaries = LegendaryIds.Where(SpriteForms.IsUsable).ToArray();
-            if (rand.Next(100) < 1 && legendaries.Length > 0) { EnemySpeciesId = legendaries[rand.Next(legendaries.Length)]; }
-            else { var ids = PokemonDex.AllPokemons.Where(p => p.Id <= 493 && !LegendaryIds.Contains(p.Id) && SpriteForms.IsUsable(p.Id)).Select(p => p.Id).ToList(); EnemySpeciesId = ids.Count > 0 ? ids[rand.Next(ids.Count)] : 1; }
+            // 야생 상대: 설정에서 고른 세대 중 기본 이미지가 있는 포켓몬 (부화와 같은 세대 기준)
+            var legendaries = LegendaryIds.Where(id => IsInSelectedGenerations(id) && SpriteForms.IsUsable(id)).ToArray();
+            if (rand.Next(100) < GameConstants.WILD_LEGENDARY_CHANCE_PERCENT && legendaries.Length > 0) { EnemySpeciesId = legendaries[rand.Next(legendaries.Length)]; }
+            else { var ids = PokemonDex.AllPokemons.Where(p => IsInSelectedGenerations(p.Id) && !LegendaryIds.Contains(p.Id) && SpriteForms.IsUsable(p.Id)).Select(p => p.Id).ToList(); EnemySpeciesId = ids.Count > 0 ? ids[rand.Next(ids.Count)] : 1; }
 
             EnemyLevel = Math.Max(1, Level + rand.Next(-2, 3));
             PlayerMaxHp = CombatMaxHp; PlayerHp = PlayerMaxHp;
 
-            IsEnemyShiny = rand.Next(100) < 1;
+            IsEnemyShiny = rand.Next(100) < GameConstants.WILD_SHINY_CHANCE_PERCENT;
             (_isEnemyGenderless, _isEnemyFemale) = PokemonDex.RollGender(EnemySpeciesId, rand);
 
             string[] allForms = AppPaths.GetSpriteForms(EnemySpeciesId);
@@ -335,6 +378,8 @@ namespace TamaPoke.Models
             await Task.Delay(1500);
             BattleMessage = Loc.T("battle.choose");
             IsPlayerTurn = true;
+
+            if (autoEncounter) FleeIfUnattendedAsync(_battleSerial);
         }
 
         public void CloseBattle()
@@ -366,6 +411,7 @@ namespace TamaPoke.Models
         public async Task ExecuteTurnAsync(BattleAction playerAction)
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
+            MarkBattleAttended();
             IsPlayerTurn = false; Random rand = new Random();
 
             if (playerAction == BattleAction.Run)
@@ -405,6 +451,7 @@ namespace TamaPoke.Models
         public async Task ExecuteSkillTurnAsync(SkillInfo playerSkill)
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
+            MarkBattleAttended();
             IsPlayerTurn = false; IsAttackMenuOpen = false;
             Random rand = new Random();
 
@@ -475,6 +522,7 @@ namespace TamaPoke.Models
         public async Task ExecuteItemTurnAsync(ItemInfo selectedItem)
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
+            MarkBattleAttended();
             IsPlayerTurn = false;
 
             if (selectedItem.Type == ItemType.Potion)
@@ -504,7 +552,7 @@ namespace TamaPoke.Models
                 return false;
             }
 
-            var targetInfo = PokemonDex.Get((targetIsEnemy ? EnemySpeciesId : SpeciesId));
+            var targetInfo = targetIsEnemy ? PokemonDex.Get(EnemySpeciesId) : MyBattleInfo; // 메가진화 중이면 메가 폼 타입
             bool alreadyAiled = (targetIsEnemy ? EnemyAilment : PlayerAilment) != SkillAilment.None;
             bool immune = AilmentHelper.IsImmune(skill.Ailment, targetInfo?.Type1 ?? PokemonType.Normal, targetInfo?.Type2 ?? PokemonType.None);
 
@@ -773,8 +821,8 @@ namespace TamaPoke.Models
             BattleMessage = Loc.T("battle.gym.prize");
             await Task.Delay(2000);
 
-            AddItem(ItemDex.HyperPotion, 2);
-            AddItem(ItemDex.MonsterBall, 3);
+            AddItem(ItemDex.HyperPotion, _isGymRematch ? GYM_REMATCH_PRIZE_POTIONS : GYM_PRIZE_POTIONS);
+            AddItem(ItemDex.MonsterBall, _isGymRematch ? GYM_REMATCH_PRIZE_BALLS : GYM_PRIZE_BALLS);
 
             BattleMessage = Loc.F("battle.gym.prizeItems", ItemDex.Get(ItemDex.HyperPotion).Name, ItemDex.Get(ItemDex.MonsterBall).Name);
             await Task.Delay(2500);
@@ -799,6 +847,7 @@ namespace TamaPoke.Models
         // [시퀀스 4-B] 야생 포획 연출 및 확률 계산
         public async Task ExecuteCatchResultAsync()
         {
+            MarkBattleAttended();
             double hpPercent = (double)EnemyHp / EnemyMaxHp;
             int catchRate = 10;
             if (hpPercent <= 0.2) catchRate = 70;
@@ -962,6 +1011,7 @@ namespace TamaPoke.Models
 
             _selectedGymIndex = gymIndex;
             _isGymRematch = gymIndex < GymBadges;
+            BeginBattleSession();
 
             IsProfileOpen = false; _isCounterReady = false;
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
@@ -988,7 +1038,7 @@ namespace TamaPoke.Models
             EnemyMaxHp = (int)(BattleCalculator.MaxHp(enemyBaseHp, BattleCalculator.GYM_GENE, EnemyLevel) * BattleCalculator.GYM_BONUS);
             EnemyHp = EnemyMaxHp;
 
-            EnemySkills = (int[])(leader.SpecificSkills?.Clone() ?? new int[4]);
+            GenerateEnemySkills(); // 관장 레벨까지 배우는 자력기 중 자기 타입/위력 높은 기술 우선
             UpdateEnemyAnimation(0);
 
             IsBattleOpen = true; IsPlayerTurn = false;
