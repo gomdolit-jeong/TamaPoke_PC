@@ -6,7 +6,6 @@
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         RenderOptions.BitmapScalingMode="NearestNeighbor"
-        RenderOptions.EdgeMode="Aliased"
         WindowStyle="None" 
         AllowsTransparency="True" 
         Background="Transparent"

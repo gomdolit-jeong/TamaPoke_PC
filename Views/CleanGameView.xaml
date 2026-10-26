@@ -5,8 +5,7 @@
              xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Height="320" Width="350"
              MouseMove="GameArea_MouseMove"
-             RenderOptions.BitmapScalingMode="NearestNeighbor"
-             RenderOptions.EdgeMode="Aliased">
+             RenderOptions.BitmapScalingMode="NearestNeighbor">
 
     <Grid Background="Transparent">
         <!-- 다마고치 기기 테두리 -->

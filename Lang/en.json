@@ -281,7 +281,7 @@
   "region.9": "Paldea",
   "party.title": "Party",
   "party.count": "{0}/6 Pokémon",
-  "party.full": "Your party is full! Click a member to send away.",
+  "party.full": "Party full! Pick one to send away.",
   "party.lead": "Lead",
   "party.selected": "Selected",
   "party.makeLead": "Make lead",

@@ -17,7 +17,7 @@
     </UserControl.Resources>
 
     <Border Background="#F7F3E8" CornerRadius="144" Width="288" Height="288" BorderBrush="Black" BorderThickness="1.5">
-        <Grid Margin="10,15,10,10">
+        <Grid Margin="0,22,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -25,17 +25,29 @@
             </Grid.RowDefinitions>
 
             <!-- 1. 상단 타이틀 영역 -->
-            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,5,0,0">
-                <TextBlock Text="{u:T party.title}" FontSize="18" FontWeight="Bold" FontFamily="Malgun Gothic" HorizontalAlignment="Center"/>
-                <TextBlock Text="{Binding Party.Count, Converter={x:Static lc:LocFormatConverter.Instance}, ConverterParameter=party.count}" FontSize="9" Foreground="#A9A9A9" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,1,0,0"/>
-                <TextBlock Text="{u:T party.full}" 
-                           Foreground="#E53935" FontSize="11" FontWeight="Bold" FontFamily="Malgun Gothic" 
-                           HorizontalAlignment="Center" Margin="0,5,0,0"
-                           Visibility="{Binding IsSwapMode, Converter={StaticResource BoolToVis}}"/>
+            <!-- 원의 위쪽은 좁으므로 제목 아래 한 줄만 씁니다: 평소엔 인원수, 파티가 꽉 찼을 땐 교체 안내 -->
+            <StackPanel Grid.Row="0" HorizontalAlignment="Center">
+                <TextBlock Text="{u:T party.title}" FontSize="17" FontWeight="Bold" FontFamily="Malgun Gothic" HorizontalAlignment="Center"/>
+                <Grid Margin="0,1,0,0" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding Party.Count, Converter={x:Static lc:LocFormatConverter.Instance}, ConverterParameter=party.count}" FontSize="9" Foreground="#A9A9A9" FontFamily="Consolas" HorizontalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSwapMode}" Value="True">
+                                        <Setter Property="Visibility" Value="Hidden"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="{u:T party.full}" Foreground="#E53935" FontSize="9.5" FontWeight="Bold" FontFamily="Malgun Gothic"
+                               HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="210"
+                               Visibility="{Binding IsSwapMode, Converter={StaticResource BoolToVis}}"/>
+                </Grid>
             </StackPanel>
 
             <!-- 2. 파티 멤버 6칸 그리드 -->
-            <ItemsControl Grid.Row="1" ItemsSource="{Binding Party}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,5,0,5">
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Party}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,4,0,4">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <UniformGrid Columns="2" Rows="3" />
@@ -45,7 +57,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <!-- 테두리 스타일: 기본 -> 대표(노랑) -> 선택(빨강) 순으로 적용됩니다 -->
-                        <Border CornerRadius="6" Margin="3" Width="125" Height="55" Cursor="Hand" MouseLeftButtonDown="PartyMemberCard_Click">
+                        <Border CornerRadius="6" Margin="2,5,2,0" Width="112" Height="48" Cursor="Hand" MouseLeftButtonDown="PartyMemberCard_Click">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="BorderBrush" Value="#DDDDDD"/>
@@ -67,30 +79,30 @@
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="45"/>
+                                    <ColumnDefinition Width="38"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
                                 <!-- 포켓몬 이미지 배경 및 이미지 -->
                                 <Border Grid.Column="0" Background="#EEEEEE" CornerRadius="4" Margin="3"/>
-                                <Image Grid.Column="0" Source="{Binding SpriteImage}" Width="36" Height="36" 
+                                <Image Grid.Column="0" Source="{Binding SpriteImage}" Width="32" Height="32" 
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        RenderOptions.BitmapScalingMode="NearestNeighbor" />
 
                                 <!-- 포켓몬 정보 텍스트 -->
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="3,0,0,0">
-                                    <TextBlock Text="{Binding DisplayName}" FontFamily="Consolas" FontWeight="Bold" FontSize="10" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding LevelDisplay}" FontFamily="Consolas" FontSize="10" Margin="0,0,0,2"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="1,0,2,0">
+                                    <TextBlock Text="{Binding DisplayName}" FontFamily="Malgun Gothic" FontWeight="Bold" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding LevelDisplay}" FontFamily="Consolas" FontSize="9"/>
 
                                     <!-- 🌟 타입 뱃지 영역: 기존 TextBlock을 Border로 감싸고 색상을 바인딩했습니다 -->
                                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                        <!-- 타입 1 뱃지 -->
-                                        <Border CornerRadius="3" Background="{Binding Type1Display, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" Margin="0,0,4,0">
-                                            <TextBlock Text="{Binding Type1Display}" FontFamily="Consolas" FontSize="8" Foreground="White" FontWeight="Bold"/>
+                                        <!-- 타입 1 뱃지 (두 개가 카드 폭에 들어가도록 작게) -->
+                                        <Border CornerRadius="3" Background="{Binding Type1Display, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="3,0" Margin="0,0,2,0">
+                                            <TextBlock Text="{Binding Type1Display}" FontFamily="Consolas" FontSize="7" Foreground="White" FontWeight="Bold"/>
                                         </Border>
 
                                         <!-- 타입 2 뱃지 -->
-                                        <Border CornerRadius="3" Background="{Binding Type2Display, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1">
+                                        <Border CornerRadius="3" Background="{Binding Type2Display, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="3,0">
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Visibility" Value="Visible"/>
@@ -105,14 +117,14 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
-                                            <TextBlock Text="{Binding Type2Display}" FontFamily="Consolas" FontSize="8" Foreground="White" FontWeight="Bold"/>
+                                            <TextBlock Text="{Binding Type2Display}" FontFamily="Consolas" FontSize="7" Foreground="White" FontWeight="Bold"/>
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- 뱃지 영역: 대표 및 선택 -->
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0">
-                                    <Border Background="#FFC107" CornerRadius="4" Padding="4,2" Margin="0,0,2,0">
+                                <!-- 뱃지 영역: 대표 및 선택 (카드 위쪽 테두리에 걸친 태그라 이름을 가리지 않음) -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-7,4,0">
+                                    <Border Background="#FFC107" CornerRadius="4" Padding="4,0" Margin="0,0,2,0" BorderBrush="White" BorderThickness="1">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -123,10 +135,10 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
-                                        <TextBlock Text="{u:T party.lead}" FontSize="8" FontWeight="Bold" Foreground="White" FontFamily="Malgun Gothic"/>
+                                        <TextBlock Text="{u:T party.lead}" FontSize="7.5" FontWeight="Bold" Foreground="White" FontFamily="Malgun Gothic"/>
                                     </Border>
 
-                                    <Border Background="#E53935" CornerRadius="4" Padding="4,2">
+                                    <Border Background="#E53935" CornerRadius="4" Padding="4,0" BorderBrush="White" BorderThickness="1">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -137,7 +149,7 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
-                                        <TextBlock Text="{u:T party.selected}" FontSize="8" FontWeight="Bold" Foreground="White" FontFamily="Malgun Gothic"/>
+                                        <TextBlock Text="{u:T party.selected}" FontSize="7.5" FontWeight="Bold" Foreground="White" FontFamily="Malgun Gothic"/>
                                     </Border>
                                 </StackPanel>
                             </Grid>
@@ -147,7 +159,7 @@
             </ItemsControl>
 
             <!-- 3. 하단 버튼 영역 -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,18">
                 <Button Width="30" Height="28" Margin="0,0,8,0" Click="CloseButton_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -181,7 +193,7 @@
                 </Button>
             </StackPanel>
 
-            <Grid x:Name="SwapConfirmOverlay" Grid.RowSpan="3" Background="#99000000" Visibility="Collapsed" Margin="-10,-15,-10,-10">
+            <Grid x:Name="SwapConfirmOverlay" Grid.RowSpan="3" Background="#99000000" Visibility="Collapsed" Margin="0,-22,0,0">
                 <Border Background="White" CornerRadius="12" Width="200" Height="110" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333333" BorderThickness="2">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
                         <TextBlock x:Name="ConfirmPopupText" Text="{u:T party.swap.confirm}" FontWeight="Bold" FontSize="12" FontFamily="Malgun Gothic" HorizontalAlignment="Center" Margin="0,0,0,15" TextWrapping="Wrap" TextAlignment="Center"/>

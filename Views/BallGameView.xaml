@@ -5,8 +5,7 @@
              xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Height="320" Width="350"
              MouseMove="GameArea_MouseMove"
-             RenderOptions.BitmapScalingMode="NearestNeighbor"
-             RenderOptions.EdgeMode="Aliased">
+             RenderOptions.BitmapScalingMode="NearestNeighbor">
 
     <!-- 바깥쪽 배경 투명 처리로 네 모서리 동그랗게 유지 -->
     <Grid Background="Transparent">
