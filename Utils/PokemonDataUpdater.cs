@@ -16,6 +16,8 @@ namespace TamaPoke.Utils
 
         private class ApiPokemon { public List<ApiStat> stats { get; set; } = new(); public List<ApiTypeSlot> types { get; set; } = new(); public ApiNamedResource species { get; set; } = new(); }
         private class ApiPokemonList { public List<ApiNamedResource> results { get; set; } = new(); }
+        private class ApiItemCategory { public List<ApiNamedResource> items { get; set; } = new(); }
+        private class ApiItem { public List<ApiName> names { get; set; } = new(); }
         private class ApiStat { public int base_stat { get; set; } public ApiNamedResource stat { get; set; } = new(); }
         private class ApiTypeSlot { public int slot { get; set; } public ApiNamedResource type { get; set; } = new(); }
         private class ApiNamedResource { public string name { get; set; } = ""; public string url { get; set; } = ""; }
@@ -133,6 +135,8 @@ namespace TamaPoke.Utils
 
             try
             {
+                var stones = await FetchMegaStonesAsync(jsonOptions);
+
                 var listJson = await client.GetStringAsync("https://pokeapi.co/api/v2/pokemon?limit=3000");
                 var names = (JsonSerializer.Deserialize<ApiPokemonList>(listJson, jsonOptions)?.results ?? new())
                     .Select(r => r.name)
@@ -151,6 +155,9 @@ namespace TamaPoke.Utils
                         string? form = MegaFormOverrides.TryGetValue(apiName, out var custom) ? custom : ToSpriteSuffix(apiName, info.species.name);
                         if (form == null) continue;
 
+                        string stoneId = MatchStone(info.species.name, form, stones.Keys) ?? string.Empty;
+                        stones.TryGetValue(stoneId, out var stoneNames);
+
                         forms.Add(new MegaFormInfo
                         {
                             SpeciesId = ExtractIdFromUrl(info.species.url),
@@ -164,6 +171,9 @@ namespace TamaPoke.Utils
                             BaseSpeed = GetStat(info, "speed"),
                             BaseSpA = GetStat(info, "special-attack"),
                             BaseSpD = GetStat(info, "special-defense"),
+                            StoneId = stoneId,
+                            StoneNameKo = stoneNames.Ko,
+                            StoneNameEn = stoneNames.En,
                         });
                     }
                     catch (Exception) { }
@@ -183,6 +193,48 @@ namespace TamaPoke.Utils
 
             MegaDex.LoadMegaData();
             progress?.Report(Loc.F("update.mega.done", forms.Count));
+        }
+
+        // 메가스톤 목록(PokeAPI 아이템 이름 → 한/영 이름). 원시회귀용 쪽빛구슬/주홍구슬도 포함
+        private static async Task<Dictionary<string, (string? Ko, string? En)>> FetchMegaStonesAsync(JsonSerializerOptions jsonOptions)
+        {
+            var stones = new Dictionary<string, (string? Ko, string? En)>();
+            var category = JsonSerializer.Deserialize<ApiItemCategory>(await client.GetStringAsync("https://pokeapi.co/api/v2/item-category/mega-stones"), jsonOptions);
+            var ids = (category?.items ?? new()).Select(i => i.name).Concat(new[] { "blue-orb", "red-orb" });
+
+            foreach (string id in ids)
+            {
+                try
+                {
+                    var item = JsonSerializer.Deserialize<ApiItem>(await client.GetStringAsync($"https://pokeapi.co/api/v2/item/{id}"), jsonOptions);
+                    stones[id] = (item?.names.FirstOrDefault(n => n.language.name == "ko")?.name, item?.names.FirstOrDefault(n => n.language.name == "en")?.name);
+                }
+                catch (Exception) { }
+            }
+            return stones;
+        }
+
+        // 메가 폼에 맞는 스톤: X/Y/Z가 같고 종 이름과 앞부분이 가장 많이 겹치는 스톤 (charizard + Mega_X → charizardite-x)
+        // 원시회귀는 가이오가=쪽빛구슬, 그란돈=주홍구슬. 맞는 스톤이 없으면 null (레쿠쟈)
+        private static string? MatchStone(string speciesName, string form, IEnumerable<string> stoneIds)
+        {
+            if (form.StartsWith("Primal")) return speciesName switch { "kyogre" => "blue-orb", "groudon" => "red-orb", _ => null };
+
+            string letter = form.Split('_').SkipWhile(t => t != "Mega").Skip(1).FirstOrDefault()?.ToLowerInvariant() ?? "";
+            string? best = null;
+            int bestScore = 0;
+            foreach (string id in stoneIds)
+            {
+                if (id.EndsWith("-orb")) continue;
+                bool hasLetter = id.Length > 2 && id[^2] == '-';
+                if ((hasLetter ? id[^1].ToString() : "") != letter) continue;
+
+                string stoneBase = hasLetter ? id[..^2] : id;
+                int score = 0;
+                while (score < Math.Min(stoneBase.Length, speciesName.Length) && stoneBase[score] == speciesName[score]) score++;
+                if (score > bestScore) { best = id; bestScore = score; }
+            }
+            return bestScore >= 4 ? best : null;
         }
 
         // charizard-mega-x → Mega_X, kyogre-primal → Primal, tatsugiri-stretchy-mega → Stretchy_Mega

@@ -36,6 +36,9 @@ namespace TamaPoke.Models
 
             IsFarewellPostponed = false;
 
+            MegaShards ??= new Dictionary<string, int>();
+            MegaStones ??= new List<string>();
+            TryGrantMegaRing(); // 메가링 기능 전에 배지를 모은 세이브
             // 예전 버전에서 메가/거다이맥스 등 배틀 전용 폼으로 태어난 포켓몬은 기본 폼으로 되돌립니다.
             if (SpeciesId > 0 && SpriteForms.IsBattleOnlyForm(_spriteFileName)) RefreshSpriteFileName();
             foreach (var member in Party)

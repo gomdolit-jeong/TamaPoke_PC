@@ -419,6 +419,7 @@ namespace TamaPoke.Models
             UnlockedPokemon.Clear(); FullPokedex.Clear(); OnPropertyChanged(nameof(RegisteredCount)); Streak = 0; LastEnd = 1; LastPlayedDate = DateTime.Now.Date;
             GameHighScore = 0; CatchHighScore = 0; MemoHighScore = 0; CleanHighScore = 0;
             GymBadges = 0;
+            HasMegaRing = false; MegaShards.Clear(); MegaStones.Clear();
             IsGymBattle = false;
 
             TrAtk = 0;

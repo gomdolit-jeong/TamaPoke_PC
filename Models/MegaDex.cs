@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,6 +22,14 @@ namespace TamaPoke.Models
         public int BaseSpeed { get; set; }
         public int BaseSpA { get; set; }
         public int BaseSpD { get; set; }
+
+        // 필요한 메가스톤 (PokeAPI 아이템 이름: charizardite-x, 원시회귀는 blue-orb/red-orb). 비어 있으면 스톤 없이 가능 (레쿠쟈)
+        public string StoneId { get; set; } = string.Empty;
+        public string? StoneNameKo { get; set; }
+        public string? StoneNameEn { get; set; }
+
+        [JsonIgnore] public string StoneName =>
+            (Loc.Instance.IsEnglish ? StoneNameEn ?? StoneNameKo : StoneNameKo ?? StoneNameEn) ?? StoneId;
 
         [JsonIgnore] public string SpriteFileName => $"p{SpeciesId:D4}_{Form}.bin";
         [JsonIgnore] public bool IsPrimal => Form.StartsWith("Primal", StringComparison.OrdinalIgnoreCase);
@@ -68,5 +76,13 @@ namespace TamaPoke.Models
 
         // 이미지까지 있어서 지금 메가진화할 수 있는 폼
         public static List<MegaFormInfo> GetAvailableForms(int speciesId) => AllForms.Where(f => f.SpeciesId == speciesId && f.HasSprite).ToList();
+
+        // 조각을 모을 수 있는 메가스톤: 스톤마다 하나씩, 그 스톤으로 메가진화하는 폼의 이미지가 있는 것만
+        // (마기아나/싸리용처럼 여러 폼이 한 스톤을 쓰면 이미지가 있는 첫 폼으로 대표)
+        public static List<MegaFormInfo> CollectibleStones() =>
+            AllForms.Where(f => !string.IsNullOrEmpty(f.StoneId) && f.HasSprite).GroupBy(f => f.StoneId).Select(g => g.First()).ToList();
+
+        // 스톤 ID로 대표 폼(이름 표시용) 찾기
+        public static MegaFormInfo? FindStone(string stoneId) => AllForms.FirstOrDefault(f => f.StoneId == stoneId);
     }
 }

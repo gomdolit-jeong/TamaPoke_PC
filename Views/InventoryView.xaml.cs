@@ -12,6 +12,18 @@ namespace TamaPoke.Views
             InitializeComponent();
         }
 
+        // 상단 탭: 아이템 목록 / 메가스톤 목록 전환
+        private void ItemsTab_Click(object sender, MouseButtonEventArgs e) => ShowTab(mega: false);
+        private void MegaTab_Click(object sender, MouseButtonEventArgs e) => ShowTab(mega: true);
+
+        public void ShowTab(bool mega)
+        {
+            ItemsPanel.Visibility = mega ? Visibility.Collapsed : Visibility.Visible;
+            MegaPanel.Visibility = mega ? Visibility.Visible : Visibility.Collapsed;
+            ItemsTab.Foreground = mega ? BrushCache.Get("#66FFFFFF") : System.Windows.Media.Brushes.White;
+            MegaTab.Foreground = mega ? System.Windows.Media.Brushes.White : BrushCache.Get("#66FFFFFF");
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             if (this.DataContext is Models.PokemonState state)

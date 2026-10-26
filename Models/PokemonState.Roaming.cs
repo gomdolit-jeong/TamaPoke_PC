@@ -161,6 +161,14 @@ namespace TamaPoke.Models
             var rand = new Random();
             if (rand.Next(100) >= WALK_ITEM_CHANCE_PER_MIN) return;
 
+            // 메가링이 있으면 가끔 메가스톤 조각을 찾습니다.
+            if (rand.Next(100) < WALK_SHARD_CHANCE && GiveMegaShards(1, rand) != null)
+            {
+                _walkFoundItems.Add(ItemDex.MegaShard.Name);
+                WalkItemFound?.Invoke(ItemDex.MegaShard);
+                return;
+            }
+
             int roll = rand.Next(WalkItemTable.Sum(x => x.Weight));
             string itemId = WalkItemTable[^1].ItemId;
             foreach (var (id, weight) in WalkItemTable)

@@ -30,6 +30,9 @@ namespace TamaPoke.Models
 
         private static readonly ItemDefinition Unknown = new("unknown", "", ItemType.Berry, 0, "📦");
 
+        // 메가스톤 조각: 가방 아이템이 아니라 메가스톤 목록에 따로 쌓입니다. (산책 발견 알림/말풍선 표시용)
+        public static readonly ItemDefinition MegaShard = new("mega_shard", "", ItemType.Berry, 0, "💎");
+
         public static ItemDefinition Get(string itemId) =>
             itemId != null && _items.TryGetValue(itemId, out var def) ? def : Unknown;
 

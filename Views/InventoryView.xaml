@@ -6,27 +6,32 @@
              xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Width="288" Height="288">
 
-    <Border Background="#F2111111" Padding="25,40,25,30">
+    <Border Background="#F2111111" Padding="25,46,25,30">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- 제목 -->
+                <!-- 탭: 아이템 / 메가스톤 -->
                 <RowDefinition Height="*"/>
-                <!-- 아이템 목록 -->
+                <!-- 목록 -->
                 <RowDefinition Height="Auto"/>
                 <!-- 닫기 버튼 -->
             </Grid.RowDefinitions>
 
-            <!-- 상단 제목 -->
-            <TextBlock Grid.Row="0" Text="{u:T bag.title}" Foreground="White" 
-                       FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+            <!-- 상단 탭: 누른 쪽 목록을 보여줍니다. -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                <TextBlock x:Name="ItemsTab" Text="{u:T bag.title}" Foreground="White" FontSize="16" FontWeight="Bold"
+                           Cursor="Hand" MouseLeftButtonDown="ItemsTab_Click"/>
+                <TextBlock Text="|" Foreground="#44FFFFFF" FontSize="16" Margin="8,0"/>
+                <TextBlock x:Name="MegaTab" Text="{u:T bag.mega.title}" Foreground="#66FFFFFF" FontSize="16" FontWeight="Bold"
+                           Cursor="Hand" MouseLeftButtonDown="MegaTab_Click"/>
+            </StackPanel>
 
             <!-- 🌟 동적으로 아이템을 렌더링하는 ItemsControl (스크롤 지원) -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer x:Name="ItemsPanel" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl ItemsSource="{Binding Inventory}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#44FFFFFF" CornerRadius="10" Padding="3" Margin="0,0,0,5"
+                            <Border Background="#44FFFFFF" CornerRadius="10" Padding="3,3,8,3" Margin="0,0,6,5"
                                     Cursor="Hand" MouseLeftButtonDown="UseItem_Click" ToolTip="{Binding Description}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -40,6 +45,31 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
+
+            <!-- 메가스톤: 메가링 상태와 완성한 스톤 / 모으는 중인 조각 -->
+            <DockPanel x:Name="MegaPanel" Grid.Row="1" Visibility="Collapsed">
+                <TextBlock DockPanel.Dock="Top" Text="{Binding MegaRingText}" Foreground="#AAFFFFFF" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="20,0,20,6"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding MegaStoneRows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#33FFFFFF" CornerRadius="10" Padding="8,3" Margin="0,0,6,4">
+                                    <Grid>
+                                        <TextBlock x:Name="StoneName" Text="{Binding Name}" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" Margin="0,0,50,0" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock x:Name="StoneProgress" Text="{Binding Progress}" Foreground="#CCFFFFFF" FontSize="14" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                    </Grid>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsComplete}" Value="True">
+                                        <Setter TargetName="StoneName" Property="Foreground" Value="#FFD54F"/>
+                                        <Setter TargetName="StoneProgress" Property="Foreground" Value="#FFD54F"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
 
             <!-- 닫기 버튼 -->
             <Button Grid.Row="2" Content="{u:T common.close}" Padding="0,10" Margin="40,10,40,0"

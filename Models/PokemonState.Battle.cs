@@ -681,11 +681,23 @@ namespace TamaPoke.Models
 
                 if (IsGymBattle)
                 {
-                    var leader = GymManager.GetLeader(GymBadges);
-                    if (leader != null)
+                    // 도전한 체육관 기준: 다음 차례 체육관이면 배지, 이미 깬 체육관이면 재대결 승리
+                    var leader = GymManager.GetLeader(_selectedGymIndex);
+                    if (leader != null && !_isGymRematch)
                     {
                         GymBadges++; Save();
                         BattleMessage = Loc.F("battle.gym.won", leader.LeaderName, leader.BadgeName);
+                        await Task.Delay(3000);
+
+                        if (TryGrantMegaRing())
+                        {
+                            BattleMessage = Loc.T("mega.ring.got");
+                            await Task.Delay(3000);
+                        }
+                    }
+                    else if (leader != null)
+                    {
+                        BattleMessage = Loc.F("battle.gym.rematchWon", leader.LeaderName);
                         await Task.Delay(3000);
                     }
                 }
@@ -761,6 +773,13 @@ namespace TamaPoke.Models
 
             BattleMessage = Loc.F("battle.gym.prizeItems", ItemDex.Get(ItemDex.HyperPotion).Name, ItemDex.Get(ItemDex.MonsterBall).Name);
             await Task.Delay(2500);
+
+            string? shardMessage = GiveMegaShards(_isGymRematch ? GYM_REMATCH_SHARDS : GYM_SHARDS, new Random());
+            if (shardMessage != null)
+            {
+                BattleMessage = shardMessage;
+                await Task.Delay(2500);
+            }
 
             Bond = Math.Min(100, Bond + 10);
 
@@ -883,6 +902,16 @@ namespace TamaPoke.Models
                 await Task.Delay(2000);
             }
 
+            if (rand.Next(100) < WILD_SHARD_CHANCE)
+            {
+                string? shardMessage = GiveMegaShards(1, rand);
+                if (shardMessage != null)
+                {
+                    BattleMessage = shardMessage;
+                    await Task.Delay(2000);
+                }
+            }
+
             CloseBattle();
         }
 
@@ -903,7 +932,7 @@ namespace TamaPoke.Models
         [JsonIgnore] public string GymChallengePrompt => Loc.F("gym.challenge.prompt", SelectedGymLeader?.GymName);
 
         private int _selectedGymIndex;
-
+        private bool _isGymRematch; // 이미 배지를 받은 체육관에 다시 도전 중
         public void PromptGymChallenge(int gymIndex)
         {
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
@@ -924,7 +953,10 @@ namespace TamaPoke.Models
             if (IsEgg || IsSleeping || Ceremony != 0 || IsAnyMiniGameOpen || IsBattleOpen) return;
 
             var leader = GymManager.GetLeader(gymIndex);
-            if (leader == null) return;
+            if (leader == null || gymIndex > GymBadges) return;
+
+            _selectedGymIndex = gymIndex;
+            _isGymRematch = gymIndex < GymBadges;
 
             IsProfileOpen = false; _isCounterReady = false;
             IsBattleResolved = false; IsCatchOffered = false; IsAttackMenuOpen = false; IsEnemyVisible = true;
