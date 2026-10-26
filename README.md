@@ -6,7 +6,6 @@
 
 Hatch an egg, raise your Pokémon, take it for walks, battle gyms, and Mega Evolve — all in a tiny Poké Ball widget.
 
-[![Release](https://img.shields.io/github/v/release/gomdolit-jeong/TamaPoke_PC?style=flat-square&color=e53935)](https://github.com/gomdolit-jeong/TamaPoke_PC/releases/latest)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square)
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-5C2D91?style=flat-square)
@@ -15,8 +14,6 @@ Hatch an egg, raise your Pokémon, take it for walks, battle gyms, and Mega Evol
 🌐 **English** · [한국어](./README.ko.md)
 
 <img src="./ScreenShot/Idle.jpg" width="300"/>&nbsp;&nbsp;<img src="./ScreenShot/battle.jpg" width="300"/>
-
-### [⬇️ Download the latest release](https://github.com/gomdolit-jeong/TamaPoke_PC/releases/latest)
 
 </div>
 

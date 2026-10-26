@@ -6,7 +6,6 @@
 
 알을 부화시키고, 돌봐주고, 산책을 시키고, 체육관에 도전하고, 메가진화까지 — 작은 몬스터볼 위젯 하나로 즐겨보세요.
 
-[![Release](https://img.shields.io/github/v/release/gomdolit-jeong/TamaPoke_PC?style=flat-square&color=e53935)](https://github.com/gomdolit-jeong/TamaPoke_PC/releases/latest)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square)
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-5C2D91?style=flat-square)
@@ -15,8 +14,6 @@
 🌐 [English](./README.md) · **한국어**
 
 <img src="./ScreenShot/Idle.jpg" width="300"/>&nbsp;&nbsp;<img src="./ScreenShot/battle.jpg" width="300"/>
-
-### [⬇️ 최신 버전 다운로드](https://github.com/gomdolit-jeong/TamaPoke_PC/releases/latest)
 
 </div>
 
