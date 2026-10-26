@@ -117,6 +117,13 @@ namespace TamaPoke.Utils
                 catch (Exception) { /* 무시 */ }
             }
 
+            // 네트워크 오류 등으로 받아온 데이터가 기존보다 적으면 덮어쓰지 않습니다.
+            if (allLearnsets.Count == 0 || allLearnsets.Count < SkillDex.PokemonLearnsets.Count || moveDatabase.Count < SkillDex.MoveDatabase.Count)
+            {
+                progress?.Report(Loc.F("update.keepExisting", allLearnsets.Count, SkillDex.PokemonLearnsets.Count));
+                return;
+            }
+
             string dataFolderPath = AppPaths.DataFolder;
             if (!Directory.Exists(dataFolderPath)) Directory.CreateDirectory(dataFolderPath);
 

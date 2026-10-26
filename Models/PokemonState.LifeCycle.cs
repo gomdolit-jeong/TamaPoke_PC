@@ -436,6 +436,7 @@ namespace TamaPoke.Models
             if (!CanFactoryReset) return;
 
             if (System.IO.File.Exists(SaveFilePath)) System.IO.File.Delete(SaveFilePath);
+            if (System.IO.File.Exists(BackupFilePath)) System.IO.File.Delete(BackupFilePath);
 
             UnlockedPokemon.Clear(); FullPokedex.Clear(); OnPropertyChanged(nameof(RegisteredCount)); Streak = 0; LastEnd = 1; LastPlayedDate = DateTime.Now.Date;
             GameHighScore = 0; CatchHighScore = 0; MemoHighScore = 0; CleanHighScore = 0;

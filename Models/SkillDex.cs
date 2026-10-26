@@ -28,12 +28,17 @@ namespace TamaPoke.Utils
         // 🌟 세대별 스킬 트리 딕셔너리
         public static Dictionary<int, Dictionary<string, List<LearnMove>>> PokemonLearnsets { get; private set; } = new();
 
+        // 기술 습득표 / 기술 데이터를 정상적으로 읽었는지 (파일이 없거나 깨졌으면 false)
+        public static bool IsLearnsetLoaded => PokemonLearnsets.Count > 0;
+        public static bool IsMoveDbLoaded => MoveDatabase.Count > 0;
+
         public static void LoadSkillData()
         {
+            string dataFolder = AppPaths.DataFolder;
+
+            // 파일마다 따로 읽어서, 하나가 깨져도 다른 하나는 정상으로 불러옵니다.
             try
             {
-                string dataFolder = AppPaths.DataFolder;
-
                 string learnsetPath = Path.Combine(dataFolder, "pokemon_skills.json");
                 if (File.Exists(learnsetPath))
                 {
@@ -48,7 +53,14 @@ namespace TamaPoke.Utils
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"기술 습득표 로드 에러: {ex.Message}");
+            }
 
+            try
+            {
                 string moveDbPath = Path.Combine(dataFolder, "pokemon_movedb.json");
                 if (File.Exists(moveDbPath))
                 {
@@ -68,7 +80,7 @@ namespace TamaPoke.Utils
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"스킬 데이터 로드 에러: {ex.Message}");
+                Console.WriteLine($"기술 데이터 로드 에러: {ex.Message}");
             }
         }
 

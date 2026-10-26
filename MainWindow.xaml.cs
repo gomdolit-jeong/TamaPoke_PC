@@ -116,6 +116,28 @@ namespace TamaPoke
             _gameTimer.Start();
 
             ShowIdleView(MyPet);
+
+            // 화면이 뜬 뒤에 세이브/데이터 이상을 안내합니다.
+            Dispatcher.BeginInvoke(ShowStartupWarnings, DispatcherPriority.ApplicationIdle);
+        }
+
+        // 세이브 복구/손상, 게임 데이터(Data 폴더) 손상을 알립니다.
+        private void ShowStartupWarnings()
+        {
+            string corruptName = PokemonState.CorruptSaveFileName ?? "-";
+            if (PokemonState.LastLoadResult == PokemonState.SaveLoadResult.RestoredFromBackup)
+                System.Windows.MessageBox.Show(this, Loc.F("save.restored", corruptName), Loc.T("common.notice"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            else if (PokemonState.LastLoadResult == PokemonState.SaveLoadResult.Corrupted)
+                System.Windows.MessageBox.Show(this, Loc.F("save.corrupted", corruptName), Loc.T("common.error"), MessageBoxButton.OK, MessageBoxImage.Error);
+
+            var broken = new List<string>();
+            if (!PokemonDex.IsLoaded) broken.Add("pokemon_data.json");
+            if (!SkillDex.IsMoveDbLoaded) broken.Add("pokemon_movedb.json");
+            if (!SkillDex.IsLearnsetLoaded) broken.Add("pokemon_skills.json");
+            if (broken.Count == 0) return;
+
+            var result = System.Windows.MessageBox.Show(this, Loc.F("data.broken", string.Join("\n", broken)), Loc.T("common.error"), MessageBoxButton.YesNo, MessageBoxImage.Error);
+            if (result == MessageBoxResult.Yes) OpenUpdateWindow();
         }
 
         // ==========================================

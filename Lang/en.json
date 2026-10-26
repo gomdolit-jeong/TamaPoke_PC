@@ -533,5 +533,9 @@
   "gym.62.badge": "Psychic Badge",
   "gym.63.name": "Glaseado Gym",
   "gym.63.leader": "Grusha",
-  "gym.63.badge": "Ice Badge"
+  "gym.63.badge": "Ice Badge",
+  "save.restored": "The save file was damaged, so it was restored from the last backup.\n(The last few seconds to minutes of progress may be lost.)\n\nDamaged file: {0}",
+  "save.corrupted": "The save file is damaged and could not be loaded.\nNo usable backup was found, so a new egg will start.\n\nDamaged file: {0}",
+  "data.broken": "Could not read the game data. (Data folder)\n{0}\n\nDownload it again from the update window now?\n(You can also overwrite it with the Data folder from the release zip.)",
+  "update.keepExisting": "The downloaded data is smaller than the existing data, so the existing files were kept. ({0}/{1})\nPlease check your network and try again."
 }

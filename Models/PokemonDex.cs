@@ -42,6 +42,9 @@ namespace TamaPoke.Models
         // 도감 번호로 빠르게 찾기 위한 색인 (LoadPokemonData에서 갱신)
         private static Dictionary<int, PokemonInfo> _byId = new();
 
+        // 포켓몬 데이터를 정상적으로 읽었는지 (파일이 없거나 깨졌으면 false)
+        public static bool IsLoaded => AllPokemons.Count > 0;
+
         public static void LoadPokemonData()
         {
             try
