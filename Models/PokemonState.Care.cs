@@ -26,7 +26,13 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool IsPlayMenuOpen { get => _isPlayMenuOpen; set => SetProperty(ref _isPlayMenuOpen, value); }
 
         private string _currentFoodIcon = "🍎";
-        [JsonIgnore] public string CurrentFoodIcon { get => _currentFoodIcon; set => SetProperty(ref _currentFoodIcon, value); }
+        [JsonIgnore] public string CurrentFoodIcon { get => _currentFoodIcon; set { if (SetProperty(ref _currentFoodIcon, value)) OnPropertyChanged(nameof(CurrentFoodImage)); } }
+
+        // 먹는 음식의 픽셀 그림 (밥 주기 메뉴와 같은 열매/사탕 아이콘)
+        [JsonIgnore] public string CurrentFoodImage => "pack://application:,,,/TamaPoke;component/Assets/UI/" + _currentFoodIcon switch
+        {
+            "🍒" => "icon_berry_red", "🫐" => "icon_berry_blue", "🍏" => "icon_berry_green", "🍬" => "icon_candy", _ => "fruit_apple",
+        } + ".png";
         private string _currentFoodColor = "#E53935";
         [JsonIgnore] public string CurrentFoodColor { get => _currentFoodColor; set => SetProperty(ref _currentFoodColor, value); }
         private bool _isBathing = false;

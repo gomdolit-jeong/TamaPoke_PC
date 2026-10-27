@@ -50,14 +50,21 @@
         </Style>
 
         <!-- 씻기(거품) 애니메이션 -->
-        <Style TargetType="emoji:TextBlock" x:Key="BubbleStyle">
+        <!-- 거품마다 가로 위치(Margin)는 그대로 두고 위로만 떠오르게 합니다. -->
+        <Style TargetType="Image" x:Key="BubbleStyle">
+            <Setter Property="RenderOptions.BitmapScalingMode" Value="NearestNeighbor"/>
             <Setter Property="Opacity" Value="0"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform Y="0"/>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsBathing}" Value="True">
                     <DataTrigger.EnterActions>
                         <BeginStoryboard Name="bubbleAnim">
                             <Storyboard>
-                                <ThicknessAnimation Storyboard.TargetProperty="Margin" From="0,30,0,0" To="0,-120,0,0" Duration="0:0:1.5" RepeatBehavior="Forever"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="10" To="-130" Duration="0:0:1.5" RepeatBehavior="Forever"/>
                                 <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1.5" RepeatBehavior="Forever"/>
                             </Storyboard>
                         </BeginStoryboard>
@@ -70,11 +77,12 @@
         </Style>
 
         <!-- 🌟 밥 먹기 애니메이션: 반쪽씩 베어 먹는(Cropping) 연출로 완벽 변경 -->
-        <Style TargetType="emoji:TextBlock" x:Key="FoodAnimStyle">
+        <Style TargetType="Image" x:Key="FoodAnimStyle">
             <Setter Property="Visibility" Value="Collapsed"/>
+            <Setter Property="RenderOptions.BitmapScalingMode" Value="NearestNeighbor"/>
             <Setter Property="Clip">
                 <Setter.Value>
-                    <RectangleGeometry Rect="0,0,50,50"/>
+                    <RectangleGeometry Rect="0,0,36,36"/>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
@@ -85,10 +93,10 @@
                         <BeginStoryboard>
                             <Storyboard>
                                 <RectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Clip).(RectangleGeometry.Rect)">
-                                    <DiscreteRectKeyFrame KeyTime="0:0:0.0" Value="0,0,50,50" />
-                                    <DiscreteRectKeyFrame KeyTime="0:0:0.7" Value="0,0,25,50" />
-                                    <DiscreteRectKeyFrame KeyTime="0:0:1.4" Value="0,0,12,50" />
-                                    <DiscreteRectKeyFrame KeyTime="0:0:2.1" Value="0,0,0,50" />
+                                    <DiscreteRectKeyFrame KeyTime="0:0:0.0" Value="0,0,36,36" />
+                                    <DiscreteRectKeyFrame KeyTime="0:0:0.7" Value="0,0,24,36" />
+                                    <DiscreteRectKeyFrame KeyTime="0:0:1.4" Value="0,0,12,36" />
+                                    <DiscreteRectKeyFrame KeyTime="0:0:2.1" Value="0,0,0,36" />
                                 </RectAnimationUsingKeyFrames>
 
                                 <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
@@ -188,14 +196,50 @@
                                 </Image.RenderTransform>
                             </Image>
 
-                            <emoji:TextBlock Text="{Binding PoopDisplay}" FontSize="24" Foreground="#795548" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,90"/>
-                            <emoji:TextBlock Text="{Binding CurrentFoodIcon}" Style="{StaticResource FoodAnimStyle}" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="80,20,0,0"/>
-                            <emoji:TextBlock Text="💤" Visibility="{Binding IsSleeping, Converter={StaticResource BoolToVis}}" FontSize="50" Foreground="#1E88E5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,-100,0,0"/>
+                            <!-- 응가: 개수만큼 픽셀 응가 (9x9 → 3배) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,100" IsHitTestVisible="False">
+                                <Image Source="/TamaPoke;component/Assets/UI/fx_poop.png" Width="27" Height="27" Margin="2,0" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Poops}" Value="1"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Poops}" Value="2"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Poops}" Value="3"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <Image Source="/TamaPoke;component/Assets/UI/fx_poop.png" Width="27" Height="27" Margin="2,0" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Poops}" Value="2"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Poops}" Value="3"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <Image Source="/TamaPoke;component/Assets/UI/fx_poop.png" Width="27" Height="27" Margin="2,0" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Poops}" Value="3"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                            </StackPanel>
+                            <Image Source="{Binding CurrentFoodImage}" Style="{StaticResource FoodAnimStyle}" Width="36" Height="36" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="80,20,0,0"/>
+                            <Image Source="/TamaPoke;component/Assets/UI/fx_zzz.png" Width="48" Height="48" RenderOptions.BitmapScalingMode="NearestNeighbor" IsHitTestVisible="False"
+                                   Visibility="{Binding IsSleeping, Converter={StaticResource BoolToVis}}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40,-110,0,0"/>
 
                             <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding IsBathing, Converter={StaticResource BoolToVis}}">
-                                <emoji:TextBlock Text="🫧" Style="{StaticResource BubbleStyle}" FontSize="24" Margin="-40,20,0,0"/>
-                                <emoji:TextBlock Text="🫧" Style="{StaticResource BubbleStyle}" FontSize="32" Margin="30,40,0,0"/>
-                                <emoji:TextBlock Text="🫧" Style="{StaticResource BubbleStyle}" FontSize="20" Margin="5,50,0,0"/>
+                                <Image Source="/TamaPoke;component/Assets/UI/fx_bubble.png" Style="{StaticResource BubbleStyle}" Width="27" Height="27" Margin="-40,20,0,0"/>
+                                <Image Source="/TamaPoke;component/Assets/UI/fx_bubble.png" Style="{StaticResource BubbleStyle}" Width="36" Height="36" Margin="30,40,0,0"/>
+                                <Image Source="/TamaPoke;component/Assets/UI/fx_bubble.png" Style="{StaticResource BubbleStyle}" Width="18" Height="18" Margin="5,50,0,0"/>
                             </Grid>
 
                             <Grid HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-30,-80,0" Opacity="0">
@@ -217,7 +261,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Grid.Style>
-                                <emoji:TextBlock Text="❤️" FontSize="36"/>
+                                <Image Source="/TamaPoke;component/Assets/UI/icon_heart.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                             </Grid>
                         </Grid>
 
