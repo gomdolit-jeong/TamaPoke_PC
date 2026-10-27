@@ -62,22 +62,17 @@ namespace TamaPoke
 
 
             _notifyIcon.Visible = true;
-            _notifyIcon.DoubleClick += (s, e) => ShowMainWindow();
+            _notifyIcon.DoubleClick += (s, e) => BringBackToMain();
 
             var contextMenu = new System.Windows.Forms.ContextMenuStrip();
 
             var openMenuItem = _openMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            openMenuItem.Click += (s, e) => ShowMainWindow();
+            openMenuItem.Click += (s, e) => BringBackToMain();
 
             // 🌟 산책 모드 메뉴 설정
             _walkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             _walkModeMenuItem.ShortcutKeyDisplayString = "Ctrl+W";
-            _walkModeMenuItem.CheckOnClick = true;
-            _walkModeMenuItem.CheckedChanged += (s, e) =>
-            {
-                _isWalkModeActive = _walkModeMenuItem.Checked;
-                if (_isWalkModeActive) StartWalk(); else StopWalk();
-            };
+            _walkModeMenuItem.Click += (s, e) => ToggleWalkMode();
 
             var settingsMenuItem = _settingsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             settingsMenuItem.ShortcutKeyDisplayString = "Ctrl+O"; // 👈 우측에 단축키 텍스트를 예쁘게 띄워줍니다.
@@ -178,7 +173,11 @@ namespace TamaPoke
             dialog.ShowDialog();
         }
 
-        public void OpenSettingsWindow() => Dispatcher.Invoke(() => ShowDialogOverMain(new SettingsWindow()));
+        public void OpenSettingsWindow() => Dispatcher.Invoke(() =>
+        {
+            ShowDialogOverMain(new SettingsWindow());
+            ApplyWalkSettings(); // 산책 중이면 바뀐 마릿수/크기를 바로 반영
+        });
         public void OpenUpdateWindow() => Dispatcher.Invoke(() => ShowDialogOverMain(new UpdateProgressWindow()));
         public void OpenUpdateWindow(bool data, bool skill, bool sprite) => Dispatcher.Invoke(() => ShowDialogOverMain(new UpdateProgressWindow(data, skill, sprite)));
 
@@ -210,31 +209,74 @@ namespace TamaPoke
         // ==========================================
         public void ToggleWalkMode()
         {
-            // 메뉴의 체크 상태를 반대로 뒤집으면 자동으로 CheckedChanged 이벤트가 발동합니다.
-            if (_walkModeMenuItem != null) _walkModeMenuItem.Checked = !_walkModeMenuItem.Checked;
+            if (_isWalkModeActive) StopWalk();
+            else StartWalk();
+        }
+
+        // 산책 중이면 산책을 끝내고 메인 화면으로, 아니면 메인 창만 앞으로 (트레이 "화면에 띄우기")
+        private void BringBackToMain()
+        {
+            if (_isWalkModeActive) StopWalk();
+            else ShowMainWindow();
         }
 
         private void StartWalk()
         {
+            if (MyPet == null || _isWalkModeActive) return;
+
+            // 배틀/미니게임/진화·이별 연출 중에는 진행 중인 처리와 겹치므로 나가지 않습니다.
+            if (!MyPet.CanStartWalk)
+            {
+                string message = Loc.T("walk.cannot");
+                if (IsVisible) _ = MyPet.ShowEventMessageAsync(message);
+                else _notifyIcon?.ShowBalloonTip(3000, Loc.T("tray.walk"), message, System.Windows.Forms.ToolTipIcon.Info);
+                return;
+            }
+
+            _isWalkModeActive = true;
+            if (_walkModeMenuItem != null) _walkModeMenuItem.Checked = true;
             this.Hide();
-            if (MyPet == null) return;
 
             MyPet.BeginWalk();
 
             var settings = SettingsManager.Current;
             int spawnCount = Math.Min(settings.RoamingPokemonCount, MyPet.Party.Count);
-            for (int i = 0; i < spawnCount; i++)
+            for (int i = 0; i < spawnCount; i++) SpawnRoamingPet(i, settings);
+        }
+
+        private void SpawnRoamingPet(int partyIndex, GameSettings settings)
+        {
+            var pet = new RoamingPet(MyPet!.Party[partyIndex], partyIndex, _activePets, settings);
+            pet.ToggleWalkRequested += ToggleWalkMode;
+            pet.Closed += p => _activePets.Remove(p);
+            _activePets.Add(pet);
+            pet.Show();
+        }
+
+        // 산책 중 설정을 저장하면: 크기/작업표시줄 모드 반영, 마릿수가 늘면 다음 파티 멤버가 나오고 줄면 뒤쪽부터 들어갑니다.
+        private void ApplyWalkSettings()
+        {
+            if (!_isWalkModeActive || MyPet == null) return;
+
+            var settings = SettingsManager.Current;
+            foreach (var pet in _activePets) pet.ApplySettings(settings);
+
+            int want = Math.Min(settings.RoamingPokemonCount, MyPet.Party.Count);
+            foreach (var pet in _activePets.OrderByDescending(p => p.PartyIndex).Take(Math.Max(0, _activePets.Count - want)).ToList())
+                pet.Close();
+
+            for (int i = 0; i < MyPet.Party.Count && _activePets.Count < want; i++)
             {
-                var pet = new RoamingPet(MyPet.Party[i], _activePets, settings);
-                pet.ToggleWalkRequested += ToggleWalkMode;
-                pet.Closed += p => _activePets.Remove(p);
-                _activePets.Add(pet);
-                pet.Show();
+                if (!_activePets.Any(p => p.PartyIndex == i)) SpawnRoamingPet(i, settings);
             }
         }
 
         private void StopWalk()
         {
+            if (!_isWalkModeActive) return;
+            _isWalkModeActive = false;
+            if (_walkModeMenuItem != null) _walkModeMenuItem.Checked = false;
+
             CloseAllRoamingPets();
             MyPet?.EndWalk(); // 돌아오면 메인 화면에 산책 요약을 보여줍니다.
             ShowMainWindow();
@@ -269,10 +311,7 @@ namespace TamaPoke
         {
             if (MyPet == null || !MyPet.CanFactoryReset) return false;
 
-            if (_walkModeMenuItem != null && _walkModeMenuItem.Checked)
-            {
-                _walkModeMenuItem.Checked = false; // 산책 펫 창 정리 + 메인 창 복귀
-            }
+            StopWalk(); // 산책 중이면 산책 펫 창 정리 + 메인 창 복귀
 
             MyPet.FactoryReset();
             ShowIdleView(MyPet);

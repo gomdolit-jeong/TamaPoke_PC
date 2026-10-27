@@ -65,14 +65,20 @@ namespace TamaPoke.Models
         // 산책 중 아이템을 주웠을 때 (MainWindow가 펫 머리 위 말풍선/알림을 띄움)
         public event Action<ItemDefinition>? WalkItemFound;
 
+        private int _walkSeconds = 0;
         private int _walkMinutes = 0;
         private int _walkStartLevel = 0;
+
+        // 배틀/미니게임/진화·이별 연출 중에는 산책을 나갈 수 없습니다.
+        [JsonIgnore] public bool CanStartWalk => !IsBattleOpen && !IsAnyMiniGameOpen && !IsCeremony;
         private readonly List<string> _walkFoundItems = new();
 
         public void BeginWalk()
         {
             IsFreeRoaming = true;
+            if (IsSleeping) IsSleeping = false; // 산책을 나가면 깨어 있는 상태 (자는 채로 기력이 줄지 않도록)
             SyncMainToLeader(); // 산책 펫이 최신 모습으로 나오도록 반영
+            _walkSeconds = 0;
             _walkMinutes = 0;
             _walkStartLevel = Level;
             _walkFoundItems.Clear();
@@ -84,7 +90,7 @@ namespace TamaPoke.Models
             ResetPosition();
             Save();
 
-            if (IsEgg || _walkMinutes == 0) return;
+            if (_walkMinutes == 0) return;
 
             // 메인 화면 문구 영역이 좁으므로 최대 두 줄로 요약합니다.
             string summary = Level > _walkStartLevel
@@ -103,32 +109,33 @@ namespace TamaPoke.Models
         private void WalkTick()
         {
             if (DateTime.Now.Date > LastPlayedDate.Date) CheckDailyStreak();
-            if (IsEgg) return; // 알은 산책 중에 부화 시간이 흐르지 않습니다.
 
-            _ageSeconds++;
-            if (_ageSeconds % 60 != 0) return;
-
+            if (++_walkSeconds % 60 != 0) return;
             _walkMinutes++;
 
-            // 나이(레벨)는 평소의 절반 속도로 증가
+            // 나이(레벨)는 평소의 ⅓ 속도로 증가
             bool ageThisMinute = _walkMinutes % WALK_MINUTES_PER_AGE == 0;
 
             // 대표 포켓몬: 나이/레벨 증가 + 산책 규칙으로 스탯 변화 (스탯 주기는 실제 산책 시간 기준)
-            if (ageThisMinute)
+            // 대표가 알이면 부화 시간이 흐르지 않고, 함께 나간 파티 멤버만 자랍니다.
+            if (!IsEgg)
             {
-                AgeMinutes++;
-                if (AgeMinutes % MINUTES_PER_LEVEL == 0) { IsEvolutionPostponed = false; IsFarewellPostponed = false; }
+                if (ageThisMinute)
+                {
+                    AgeMinutes++;
+                    if (AgeMinutes % MINUTES_PER_LEVEL == 0) { IsEvolutionPostponed = false; IsFarewellPostponed = false; }
+                }
+                NeglectTicks = 0;
+
+                if (Weight > 0 && _walkMinutes % WEIGHT_BURN_EVERY_MINUTES == 0) Weight--;
+                Joy = ApplyWalkStat(Joy, _walkMinutes, 10, +1);
+                Fullness = ApplyWalkStat(Fullness, _walkMinutes, 20, -1);
+                Energy = ApplyWalkStat(Energy, _walkMinutes, 20, -1);
+                Hygiene = ApplyWalkStat(Hygiene, _walkMinutes, 30, -1);
             }
-            NeglectTicks = 0;
 
-            if (Weight > 0 && _walkMinutes % WEIGHT_BURN_EVERY_MINUTES == 0) Weight--;
-            Joy = ApplyWalkStat(Joy, _walkMinutes, 10, +1);
-            Fullness = ApplyWalkStat(Fullness, _walkMinutes, 20, -1);
-            Energy = ApplyWalkStat(Energy, _walkMinutes, 20, -1);
-            Hygiene = ApplyWalkStat(Hygiene, _walkMinutes, 30, -1);
-
-            // 나머지 파티 멤버도 함께 성장 (Party[0]은 대표이므로 Save 시 동기화)
-            for (int i = 1; i < Party.Count; i++)
+            // 나머지 파티 멤버도 함께 성장 (대표가 있으면 Party[0]은 대표라서 Save 때 동기화, 알이면 첫 칸부터 모두)
+            for (int i = IsEgg ? 0 : 1; i < Party.Count; i++)
             {
                 var m = Party[i];
                 if (ageThisMinute)

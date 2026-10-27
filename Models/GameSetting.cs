@@ -35,16 +35,15 @@ namespace TamaPoke.Models
 
         public bool IsTaskbarMode { get; set; } = false; // 작업표시줄 모드 기본값은 끄기(false)
 
+        // 산책 포켓몬 크기 배율 (설정 창 슬라이더와 산책 펫이 같은 범위를 씁니다)
+        public const double MinPetScale = 0.5;
+        public const double MaxPetScale = 5.0;
+
         private double _roamingPetScale = 2.0;
         public double RoamingPetScale
         {
-            get => _roamingPetScale;
-            set
-            {
-                _roamingPetScale = value;
-                // 만약 이 클래스에서 SetProperty나 OnPropertyChanged를 사용한다면 알맞게 적용해 주세요!
-                // 예: SetProperty(ref _roamingPetScale, value);
-            }
+            get => Math.Clamp(_roamingPetScale, MinPetScale, MaxPetScale);
+            set => _roamingPetScale = Math.Clamp(value, MinPetScale, MaxPetScale);
         }
 
     }

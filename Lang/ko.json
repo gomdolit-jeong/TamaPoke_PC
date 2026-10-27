@@ -573,5 +573,6 @@
   "battle.stat.fell": "{0}의\n{1}{2} 떨어졌다!",
   "battle.stat.harshlyFell": "{0}의\n{1}{2} 크게 떨어졌다!",
   "battle.stat.noHigher": "{0}의\n{1}{2} 더 올라가지 않는다!",
-  "battle.stat.noLower": "{0}의\n{1}{2} 더 떨어지지 않는다!"
+  "battle.stat.noLower": "{0}의\n{1}{2} 더 떨어지지 않는다!",
+  "walk.cannot": "지금은 산책을 나갈 수 없어요.\n(배틀/미니게임/진화 중)"
 }

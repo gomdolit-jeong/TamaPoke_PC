@@ -573,5 +573,6 @@
   "battle.stat.fell": "{0}'s\n{1} fell!",
   "battle.stat.harshlyFell": "{0}'s\n{1} harshly fell!",
   "battle.stat.noHigher": "{0}'s\n{1} won't go any higher!",
-  "battle.stat.noLower": "{0}'s\n{1} won't go any lower!"
+  "battle.stat.noLower": "{0}'s\n{1} won't go any lower!",
+  "walk.cannot": "Can't go for a walk right now.\n(battle, mini-game or evolution in progress)"
 }

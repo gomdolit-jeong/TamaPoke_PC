@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:u="clr-namespace:TamaPoke.Utils"
         xmlns:viewmodels="clr-namespace:TamaPoke.ViewModels"
+        xmlns:models="clr-namespace:TamaPoke.Models"
         Title="{u:T settings.title}" Height="640" Width="400"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
 
@@ -62,8 +63,8 @@
             <!-- 🌟 [새로 추가된 코드] 포켓몬 크기 설정 영역 -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="{u:T settings.scale}" VerticalAlignment="Center" Width="120"/>
-                <!-- 1배부터 3배까지 0.5 단위로 조절되도록 구성했습니다. -->
-                <Slider Minimum="1.0" Maximum="3.0" 
+                <!-- 0.5배부터 5배까지 0.5 단위 (범위는 GameSettings.MinPetScale / MaxPetScale) -->
+                <Slider Minimum="{x:Static models:GameSettings.MinPetScale}" Maximum="{x:Static models:GameSettings.MaxPetScale}" 
                         Value="{Binding Settings.RoamingPetScale, Mode=TwoWay}" 
                         Width="120" TickFrequency="0.5" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
                 <StackPanel Orientation="Horizontal" Width="50" Margin="10,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center">

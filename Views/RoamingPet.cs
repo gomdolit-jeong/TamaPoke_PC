@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
@@ -28,12 +28,16 @@ namespace TamaPoke.Views
         private const double BASE_ROAMING_SPEED = 3.0;
         private const double SPRITE_ZOOM = 2.0;    // 스프라이트 원본 대비 배율 (IdleView와 동일)
         private const int RUMMAGE_TICKS = 130;     // 풀숲 뒤적이기 연출 길이 (33ms 틱, 약 4.3초)
+        private const double MAX_SCREEN_RATIO = 0.8; // 창이 화면 작업 영역의 이 비율을 넘지 않도록 큰 포켓몬은 배율을 줄임
 
         // 목적지에 도착하거나 이벤트가 생겼을 때 잠시 하는 행동
         private enum Behavior { Walking, Sleeping, Sinking, Interacting, Rummaging }
 
         public PokemonState State { get; }
         public Window Window { get; }
+
+        // 파티에서 몇 번째 칸의 포켓몬인지 (산책 중 1분마다 저장하며 Party[0]이 새 객체로 바뀌므로 칸 번호로 구분)
+        public int PartyIndex { get; }
 
         // 산책 중 이 펫이 줍게 된 아이템 (풀숲 뒤적이기 연출이 끝나면 머리 위에 표시)
         public ItemDefinition? PendingFoundItem { get; set; }
@@ -44,19 +48,22 @@ namespace TamaPoke.Views
         private readonly IReadOnlyList<RoamingPet> _others; // 서로 부딪히면 놀기 위한 다른 펫 목록
         private readonly DispatcherTimer _moveTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
         private readonly Random _rnd = new(Guid.NewGuid().GetHashCode());
-        private readonly bool _isTaskbarMode;
-        private readonly double _scale;
-        private readonly double _width, _height;
+        private bool _isTaskbarMode;
+        private double _scale;
+        private double _width, _height;
+        private readonly double _baseWidth, _baseHeight; // 배율 1일 때의 창 크기
         private readonly double _speed;
+        private RoamingView? _roamingView;
 
         private double _targetX, _targetY;
         private int _restCounter = 0;
         private Behavior _behavior = Behavior.Walking;
         private int _interactionCooldown = 0;
 
-        public RoamingPet(PartyMember member, IReadOnlyList<RoamingPet> others, GameSettings settings)
+        public RoamingPet(PartyMember member, int partyIndex, IReadOnlyList<RoamingPet> others, GameSettings settings)
         {
             _others = others;
+            PartyIndex = partyIndex;
 
             State = new PokemonState
             {
@@ -67,19 +74,57 @@ namespace TamaPoke.Views
             };
             State.StartSubPetAnimationOnly();
 
-            double rawScale = settings.RoamingPetScale > 0 ? settings.RoamingPetScale : 2.0;
-            _scale = Math.Min(rawScale, 3.0);
             _isTaskbarMode = settings.IsTaskbarMode;
             _speed = BASE_ROAMING_SPEED * (0.8 + _rnd.NextDouble() * 0.4);
 
             // 가장 큰 모션 프레임이 잘리지 않는 크기로 창을 만듭니다.
             var maxFrame = BinSpriteReader.GetMaxFrameSize(AppPaths.SpritePath(State.SpriteFileName));
-            double baseWidth = Math.Max(50.0, maxFrame.Width) * SPRITE_ZOOM;
-            double baseHeight = Math.Max(50.0, maxFrame.Height) * SPRITE_ZOOM;
-            _width = baseWidth * _scale;
-            _height = baseHeight * _scale;
+            _baseWidth = Math.Max(50.0, maxFrame.Width) * SPRITE_ZOOM;
+            _baseHeight = Math.Max(50.0, maxFrame.Height) * SPRITE_ZOOM;
+            _scale = FitScale(ScaleFrom(settings));
+            _width = _baseWidth * _scale;
+            _height = _baseHeight * _scale;
 
-            Window = CreateWindow(baseWidth, baseHeight);
+            Window = CreateWindow(_baseWidth, _baseHeight);
+        }
+
+        private static double ScaleFrom(GameSettings settings) => settings.RoamingPetScale; // 범위는 GameSettings에서 보장
+
+        // 레쿠쟈, 고래왕자처럼 큰 포켓몬을 크게 키워도 창이 화면을 넘지 않도록 배율을 줄입니다.
+        // (창 크기와 같은 WPF 단위(DIP)로 된 주 화면 작업 영역 기준)
+        private double FitScale(double requested)
+        {
+            Rect area = SystemParameters.WorkArea;
+            double fit = Math.Min(area.Width * MAX_SCREEN_RATIO / _baseWidth, area.Height * MAX_SCREEN_RATIO / _baseHeight);
+            return Math.Min(requested, fit);
+        }
+
+        // 창이 화면보다 커도 예외가 나지 않도록: 범위가 뒤집히면 최소값(화면 왼쪽/위쪽)을 씁니다.
+        private static double ClampSafe(double value, double min, double max) => max < min ? min : Math.Clamp(value, min, max);
+        private int NextSafe(int min, int max) => max <= min ? min : _rnd.Next(min, max);
+
+        // 산책 중 설정이 바뀌면 크기/작업표시줄 모드를 바로 반영합니다. (발 위치를 기준으로 커지거나 작아짐)
+        public void ApplySettings(GameSettings settings)
+        {
+            bool modeChanged = _isTaskbarMode != settings.IsTaskbarMode;
+            double scale = FitScale(ScaleFrom(settings));
+            _isTaskbarMode = settings.IsTaskbarMode;
+
+            if (scale != _scale)
+            {
+                double centerX = Window.Left + _width / 2, bottom = Window.Top + _height;
+                _scale = scale;
+                _width = _baseWidth * _scale;
+                _height = _baseHeight * _scale;
+                Window.Width = _width;
+                Window.Height = _height;
+                if (_roamingView != null) _roamingView.LayoutTransform = new System.Windows.Media.ScaleTransform(_scale * SPRITE_ZOOM, _scale * SPRITE_ZOOM);
+                Window.Left = centerX - _width / 2;
+                Window.Top = bottom - _height;
+            }
+            else if (!modeChanged) return;
+
+            if (_behavior == Behavior.Walking) (_targetX, _targetY) = PickTargetOnCurrentScreen();
         }
 
         private Window CreateWindow(double baseWidth, double baseHeight)
@@ -111,7 +156,7 @@ namespace TamaPoke.Views
                 if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.W) ToggleWalkRequested?.Invoke();
             };
 
-            var roamingView = new RoamingView
+            var roamingView = _roamingView = new RoamingView
             {
                 DataContext = State,
                 Width = baseWidth / SPRITE_ZOOM,
@@ -149,8 +194,8 @@ namespace TamaPoke.Views
             var primaryScreen = System.Windows.Forms.Screen.PrimaryScreen;
             if (primaryScreen != null)
             {
-                Window.Left = _rnd.Next(primaryScreen.Bounds.Left, primaryScreen.Bounds.Right - (int)_width);
-                Window.Top = _isTaskbarMode ? primaryScreen.WorkingArea.Bottom - _height : _rnd.Next(primaryScreen.Bounds.Top, primaryScreen.Bounds.Bottom - (int)_height);
+                Window.Left = NextSafe(primaryScreen.Bounds.Left, primaryScreen.Bounds.Right - (int)_width);
+                Window.Top = _isTaskbarMode ? primaryScreen.WorkingArea.Bottom - _height : NextSafe(primaryScreen.Bounds.Top, primaryScreen.Bounds.Bottom - (int)_height);
             }
             Window.Show();
 
@@ -168,8 +213,8 @@ namespace TamaPoke.Views
         {
             var screen = CurrentScreen(Window.Left + _width / 2, Window.Top + _height / 2);
             var b = screen.Bounds;
-            double tX = _rnd.Next(b.Left, (int)Math.Max(b.Left + 10, b.Right - _width));
-            double tY = _isTaskbarMode ? screen.WorkingArea.Bottom - _height : _rnd.Next(b.Top, (int)Math.Max(b.Top + 10, b.Bottom - _height));
+            double tX = NextSafe(b.Left, (int)(b.Right - _width));
+            double tY = _isTaskbarMode ? screen.WorkingArea.Bottom - _height : NextSafe(b.Top, (int)(b.Bottom - _height));
             return (tX, tY);
         }
 
@@ -253,9 +298,9 @@ namespace TamaPoke.Views
             var screen = CurrentScreen(Window.Left + _width / 2, Window.Top + _height / 2);
             var b = screen.Bounds;
 
-            double x = Math.Clamp(Window.Left + Math.Cos(angle) * escapeDistance, b.Left, b.Right - _width);
+            double x = ClampSafe(Window.Left + Math.Cos(angle) * escapeDistance, b.Left, b.Right - _width);
             double y = _isTaskbarMode ? screen.WorkingArea.Bottom - _height
-                                      : Math.Clamp(Window.Top + Math.Sin(angle) * escapeDistance, b.Top, b.Bottom - _height);
+                                      : ClampSafe(Window.Top + Math.Sin(angle) * escapeDistance, b.Top, b.Bottom - _height);
             return (x, y);
         }
 
