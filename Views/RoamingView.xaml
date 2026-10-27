@@ -104,8 +104,8 @@
         <!-- 풀숲 뒤적이기: 포켓몬 몸 아래쪽을 덮는 풀숲이 좌우로 흔들립니다. (포켓몬보다 앞에 그려서 뛰어든 것처럼 보이게)
              PMD 프레임은 포켓몬이 가운데에 있으므로, 프레임 가장자리가 아닌 가운데를 기준으로 배치합니다. -->
         <Grid IsHitTestVisible="False">
-            <Viewbox Width="72" Height="36" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
-                     Margin="0,0,0,22" RenderTransformOrigin="0.5,1">
+            <Viewbox Width="40" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Margin="0,0,0,6" RenderTransformOrigin="0.5,1" RenderOptions.BitmapScalingMode="NearestNeighbor">
                 <Viewbox.RenderTransform>
                     <RotateTransform Angle="0"/>
                 </Viewbox.RenderTransform>
@@ -129,18 +129,8 @@
                         </Style.Triggers>
                     </Style>
                 </Viewbox.Style>
-                <!-- 잎을 겹쳐 쌓아 덤불처럼 보이게 합니다. (뒤쪽 2장 + 앞쪽 3장) -->
-                <Grid Width="46" Height="24">
-                    <emoji:TextBlock Text="🌿" FontSize="20" Margin="6,0,0,0"  HorizontalAlignment="Left"  VerticalAlignment="Top"/>
-                    <emoji:TextBlock Text="🌿" FontSize="20" Margin="0,0,6,0"  HorizontalAlignment="Right" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5">
-                        <emoji:TextBlock.RenderTransform><ScaleTransform ScaleX="-1"/></emoji:TextBlock.RenderTransform>
-                    </emoji:TextBlock>
-                    <emoji:TextBlock Text="🌿" FontSize="20" Margin="-4,0,0,-2" HorizontalAlignment="Left"  VerticalAlignment="Bottom"/>
-                    <emoji:TextBlock Text="🌿" FontSize="22" Margin="0,0,0,-3"  HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
-                    <emoji:TextBlock Text="🌿" FontSize="20" Margin="0,0,-4,-2" HorizontalAlignment="Right" VerticalAlignment="Bottom" RenderTransformOrigin="0.5,0.5">
-                        <emoji:TextBlock.RenderTransform><ScaleTransform ScaleX="-1"/></emoji:TextBlock.RenderTransform>
-                    </emoji:TextBlock>
-                </Grid>
+                <!-- 픽셀 풀숲 (40x20, 포켓몬 그림과 같은 1배): 뒤쪽 진한 풀잎 + 앞쪽 밝은 풀잎 -->
+                <Image Source="/TamaPoke;component/Assets/UI/fx_bush.png" Width="40" Height="20" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
             </Viewbox>
         </Grid>
 
