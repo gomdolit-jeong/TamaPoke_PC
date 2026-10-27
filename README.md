@@ -166,4 +166,14 @@ This desktop project was reimagined for the desktop environment by referencing t
   * These resources are used strictly for non-commercial purposes under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
   * Read the full license: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/).
 * **Badge Images**: Gym badge images reference and cite materials from [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page).
+* **Game Data**: Pokémon names, base stats, evolutions, moves and Mega Evolution data were generated from [PokéAPI](https://pokeapi.co/) ([PokeAPI/api-data](https://github.com/PokeAPI/api-data), BSD-3-Clause).
+* **Libraries**: [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (WTFPL).
 * **Disclaimer**: This is a non-commercial fan project. All copyrights and trademarks related to Pokémon belong to Nintendo, Creatures Inc., and GAME FREAK inc.
+
+---
+
+## ⚖️ License
+
+- **Source code**: [MIT](./LICENSE). The MIT license covers the source code only.
+- **Images and data**: Sprites, gym badges and Pokémon names/data belong to their respective owners (see Credits above) and are **not** covered by the MIT license. They may be used for **non-commercial purposes only**.
+- Pokémon © Nintendo / Creatures Inc. / GAME FREAK inc. This project is unofficial and not affiliated with or endorsed by them.

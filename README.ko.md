@@ -166,4 +166,14 @@
   * 해당 리소스는 **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** 라이선스에 따라 비상업적 목적으로만 사용되었습니다.
   * 라이선스 전문 확인: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/)
 * **Badge Images**: 본 프로젝트에 사용된 체육관 뱃지 이미지는 [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page)의 자료를 참고 및 인용하였습니다.
+* **Game Data**: 포켓몬 이름, 종족값, 진화, 기술, 메가진화 데이터는 [PokéAPI](https://pokeapi.co/) ([PokeAPI/api-data](https://github.com/PokeAPI/api-data), BSD-3-Clause)를 바탕으로 만들었습니다.
+* **Libraries**: [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (WTFPL).
 * **Disclaimer**: 이 프로젝트는 비상업적 팬 프로젝트(Fan Project)이며, 포켓몬스터(Pokémon)와 관련된 모든 저작권 및 상표권은 Nintendo, Creatures Inc., GAME FREAK inc. 에 귀속되어 있습니다.
+
+---
+
+## ⚖️ 라이선스
+
+- **소스 코드**: [MIT](./LICENSE). MIT 라이선스는 소스 코드에만 적용됩니다.
+- **이미지와 데이터**: 스프라이트, 체육관 배지, 포켓몬 이름과 데이터는 각 원저작자에게 권리가 있으며(위 Credits 참고) MIT 라이선스 대상이 **아닙니다**. **비상업적 용도로만** 사용할 수 있습니다.
+- Pokémon © Nintendo / Creatures Inc. / GAME FREAK inc. 이 프로젝트는 비공식 팬 프로젝트이며, 위 회사들과 관련이 없고 승인을 받지 않았습니다.
