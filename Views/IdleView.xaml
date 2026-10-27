@@ -223,49 +223,24 @@
 
                         <Grid Visibility="{Binding CanShowEvolvePrompt, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
                             <StackPanel Orientation="Horizontal">
-                                <Button Content="{u:T idle.evolve}" FontSize="14" FontWeight="Bold" Background="#E53935" Foreground="#FFFFFF" Padding="15,8" BorderThickness="0" Cursor="Hand" Click="Evolve_Click" Margin="0,0,5,0">
-                                    <Button.Resources>
-                                        <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="15"/>
-                                        </Style>
-                                    </Button.Resources>
+                                <Button Content="{u:T idle.evolve}" FontSize="14" FontWeight="Bold" Style="{StaticResource PixelTextButton}" Background="#E53935" Foreground="#FFFFFF" Padding="15,8" Click="Evolve_Click" Margin="0,0,5,0">
                                 </Button>
-                                <Button Content="{u:T idle.later}" FontSize="12" FontWeight="Bold" Background="#757575" Foreground="#FFFFFF" Padding="10,8" BorderThickness="0" Cursor="Hand" Click="PostponeEvolve_Click">
-                                    <Button.Resources>
-                                        <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="15"/>
-                                        </Style>
-                                    </Button.Resources>
+                                <Button Content="{u:T idle.later}" FontSize="12" FontWeight="Bold" Style="{StaticResource PixelTextButton}" Background="#757575" Foreground="#FFFFFF" Padding="10,8" Click="PostponeEvolve_Click">
                                 </Button>
                             </StackPanel>
                         </Grid>
 
                         <Grid Visibility="{Binding CanShowFarewellPrompt, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
                             <StackPanel Orientation="Horizontal">
-                                <Button Content="{u:T idle.farewell}" FontSize="12" FontWeight="Bold" Background="#FFD54F" Foreground="#4E342E" Padding="12,8" BorderThickness="0" Cursor="Hand" Click="StartFarewell_Click" Margin="0,0,5,0">
-                                    <Button.Resources>
-                                        <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="15"/>
-                                        </Style>
-                                    </Button.Resources>
+                                <Button Content="{u:T idle.farewell}" FontSize="12" FontWeight="Bold" Style="{StaticResource PixelTextButton}" Background="#FFD54F" Foreground="#4E342E" Padding="12,8" Click="StartFarewell_Click" Margin="0,0,5,0">
                                 </Button>
-                                <Button Content="{u:T idle.later}" FontSize="12" FontWeight="Bold" Background="#757575" Foreground="#FFFFFF" Padding="10,8" BorderThickness="0" Cursor="Hand" Click="PostponeFarewell_Click">
-                                    <Button.Resources>
-                                        <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="15"/>
-                                        </Style>
-                                    </Button.Resources>
+                                <Button Content="{u:T idle.later}" FontSize="12" FontWeight="Bold" Style="{StaticResource PixelTextButton}" Background="#757575" Foreground="#FFFFFF" Padding="10,8" Click="PostponeFarewell_Click">
                                 </Button>
                             </StackPanel>
                         </Grid>
 
                         <Grid Visibility="{Binding CanRunawayNow, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="5">
-                            <Button Content="{u:T idle.runaway}" FontSize="14" FontWeight="Bold" Background="#78909C" Foreground="#FFFFFF" Padding="15,10" BorderThickness="0" Cursor="Hand" Click="StartRunaway_Click">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="20"/>
-                                    </Style>
-                                </Button.Resources>
+                            <Button Content="{u:T idle.runaway}" FontSize="14" FontWeight="Bold" Style="{StaticResource PixelTextButton}" Background="#78909C" Foreground="#FFFFFF" Padding="15,10" Click="StartRunaway_Click">
                             </Button>
                         </Grid>
                     </Grid>
