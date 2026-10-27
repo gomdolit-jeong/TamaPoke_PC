@@ -17,7 +17,7 @@ namespace TamaPoke.Views
         // 🌟 카드를 클릭했을 때
         private void PartyMemberCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (sender is Border border && border.DataContext is PartyMember clickedMember)
+            if (sender is System.Windows.FrameworkElement card && card.DataContext is PartyMember clickedMember)
             {
                 var state = this.DataContext as PokemonState;
                 if (state == null || state.Party == null) return;

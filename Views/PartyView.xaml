@@ -10,13 +10,45 @@
              Background="Transparent">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 픽셀 버튼/상자 (대기 화면, 배틀 화면과 같은 스타일) -->
+                <ResourceDictionary Source="/TamaPoke;component/Views/PixelStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <!-- 🌟 스킬 창에서 만들었던 타입->색상 변환기를 파티 화면에도 등록합니다! -->
-        <conv:TypeToColorConverter x:Key="TypeToColor"/>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+            <!-- 🌟 스킬 창에서 만들었던 타입->색상 변환기를 파티 화면에도 등록합니다! -->
+            <conv:TypeToColorConverter x:Key="TypeToColor"/>
+
+            <!-- 파티원 카드: 픽셀 칸. 대표는 금빛, 선택한 카드는 붉은빛 -->
+            <Style TargetType="ContentControl" x:Key="MemberCard" BasedOn="{StaticResource PixelTile}">
+                <Setter Property="Margin" Value="2,5,2,0"/>
+                <Setter Property="Width" Value="114"/>
+                <Setter Property="Height" Value="48"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsFirst}" Value="True">
+                        <Setter Property="Background" Value="#FFF0BE"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="Background" Value="#FFD8D2"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- 카드 위쪽 테두리에 걸치는 작은 딱지 (대표 / 선택) -->
+            <Style TargetType="Border" x:Key="CardTag" BasedOn="{StaticResource PixelTag}">
+                <Setter Property="Padding" Value="3,0,3,1"/>
+                <Setter Property="Margin" Value="0,0,2,0"/>
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
-    <Border Background="#F7F3E8" CornerRadius="144" Width="288" Height="288" BorderBrush="Black" BorderThickness="1.5">
+    <Border Background="#F1ECDD" CornerRadius="144" Width="288" Height="288">
         <Grid Margin="0,22,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -27,9 +59,9 @@
             <!-- 1. 상단 타이틀 영역 -->
             <!-- 원의 위쪽은 좁으므로 제목 아래 한 줄만 씁니다: 평소엔 인원수, 파티가 꽉 찼을 땐 교체 안내 -->
             <StackPanel Grid.Row="0" HorizontalAlignment="Center">
-                <TextBlock Text="{u:T party.title}" FontSize="17" FontWeight="Bold" FontFamily="Malgun Gothic" HorizontalAlignment="Center"/>
+                <TextBlock Text="{u:T party.title}" FontSize="17" FontWeight="Bold" FontFamily="Malgun Gothic" Foreground="#333" HorizontalAlignment="Center"/>
                 <Grid Margin="0,1,0,0" HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding Party.Count, Converter={x:Static lc:LocFormatConverter.Instance}, ConverterParameter=party.count}" FontSize="9" Foreground="#A9A9A9" FontFamily="Consolas" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding Party.Count, Converter={x:Static lc:LocFormatConverter.Instance}, ConverterParameter=party.count}" FontSize="9" Foreground="#8C8676" FontFamily="Consolas" HorizontalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Style.Triggers>
@@ -56,57 +88,36 @@
 
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <!-- 테두리 스타일: 기본 -> 대표(노랑) -> 선택(빨강) 순으로 적용됩니다 -->
-                        <Border CornerRadius="6" Margin="2,5,2,0" Width="112" Height="48" Cursor="Hand" MouseLeftButtonDown="PartyMemberCard_Click">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="BorderBrush" Value="#DDDDDD"/>
-                                    <Setter Property="BorderThickness" Value="1"/>
-                                    <Setter Property="Background" Value="White"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsFirst}" Value="True">
-                                            <Setter Property="BorderBrush" Value="#FFC107"/>
-                                            <Setter Property="BorderThickness" Value="2"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="BorderBrush" Value="#E53935"/>
-                                            <Setter Property="BorderThickness" Value="2"/>
-                                            <Setter Property="Background" Value="#FFF0F0"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-
+                        <ContentControl Style="{StaticResource MemberCard}" MouseLeftButtonDown="PartyMemberCard_Click">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="38"/>
+                                    <ColumnDefinition Width="40"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- 포켓몬 이미지 배경 및 이미지 -->
-                                <Border Grid.Column="0" Background="#EEEEEE" CornerRadius="4" Margin="3"/>
-                                <Image Grid.Column="0" Source="{Binding SpriteImage}" Width="32" Height="32" 
+                                <!-- 포켓몬 이미지 칸 -->
+                                <Rectangle Grid.Column="0" Fill="#E4DDC8" Margin="5,5,3,5"/>
+                                <Image Grid.Column="0" Source="{Binding SpriteImage}" Width="32" Height="32" Margin="2,0,0,0"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        RenderOptions.BitmapScalingMode="NearestNeighbor" />
 
                                 <!-- 포켓몬 정보 텍스트 -->
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="1,0,2,0">
-                                    <TextBlock Text="{Binding DisplayName}" FontFamily="Malgun Gothic" FontWeight="Bold" FontSize="10" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding LevelDisplay}" FontFamily="Consolas" FontSize="9"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="1,0,4,0">
+                                    <TextBlock Text="{Binding DisplayName}" FontFamily="Malgun Gothic" FontWeight="Bold" FontSize="10" Foreground="#333" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding LevelDisplay}" FontFamily="Consolas" FontSize="9" Foreground="#555"/>
 
-                                    <!-- 🌟 타입 뱃지 영역: 기존 TextBlock을 Border로 감싸고 색상을 바인딩했습니다 -->
+                                    <!-- 타입 딱지 (두 개가 카드 폭에 들어가도록 작게) -->
                                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                        <!-- 타입 1 뱃지 (두 개가 카드 폭에 들어가도록 작게) -->
-                                        <Border CornerRadius="3" Background="{Binding Type1Display, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="3,0" Margin="0,0,2,0">
+                                        <Border Style="{StaticResource PixelTag}" Padding="2,0,2,0" Margin="0,0,2,0"
+                                                Background="{Binding Type1Display, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}">
                                             <TextBlock Text="{Binding Type1Display}" FontFamily="Consolas" FontSize="7" Foreground="White" FontWeight="Bold"/>
                                         </Border>
-
-                                        <!-- 타입 2 뱃지 -->
-                                        <Border CornerRadius="3" Background="{Binding Type2Display, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="3,0">
+                                        <Border Padding="2,0,2,0"
+                                                Background="{Binding Type2Display, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}">
                                             <Border.Style>
-                                                <Style TargetType="Border">
+                                                <Style TargetType="Border" BasedOn="{StaticResource PixelTag}">
                                                     <Setter Property="Visibility" Value="Visible"/>
-                                                    <!-- 🌟 타입2가 없거나 'None'일 경우 빈 상자가 뜨지 않도록 깔끔하게 숨겨줍니다! -->
+                                                    <!-- 🌟 타입2가 없거나 'None'일 경우 빈 상자가 뜨지 않도록 숨겨줍니다 -->
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Type2Display}" Value="">
                                                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -122,12 +133,11 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- 뱃지 영역: 대표 및 선택 (카드 위쪽 테두리에 걸친 태그라 이름을 가리지 않음) -->
+                                <!-- 딱지: 대표 및 선택 (카드 위쪽 테두리에 걸친 태그라 이름을 가리지 않음) -->
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-7,4,0">
-                                    <Border Background="#FFC107" CornerRadius="4" Padding="4,0" Margin="0,0,2,0" BorderBrush="White" BorderThickness="1">
+                                    <Border Background="#F2B300">
                                         <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style TargetType="Border" BasedOn="{StaticResource CardTag}">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsFirst}" Value="True">
                                                         <Setter Property="Visibility" Value="Visible"/>
@@ -138,10 +148,9 @@
                                         <TextBlock Text="{u:T party.lead}" FontSize="7.5" FontWeight="Bold" Foreground="White" FontFamily="Malgun Gothic"/>
                                     </Border>
 
-                                    <Border Background="#E53935" CornerRadius="4" Padding="4,0" BorderBrush="White" BorderThickness="1">
+                                    <Border Background="#E53935">
                                         <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style TargetType="Border" BasedOn="{StaticResource CardTag}">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                         <Setter Property="Visibility" Value="Visible"/>
@@ -153,69 +162,44 @@
                                     </Border>
                                 </StackPanel>
                             </Grid>
-                        </Border>
+                        </ContentControl>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- 3. 하단 버튼 영역 -->
+            <!-- 3. 하단 버튼 영역: 뒤로 / 메인 교체 (파티가 꽉 차서 교체할 때는 "교체") -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,18">
-                <Button Width="30" Height="28" Margin="0,0,8,0" Click="CloseButton_Click">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border Background="#E0DBC8" BorderBrush="Black" BorderThickness="1" CornerRadius="6">
-                                <TextBlock Text="◀️" FontFamily="Malgun Gothic" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Button.Template>
+                <Button Width="32" Height="28" Margin="0,0,8,0" Style="{StaticResource PixelLightButton}" Padding="0" Click="CloseButton_Click">
+                    <Image Source="/TamaPoke;component/Assets/UI/arrow_left.png" Width="10" Height="18" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                 </Button>
 
-                <Button Width="70" Height="28" Margin="8,0,0,0" Click="ChangeMainButton_Click">
+                <Button Width="76" Height="28" Margin="8,0,0,0" FontSize="12" Click="ChangeMainButton_Click">
                     <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="ActionBorder" Background="#1E88E5" BorderBrush="Black" BorderThickness="1" CornerRadius="6">
-                                            <TextBlock x:Name="ActionText" Text="{u:T party.makeLead}" FontFamily="Malgun Gothic" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding IsSwapMode}" Value="True">
-                                                <Setter TargetName="ActionBorder" Property="Background" Value="#E53935"/>
-                                                <Setter TargetName="ActionText" Property="Text" Value="{u:T party.swap}"/>
-                                            </DataTrigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
+                        <Style TargetType="Button" BasedOn="{StaticResource PixelTextButton}">
+                            <Setter Property="Background" Value="#1E88E5"/>
+                            <Setter Property="Content" Value="{u:T party.makeLead}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSwapMode}" Value="True">
+                                    <Setter Property="Background" Value="#E53935"/>
+                                    <Setter Property="Content" Value="{u:T party.swap}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </Button.Style>
                 </Button>
             </StackPanel>
 
             <Grid x:Name="SwapConfirmOverlay" Grid.RowSpan="3" Background="#99000000" Visibility="Collapsed" Margin="0,-22,0,0">
-                <Border Background="White" CornerRadius="12" Width="200" Height="110" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333333" BorderThickness="2">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
-                        <TextBlock x:Name="ConfirmPopupText" Text="{u:T party.swap.confirm}" FontWeight="Bold" FontSize="12" FontFamily="Malgun Gothic" HorizontalAlignment="Center" Margin="0,0,0,15" TextWrapping="Wrap" TextAlignment="Center"/>
+                <ContentControl Style="{StaticResource PixelPanel}" Width="210" Padding="12,14" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock x:Name="ConfirmPopupText" Text="{u:T party.swap.confirm}" FontWeight="Bold" FontSize="12" FontFamily="Malgun Gothic" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,12" TextWrapping="Wrap" TextAlignment="Center"/>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button Content="{u:T common.yes}" Width="50" Height="25" Margin="0,0,10,0" Background="#1E88E5" Foreground="White" FontWeight="Bold" Click="ConfirmYes_Click">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="4"/>
-                                    </Style>
-                                </Button.Resources>
-                            </Button>
-                            <Button Content="{u:T common.no}" Width="50" Height="25" Background="#E53935" Foreground="White" FontWeight="Bold" Click="ConfirmNo_Click">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="4"/>
-                                    </Style>
-                                </Button.Resources>
-                            </Button>
+                            <Button Content="{u:T common.yes}" Width="56" Height="26" Margin="0,0,10,0" Style="{StaticResource PixelTextButton}" Background="#1E88E5" Click="ConfirmYes_Click"/>
+                            <Button Content="{u:T common.no}" Width="56" Height="26" Style="{StaticResource PixelTextButton}" Background="#E53935" Click="ConfirmNo_Click"/>
                         </StackPanel>
                     </StackPanel>
-                </Border>
+                </ContentControl>
             </Grid>
         </Grid>
     </Border>
