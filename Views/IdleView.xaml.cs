@@ -13,7 +13,75 @@ namespace TamaPoke.Views
         public IdleView()
         {
             InitializeComponent();
+            OpacityTrack.Data = OpacityHitArea.Data = ArcGeometry(OPACITY_ARC_TOP_DEG, OPACITY_ARC_BOTTOM_DEG);
+            Loaded += (s, e) => UpdateOpacityArc(); // 창이 붙은 뒤 현재 투명도로 손잡이 위치를 맞춤
         }
+
+        // ==========================================
+        // 투명도 원호 슬라이더 (몬스터볼 빨간 띠를 따라 움직임)
+        // ==========================================
+        // 각도는 화면 기준(오른쪽 = 0°, 위 = -90°, 시계 방향으로 증가). 위쪽 끝이 불투명, 아래쪽 끝이 가장 투명합니다.
+        private const double OPACITY_ARC_CENTER = 160;      // 몬스터볼(320×320) 중심
+        private const double OPACITY_ARC_RADIUS = 150;      // 빨간 띠의 가운데 (게임 영역 144 ~ 테두리 156)
+        private const double OPACITY_ARC_TOP_DEG = -72;
+        private const double OPACITY_ARC_BOTTOM_DEG = -12;  // 가운데 검은 띠에 닿기 전까지
+        private const double MIN_WINDOW_OPACITY = 0.15, MAX_WINDOW_OPACITY = 1.0;
+
+        private static System.Windows.Point ArcPoint(double degrees)
+        {
+            double rad = degrees * Math.PI / 180;
+            return new System.Windows.Point(OPACITY_ARC_CENTER + OPACITY_ARC_RADIUS * Math.Cos(rad), OPACITY_ARC_CENTER + OPACITY_ARC_RADIUS * Math.Sin(rad));
+        }
+
+        private static System.Windows.Media.Geometry ArcGeometry(double fromDegrees, double toDegrees)
+        {
+            var figure = new System.Windows.Media.PathFigure { StartPoint = ArcPoint(fromDegrees) };
+            figure.Segments.Add(new System.Windows.Media.ArcSegment(ArcPoint(toDegrees), new System.Windows.Size(OPACITY_ARC_RADIUS, OPACITY_ARC_RADIUS),
+                0, false, System.Windows.Media.SweepDirection.Clockwise, true));
+            return new System.Windows.Media.PathGeometry(new[] { figure });
+        }
+
+        // 현재 창 투명도에 맞춰 손잡이와 채워진 부분(아래쪽 끝 ~ 손잡이)을 그립니다.
+        private void UpdateOpacityArc()
+        {
+            double opacity = Window.GetWindow(this)?.Opacity ?? MAX_WINDOW_OPACITY;
+            double t = Math.Clamp((opacity - MIN_WINDOW_OPACITY) / (MAX_WINDOW_OPACITY - MIN_WINDOW_OPACITY), 0, 1);
+            double degrees = OPACITY_ARC_BOTTOM_DEG + (OPACITY_ARC_TOP_DEG - OPACITY_ARC_BOTTOM_DEG) * t;
+
+            var p = ArcPoint(degrees);
+            Canvas.SetLeft(OpacityThumb, p.X - OpacityThumb.Width / 2);
+            Canvas.SetTop(OpacityThumb, p.Y - OpacityThumb.Height / 2);
+            OpacityFill.Data = ArcGeometry(degrees, OPACITY_ARC_BOTTOM_DEG);
+        }
+
+        // 마우스 위치의 각도로 투명도를 정합니다. (원호 범위 밖은 양 끝으로)
+        private void SetOpacityFromPoint(System.Windows.Point p)
+        {
+            var window = Window.GetWindow(this);
+            if (window == null) return;
+
+            double degrees = Math.Atan2(p.Y - OPACITY_ARC_CENTER, p.X - OPACITY_ARC_CENTER) * 180 / Math.PI;
+            degrees = Math.Clamp(degrees, OPACITY_ARC_TOP_DEG, OPACITY_ARC_BOTTOM_DEG);
+            double t = (OPACITY_ARC_BOTTOM_DEG - degrees) / (OPACITY_ARC_BOTTOM_DEG - OPACITY_ARC_TOP_DEG);
+            window.Opacity = MIN_WINDOW_OPACITY + (MAX_WINDOW_OPACITY - MIN_WINDOW_OPACITY) * t;
+            UpdateOpacityArc();
+        }
+
+        private void OpacityArc_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var arcCanvas = (Canvas)((FrameworkElement)sender).Parent;
+            ((UIElement)sender).CaptureMouse();
+            SetOpacityFromPoint(e.GetPosition(arcCanvas));
+            e.Handled = true; // 창 드래그(이동)로 넘어가지 않게
+        }
+
+        private void OpacityArc_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (sender is UIElement element && element.IsMouseCaptured)
+                SetOpacityFromPoint(e.GetPosition((Canvas)((FrameworkElement)sender).Parent));
+        }
+
+        private void OpacityArc_MouseUp(object sender, MouseButtonEventArgs e) => ((UIElement)sender).ReleaseMouseCapture();
 
         private PokemonState? GetPet() => DataContext as PokemonState;
 

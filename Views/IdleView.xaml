@@ -509,39 +509,19 @@
                 </Style>
             </Button.Style>
         </Button>
-        <Slider Minimum="0.15" Maximum="1.0" 
-        Value="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=Opacity}" 
-        Orientation="Vertical" 
-        HorizontalAlignment="Center" VerticalAlignment="Top" 
-        Margin="264, 50, 0, 0" 
-        Height="100" Width="22" 
-        IsMoveToPointEnabled="True"
-        ToolTip="{u:T idle.btn.stealth}">
-            <Slider.RenderTransform>
-                <RotateTransform Angle="-24.5" CenterX="11" CenterY="50"/>
-            </Slider.RenderTransform>
-            <Slider.Template>
-                <ControlTemplate TargetType="Slider">
-                    <Grid>
-                        <Path Stroke="#88FFFFFF" StrokeThickness="2" Data="M 11,7 Q 20,50 11,93" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                        <Track x:Name="PART_Track">
-                            <Track.Thumb>
-                                <Thumb>
-                                    <Thumb.Template>
-                                        <ControlTemplate TargetType="Thumb">
-                                            <Ellipse Width="10" Height="10" Fill="Blue" Stroke="White" StrokeThickness="2" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <Ellipse.Effect>
-                                                    <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.4"/>
-                                                </Ellipse.Effect>
-                                            </Ellipse>
-                                        </ControlTemplate>
-                                    </Thumb.Template>
-                                </Thumb>
-                            </Track.Thumb>
-                        </Track>
-                    </Grid>
-                </ControlTemplate>
-            </Slider.Template>
-        </Slider>
+        <!-- 투명도 조절: 몬스터볼 빨간 띠의 가운데(반지름 150)를 따라 움직이는 원호 슬라이더. 위쪽 끝 = 불투명, 아래쪽 끝 = 가장 투명
+             (원호 모양/위치는 IdleView.xaml.cs에서 계산합니다) -->
+        <Canvas Width="320" Height="320" HorizontalAlignment="Left" VerticalAlignment="Top" ToolTip="{u:T idle.btn.stealth}">
+            <Path x:Name="OpacityTrack" Stroke="#55FFFFFF" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" IsHitTestVisible="False"/>
+            <Path x:Name="OpacityFill" Stroke="#EEFFFFFF" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" IsHitTestVisible="False"/>
+            <Path x:Name="OpacityHitArea" Stroke="Transparent" StrokeThickness="16" Cursor="Hand"
+                  MouseLeftButtonDown="OpacityArc_MouseDown" MouseMove="OpacityArc_MouseMove" MouseLeftButtonUp="OpacityArc_MouseUp"/>
+            <Ellipse x:Name="OpacityThumb" Width="13" Height="13" Fill="#1E88E5" Stroke="White" StrokeThickness="2.5" Cursor="Hand"
+                     MouseLeftButtonDown="OpacityArc_MouseDown" MouseMove="OpacityArc_MouseMove" MouseLeftButtonUp="OpacityArc_MouseUp">
+                <Ellipse.Effect>
+                    <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.4"/>
+                </Ellipse.Effect>
+            </Ellipse>
+        </Canvas>
     </Grid>
 </UserControl>
