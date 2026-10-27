@@ -165,7 +165,7 @@ This desktop project was reimagined for the desktop environment by referencing t
 * **Sprite Assets**: All Pokemon dot sprites used in this game utilize the original resources from the Pokemon Mystery Dungeon community's open-source project, [PMDCollab/SpriteCollab](https://github.com/PMDCollab/SpriteCollab). Deep thanks to the community contributors for providing high-quality sprites.
   * These resources are used strictly for non-commercial purposes under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
   * Read the full license: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/).
-* **Badge Images**: Gym badges are 20×20 pixel-art redraws based on the official badge designs (reference images from [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page)).
+* **Badge Images**: Gym badges are 20×20 pixel-art redraws based on the official badge designs (reference images from the [Pokémon Wiki (Fandom)](https://pokemon.fandom.com/ko/wiki/%EB%B0%B0%EC%A7%80)).
 * **Game Data**: Pokémon names, base stats, evolutions, moves and Mega Evolution data were generated from [PokéAPI](https://pokeapi.co/) ([PokeAPI/api-data](https://github.com/PokeAPI/api-data), BSD-3-Clause).
 * **Libraries**: [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (WTFPL).
 * **Disclaimer**: This is a non-commercial fan project. All copyrights and trademarks related to Pokémon belong to Nintendo, Creatures Inc., and GAME FREAK inc.

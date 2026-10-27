@@ -165,7 +165,7 @@
 * **Sprite Assets**: 게임 내 사용된 모든 포켓몬 도트 스프라이트(Sprites)는 포켓몬 불가사의 던전 커뮤니티의 오픈소스 프로젝트인 [PMDCollab/SpriteCollab](https://github.com/PMDCollab/SpriteCollab)의 원본 리소스를 활용하였습니다. 고품질의 스프라이트를 제공해 주신 커뮤니티 기여자분들께 깊은 감사를 드립니다.
   * 해당 리소스는 **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** 라이선스에 따라 비상업적 목적으로만 사용되었습니다.
   * 라이선스 전문 확인: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/)
-* **Badge Images**: 체육관 배지는 공식 배지 디자인을 참고해 20×20 도트로 다시 그린 그림입니다. (참고 이미지: [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page))
+* **Badge Images**: 체육관 배지는 공식 배지 디자인을 참고해 20×20 도트로 다시 그린 그림입니다. (참고 이미지: [포켓몬 위키 (Fandom)](https://pokemon.fandom.com/ko/wiki/%EB%B0%B0%EC%A7%80))
 * **Game Data**: 포켓몬 이름, 종족값, 진화, 기술, 메가진화 데이터는 [PokéAPI](https://pokeapi.co/) ([PokeAPI/api-data](https://github.com/PokeAPI/api-data), BSD-3-Clause)를 바탕으로 만들었습니다.
 * **Libraries**: [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (WTFPL).
 * **Disclaimer**: 이 프로젝트는 비상업적 팬 프로젝트(Fan Project)이며, 포켓몬스터(Pokémon)와 관련된 모든 저작권 및 상표권은 Nintendo, Creatures Inc., GAME FREAK inc. 에 귀속되어 있습니다.
