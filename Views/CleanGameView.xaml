@@ -7,6 +7,15 @@
              MouseMove="GameArea_MouseMove"
              RenderOptions.BitmapScalingMode="NearestNeighbor">
 
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 픽셀 버튼 (대기 화면과 같은 스타일) -->
+                <ResourceDictionary Source="/TamaPoke;component/Views/PixelStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
     <Grid Background="Transparent">
         <!-- 다마고치 기기 테두리 -->
         <Border Width="320" Height="320" CornerRadius="160" BorderBrush="#333333" BorderThickness="4" ClipToBounds="True">
@@ -30,18 +39,18 @@
                     <RowDefinition Height="35*"/>
                 </Grid.RowDefinitions>
 
-                <!-- 청소 테마에 맞춘 밝고 산뜻한 배경 -->
-                <Border Grid.Row="0" Background="#B2EBF2"/>
-                <Border Grid.Row="1" Background="#80DEEA"/>
-                <Border Grid.Row="2" Background="#FFF59D"/>
+                <!-- 픽셀 배경 (96x96 → 3배) -->
+                <Image Grid.RowSpan="3" Source="/TamaPoke;component/Assets/UI/bg_game_clean.png" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
                 <Grid Grid.RowSpan="3">
 
                     <!-- 최고 점수 (HI) -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="40,55,0,0">
-                        <TextBlock Text="HI:" FontSize="12" FontWeight="Bold" Foreground="#555555" Margin="0,0,5,0"/>
-                        <TextBlock Text="{Binding CleanHighScore}" FontSize="12" FontWeight="Bold" Foreground="#555555"/>
-                    </StackPanel>
+                    <Border Style="{StaticResource PixelTag}" Background="#F6F3EA" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="40,55,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="HI:" FontSize="11" FontWeight="Bold" Foreground="#555555" Margin="0,0,4,0"/>
+                            <TextBlock Text="{Binding CleanHighScore}" FontSize="11" FontWeight="Bold" Foreground="#333333"/>
+                        </StackPanel>
+                    </Border>
 
                     <!-- 상태 안내 및 현재 점수 -->
                     <TextBlock Text="{Binding CleanStatusText}" Foreground="#006064" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,25,0,0"/>
@@ -72,7 +81,7 @@
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Grid Background="Transparent">
-                                                <emoji:TextBlock Text="🦠" FontSize="30"/>
+                                                <Image Source="/TamaPoke;component/Assets/UI/germ.png" Width="27" Height="27" Margin="2" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                                             </Grid>
                                         </ControlTemplate>
                                     </Button.Template>
@@ -88,13 +97,7 @@
                         </ItemsControl.ItemContainerStyle>
                     </ItemsControl>
 
-                    <Button Content="{u:T game.quit}" Width="70" Height="22" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15" Click="QuitGame_Click" Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11" Cursor="Hand">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="4"/>
-                            </Style>
-                        </Button.Resources>
-                    </Button>
+                    <Button Content="{u:T game.quit}" Width="74" Height="24" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,13" Click="QuitGame_Click" Style="{StaticResource PixelTextButton}" Background="#757575"/>
                 </Grid>
             </Grid>
         </Border>

@@ -63,7 +63,15 @@ namespace TamaPoke.Models
         private double _catchTimeLeft;
         [JsonIgnore] public double CatchTimeLeft { get => _catchTimeLeft; set { _catchTimeLeft = value; OnPropertyChanged(); } }
         private string _currentFruitIcon = "🍎";
-        [JsonIgnore] public string CurrentFruitIcon { get => _currentFruitIcon; set { _currentFruitIcon = value; OnPropertyChanged(); } }
+        [JsonIgnore] public string CurrentFruitIcon { get => _currentFruitIcon; set { _currentFruitIcon = value; OnPropertyChanged(); OnPropertyChanged(nameof(CurrentFruitImage)); } }
+
+        // 과일 받기 화면의 픽셀 과일 그림 (Assets/UI/fruit_*.png, 실행 파일에 포함)
+        private static readonly Dictionary<string, string> FruitImages = new()
+        {
+            ["🍎"] = "fruit_apple", ["🍌"] = "fruit_banana", ["🍇"] = "fruit_grapes", ["🍓"] = "fruit_strawberry",
+            ["🍊"] = "fruit_orange", ["🍉"] = "fruit_watermelon", ["🍒"] = "fruit_cherry", ["🍑"] = "fruit_peach",
+        };
+        [JsonIgnore] public string CurrentFruitImage => $"pack://application:,,,/TamaPoke;component/Assets/UI/{(FruitImages.TryGetValue(_currentFruitIcon, out var f) ? f : "fruit_apple")}.png";
         private double _fruitX;
         [JsonIgnore] public double FruitX { get => _fruitX; set { _fruitX = value; OnPropertyChanged(); } }
         private double _fruitY;
