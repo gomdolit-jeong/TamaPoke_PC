@@ -12,26 +12,32 @@
     <!-- 🌟 바탕을 투명하게 변경하여 동그라미만 보이게 합니다 -->
 
     <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <!-- 픽셀 버튼/칸 (대기 화면, 배틀 화면과 같은 스타일) -->
+            <ResourceDictionary Source="/TamaPoke;component/Views/PixelStyles.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
 
-        <!-- 지방 탭 라디오 버튼 스타일 (기존 유지) -->
-        <!-- 🌟 수정됨: 지방 탭 라디오 버튼 스타일 (내부 구조를 자유롭게 구성할 수 있도록 변경) -->
+        <!-- 지방 탭: 픽셀 칸 (고른 지방은 빨간 칸 + 흰 글자) -->
         <Style TargetType="RadioButton" x:Key="RegionTabStyle">
             <Setter Property="Foreground" Value="#555555"/>
+            <Setter Property="Background" Value="#DCD7C9"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <!-- TextElement.Foreground를 추가하여 내부 글자색이 자동으로 하얀색/회색으로 변하게 합니다 -->
-                        <Border Background="{TemplateBinding Background}" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="6" Padding="6,4" Margin="1,0" Cursor="Hand" TextElement.Foreground="{TemplateBinding Foreground}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid Margin="1,0" SnapsToDevicePixels="True" TextElement.Foreground="{TemplateBinding Foreground}">
+                            <Rectangle Fill="#2B2B36" Margin="2,0"/>
+                            <Rectangle Fill="#2B2B36" Margin="0,2"/>
+                            <Rectangle Fill="{TemplateBinding Background}" Margin="2"/>
+                            <Rectangle Fill="#4DFFFFFF" Margin="4,2,4,0" Height="2" VerticalAlignment="Top"/>
+                            <Rectangle Fill="#26000000" Margin="2,0,2,2" Height="2" VerticalAlignment="Bottom"/>
+                            <ContentPresenter Margin="7,4,7,5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter Property="Background" Value="#E53935"/>
                                 <Setter Property="Foreground" Value="White"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter Property="Background" Value="#E0E0E0"/>
-                                <Setter Property="Foreground" Value="#555555"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -39,32 +45,17 @@
             </Setter>
         </Style>
 
-        <!-- 하단 닫기 버튼 전용 스타일 (기존 유지) -->
-        <Style TargetType="Button" x:Key="CloseButtonStyle">
+        <!-- 하단 닫기 버튼: 픽셀 버튼 -->
+        <Style TargetType="Button" x:Key="CloseButtonStyle" BasedOn="{StaticResource PixelTextButton}">
             <Setter Property="Background" Value="#E53935"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="12" Padding="20,6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#D32F2F"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Padding" Value="20,6"/>
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <!-- 🌟 다른 창들처럼 동일한 크기의 동그란 테두리 적용 -->
-    <Border Background="#F8F9FA" CornerRadius="144" Width="288" Height="288" BorderBrush="Black" BorderThickness="1.5">
+    <Border Background="#F1ECDD" CornerRadius="144" Width="288" Height="288">
 
         <!-- 원형 밖으로 내용이 삐져나가지 않도록 상하좌우 마진을 줍니다 -->
         <Grid Margin="30,20,35,5">
@@ -151,7 +142,7 @@
             <!-- 🌟 2-5. 새로 추가됨: 잡은 포켓몬만 보기 체크박스 -->
             <CheckBox Grid.Row="2" Content="{u:T dex.caughtOnly}" IsChecked="{Binding IsShowOnlyUnlocked}" 
                       HorizontalAlignment="Right" Margin="0,0,10,0" 
-                      Foreground="#666666" FontSize="10" FontWeight="Bold" Cursor="Hand"/>
+                      Style="{StaticResource PixelCheckBox}" FontSize="10"/>
 
             <!-- 3. 포켓몬 도감 리스트 갤러리 (Row를 2에서 3으로 변경) -->
             <ScrollViewer x:Name="DexScrollViewer" Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="6,0,6,0">
@@ -163,7 +154,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Width="85" Height="90" Margin="3" Background="White" CornerRadius="8" BorderBrush="#DDDDDD" BorderThickness="1">
+                            <ContentControl Width="86" Height="90" Margin="3" Style="{StaticResource PixelTile}">
                                 <StackPanel VerticalAlignment="Center">
                                     <Image Source="{Binding SpriteImage}" Margin="0,0,0,-5" Width="55" Height="55" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor">
                                     <Image.Style>
@@ -176,10 +167,10 @@
                                             </Style>
                                         </Image.Style>
                                     </Image>
-                                    <TextBlock Text="{Binding Id, StringFormat='No.{0:D4}'}" FontSize="10" Foreground="#888888" HorizontalAlignment="Center" Margin="0,0,0,0"/>
+                                    <TextBlock Text="{Binding Id, StringFormat='No.{0:D4}'}" FontSize="10" Foreground="#8C8676" HorizontalAlignment="Center" Margin="0,0,0,0"/>
                                     <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="Bold" Foreground="#333333" HorizontalAlignment="Center"/>
                                 </StackPanel>
-                            </Border>
+                            </ContentControl>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
