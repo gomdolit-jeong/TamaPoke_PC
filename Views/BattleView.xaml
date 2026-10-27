@@ -8,14 +8,20 @@
              HorizontalAlignment="Center" VerticalAlignment="Center">
 
     <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <!-- 픽셀 버튼/상자/바 (대기 화면과 같은 스타일) -->
+            <ResourceDictionary Source="/TamaPoke;component/Views/PixelStyles.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:TypeToColorConverter x:Key="TypeToColor"/>
         <conv:AilmentStyleConverter x:Key="AilmentStyle"/>
 
         <!-- 상태이상 배지 공통 모양 -->
         <Style TargetType="Border" x:Key="AilmentPillBase">
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="BorderThickness" Value="0.8"/>
+            <Setter Property="CornerRadius" Value="2"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="3,0"/>
             <Setter Property="Margin" Value="0,0,4,0"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
@@ -61,32 +67,9 @@
             </Style.Triggers>
         </Style>
 
-        <Style TargetType="Button" x:Key="RoundedButtonStyle">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="5">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <TranslateTransform X="1" Y="1"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <!-- 배틀 창의 글자 버튼: 픽셀 버튼 (Background가 버튼 색) -->
+        <Style TargetType="Button" x:Key="RoundedButtonStyle" BasedOn="{StaticResource PixelTextButton}"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Background="#F2EFE1" ClipToBounds="True">
@@ -101,27 +84,15 @@
 
         <!-- 1. 상단 배틀 화면 영역 -->
         <Grid x:Name="BattleArea" Grid.Row="0">
-            <!-- 발판: 적은 오른쪽 위, 내 포켓몬은 왼쪽 아래. 포켓몬의 발이 발판 중앙에 오도록 배치합니다. -->
-            <Ellipse x:Name="EnemyPlatform" Width="96" Height="22" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="160,87,0,0" IsHitTestVisible="False">
-                <Ellipse.Fill>
-                    <RadialGradientBrush>
-                        <GradientStop Color="#55788C4A" Offset="0"/>
-                        <GradientStop Color="#33788C4A" Offset="0.7"/>
-                        <GradientStop Color="#00788C4A" Offset="1"/>
-                    </RadialGradientBrush>
-                </Ellipse.Fill>
-            </Ellipse>
-            <Ellipse x:Name="PlayerPlatform" Width="130" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,154,0,0" IsHitTestVisible="False">
-                <Ellipse.Fill>
-                    <RadialGradientBrush>
-                        <GradientStop Color="#55788C4A" Offset="0"/>
-                        <GradientStop Color="#33788C4A" Offset="0.7"/>
-                        <GradientStop Color="#00788C4A" Offset="1"/>
-                    </RadialGradientBrush>
-                </Ellipse.Fill>
-            </Ellipse>
+            <!-- 배경: 대기 화면과 같은 장소 그림(96x96)을 3배로. 위쪽 하늘을 36만큼 잘라 지평선이 상대 이름 상자 바로 아래에 오게 합니다. -->
+            <Image Source="{Binding BackgroundImage}" Width="288" Height="288" Stretch="Fill" VerticalAlignment="Top" Margin="0,-36,0,0"
+                   RenderOptions.BitmapScalingMode="NearestNeighbor" IsHitTestVisible="False"/>
 
-            <Border Margin="60,25,0,0" Background="#FAFAFA" CornerRadius="8" Padding="8,4" BorderBrush="#555" BorderThickness="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="120">
+            <!-- 발판: 적은 오른쪽 위, 내 포켓몬은 왼쪽 아래. 포켓몬의 발이 발판 중앙에 오도록 배치합니다. -->
+            <Ellipse x:Name="EnemyPlatform" Width="96" Height="22" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="160,87,0,0" IsHitTestVisible="False" Fill="#40000000"/>
+            <Ellipse x:Name="PlayerPlatform" Width="130" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,154,0,0" IsHitTestVisible="False" Fill="#40000000"/>
+
+            <ContentControl Style="{StaticResource PixelPanel}" Margin="56,25,0,0" Padding="8,5,8,6" HorizontalAlignment="Left" VerticalAlignment="Top" Width="128">
                 <StackPanel>
                     <!-- 🌟 적 이름, 상태이상, 레벨 패널 -->
                     <Grid>
@@ -145,13 +116,10 @@
                             <TextBlock Text="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Text}" FontSize="8" FontWeight="Bold"
                                        Foreground="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fg}"/>
                         </Border>
-                        <ProgressBar Value="{Binding EnemyHp}" Maximum="{Binding EnemyMaxHp}" Grid.Column="1" Height="8" VerticalAlignment="Center">
+                        <ProgressBar Value="{Binding EnemyHp}" Maximum="{Binding EnemyMaxHp}" Grid.Column="1" VerticalAlignment="Center">
                         <ProgressBar.Style>
-                            <Style TargetType="ProgressBar">
+                            <Style TargetType="ProgressBar" BasedOn="{StaticResource PixelBar}">
                                 <Setter Property="Foreground" Value="{Binding EnemyHpColor}"/>
-                                <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="BorderBrush" Value="#888"/>
-                                <Setter Property="Background" Value="#E0E0E0"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsEnemyTakingDamage}" Value="True">
                                         <DataTrigger.EnterActions>
@@ -171,7 +139,7 @@
                     </ProgressBar>
                     </Grid>
                 </StackPanel>
-            </Border>
+            </ContentControl>
 
             <Image x:Name="EnemySprite" Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="178,54,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
@@ -276,28 +244,12 @@
             <!-- 💎 메가진화 버튼: 내 턴 메인 메뉴가 보이고, 이번 배틀에서 아직 메가진화하지 않았을 때 -->
             <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Margin="30,84,0,0" Panel.ZIndex="15"
                   Visibility="{Binding IsMainMenuVisible, Converter={StaticResource BoolToVis}}">
-                <Button Visibility="{Binding CanMegaEvolveNow, Converter={StaticResource BoolToVis}}" Click="MegaEvolve_Click" Cursor="Hand">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="Bd" CornerRadius="10" Padding="7,2" BorderBrush="#FFFFFF" BorderThickness="1.5">
-                                <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#7C4DFF" Offset="0"/>
-                                        <GradientStop Color="#E040FB" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Border.Background>
-                                <StackPanel Orientation="Horizontal">
-                                    <emoji:TextBlock Text="💎" FontSize="10" Margin="0,0,3,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{u:T battle.ui.mega}" Foreground="White" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
+                <Button Visibility="{Binding CanMegaEvolveNow, Converter={StaticResource BoolToVis}}" Click="MegaEvolve_Click"
+                        Style="{StaticResource PixelTextButton}" Background="#8E44EC" FontSize="10" Height="24">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_mega.png" Style="{StaticResource PixelIcon}" Margin="-2,0,3,0"/>
+                        <TextBlock Text="{u:T battle.ui.mega}" VerticalAlignment="Center"/>
+                    </StackPanel>
                 </Button>
             </Grid>
 
@@ -308,14 +260,10 @@
                         <TranslateTransform x:Name="PokeballTranslate" X="0" Y="0"/>
                     </TransformGroup>
                 </Grid.RenderTransform>
-                <Path Fill="#E53935" Data="M 0,12 A 12,12 0 0 1 24,12 Z"/>
-                <Path Fill="White" Data="M 0,12 A 12,12 0 0 0 24,12 Z"/>
-                <Ellipse Stroke="#333" StrokeThickness="2"/>
-                <Rectangle Height="2" Fill="#333" VerticalAlignment="Center"/>
-                <Ellipse Width="8" Height="8" Fill="White" Stroke="#333" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Image Source="/TamaPoke;component/Assets/UI/icon_ball.png" Width="18" Height="18" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
             </Grid>
 
-            <Border Margin="0,0,50,5" Background="#FAFAFA" CornerRadius="8" Padding="8,4" BorderBrush="#555" BorderThickness="2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="120">
+            <ContentControl Style="{StaticResource PixelPanel}" Margin="0,0,46,5" Padding="8,5,8,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="128">
                 <StackPanel>
                     <!-- 🌟 플레이어 이름, 상태이상, 레벨 패널 -->
                     <Grid>
@@ -342,13 +290,10 @@
                             <TextBlock Text="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Text}" FontSize="8" FontWeight="Bold"
                                        Foreground="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fg}"/>
                         </Border>
-                        <ProgressBar Value="{Binding PlayerHp}" Maximum="{Binding PlayerMaxHp}" Grid.Column="1" Height="8" VerticalAlignment="Center">
+                        <ProgressBar Value="{Binding PlayerHp}" Maximum="{Binding PlayerMaxHp}" Grid.Column="1" VerticalAlignment="Center">
                         <ProgressBar.Style>
-                            <Style TargetType="ProgressBar">
+                            <Style TargetType="ProgressBar" BasedOn="{StaticResource PixelBar}">
                                 <Setter Property="Foreground" Value="{Binding PlayerHpColor}"/>
-                                <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="BorderBrush" Value="#888"/>
-                                <Setter Property="Background" Value="#E0E0E0"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsPlayerTakingDamage}" Value="True">
                                         <DataTrigger.EnterActions>
@@ -376,12 +321,12 @@
                         </TextBlock.Text>
                     </TextBlock>
                 </StackPanel>
-            </Border>
+            </ContentControl>
         </Grid>
 
         <!-- 2. 중앙 팝업 (포획 선택 창 등) -->
         <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsCatchOffered, Converter={StaticResource BoolToVis}}" Panel.ZIndex="100">
-            <Border Background="#FAFAFA" CornerRadius="15" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
+            <ContentControl Style="{StaticResource PixelPanel}" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="{u:T battle.ui.won}" FontSize="14" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,15"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -389,12 +334,12 @@
                         <Button Content="{u:T battle.ui.moveOn}" Width="90" Height="35" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="Leave_Click"/>
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ContentControl>
         </Grid>
 
         <!-- 메가 폼 선택 창 (리자몽 X/Y처럼 메가 폼이 둘 이상일 때) -->
         <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsMegaChoiceOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="105">
-            <Border Background="#FAFAFA" CornerRadius="15" Padding="16" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
+            <ContentControl Style="{StaticResource PixelPanel}" Padding="16" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="{u:T mega.battle.choose}" FontSize="13" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                     <ItemsControl ItemsSource="{Binding MegaChoices}">
@@ -411,39 +356,29 @@
                     </ItemsControl>
                     <Button Content="{u:T common.cancel}" Width="120" Height="28" Margin="0,10,0,0" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="MegaCancel_Click"/>
                 </StackPanel>
-            </Border>
+            </ContentControl>
         </Grid>
 
         <!-- 스킬 학습 창 -->
         <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsSkillLearnMenuOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="110">
-            <Border Background="#FAFAFA" CornerRadius="15" Padding="15" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
+            <ContentControl Style="{StaticResource PixelPanel}" Padding="15" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="{u:T battle.ui.newSkill}" FontSize="14" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,15"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
                         <Button Visibility="{Binding HasRecommendedSkill1, Converter={StaticResource BoolToVis}}" 
-                                Width="100" Height="45" Margin="4,0" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnLearnSkill1_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
+                                Width="100" Height="45" Margin="4,0" Style="{StaticResource PixelLightButton}" Click="BtnLearnSkill1_Click">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding RecommendedSkill1.Name}" FontWeight="Bold" FontSize="11" Foreground="#333" Margin="0,0,0,3" HorizontalAlignment="Center"/>
-                                <Border CornerRadius="3" Background="{Binding RecommendedSkill1.Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
+                                <Border CornerRadius="1" Background="{Binding RecommendedSkill1.Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding RecommendedSkill1.Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                 </Border>
                             </StackPanel>
                         </Button>
                         <Button Visibility="{Binding HasRecommendedSkill2, Converter={StaticResource BoolToVis}}" 
-                                Width="100" Height="45" Margin="4,0" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnLearnSkill2_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
+                                Width="100" Height="45" Margin="4,0" Style="{StaticResource PixelLightButton}" Click="BtnLearnSkill2_Click">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding RecommendedSkill2.Name}" FontWeight="Bold" FontSize="11" Foreground="#333" Margin="0,0,0,3" HorizontalAlignment="Center"/>
-                                <Border CornerRadius="3" Background="{Binding RecommendedSkill2.Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
+                                <Border CornerRadius="1" Background="{Binding RecommendedSkill2.Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding RecommendedSkill2.Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                 </Border>
                             </StackPanel>
@@ -451,63 +386,43 @@
                     </StackPanel>
                     <Button Content="{u:T battle.ui.dontLearn}" Width="208" Height="30" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="BtnSkipSkill_Click"/>
                 </StackPanel>
-            </Border>
+            </ContentControl>
         </Grid>
 
         <!-- 스킬 교체 창 -->
         <Grid Grid.RowSpan="2" Background="#99000000" Visibility="{Binding IsSkillReplaceMenuOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="110">
-            <Border Background="#FAFAFA" CornerRadius="15" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#333" BorderThickness="3">
+            <ContentControl Style="{StaticResource PixelPanel}" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="{u:T battle.ui.skillsFull}" TextAlignment="Center" FontSize="13" FontWeight="Bold" Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,5"/>
                     <UniformGrid Columns="2" Rows="2" Margin="0,0,0,10">
-                        <Button Margin="3" Height="45" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnReplaceSkill0_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
+                        <Button Margin="3" Height="45" Style="{StaticResource PixelLightButton}" Click="BtnReplaceSkill0_Click">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding CurrentSkills[0].Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,3" HorizontalAlignment="Center"/>
-                                <Border CornerRadius="3" Background="{Binding CurrentSkills[0].Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
+                                <Border CornerRadius="1" Background="{Binding CurrentSkills[0].Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding CurrentSkills[0].Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                 </Border>
                             </StackPanel>
                         </Button>
-                        <Button Margin="3" Height="45" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnReplaceSkill1_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
+                        <Button Margin="3" Height="45" Style="{StaticResource PixelLightButton}" Click="BtnReplaceSkill1_Click">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding CurrentSkills[1].Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,3" HorizontalAlignment="Center"/>
-                                <Border CornerRadius="3" Background="{Binding CurrentSkills[1].Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
+                                <Border CornerRadius="1" Background="{Binding CurrentSkills[1].Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding CurrentSkills[1].Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                 </Border>
                             </StackPanel>
                         </Button>
-                        <Button Margin="3" Height="45" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnReplaceSkill2_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
+                        <Button Margin="3" Height="45" Style="{StaticResource PixelLightButton}" Click="BtnReplaceSkill2_Click">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding CurrentSkills[2].Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,3" HorizontalAlignment="Center"/>
-                                <Border CornerRadius="3" Background="{Binding CurrentSkills[2].Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
+                                <Border CornerRadius="1" Background="{Binding CurrentSkills[2].Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding CurrentSkills[2].Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                 </Border>
                             </StackPanel>
                         </Button>
-                        <Button Margin="3" Height="45" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="BtnReplaceSkill3_Click">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
+                        <Button Margin="3" Height="45" Style="{StaticResource PixelLightButton}" Click="BtnReplaceSkill3_Click">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding CurrentSkills[3].Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,3" HorizontalAlignment="Center"/>
-                                <Border CornerRadius="3" Background="{Binding CurrentSkills[3].Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
+                                <Border CornerRadius="1" Background="{Binding CurrentSkills[3].Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding CurrentSkills[3].Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                 </Border>
                             </StackPanel>
@@ -515,28 +430,32 @@
                     </UniformGrid>
                     <Button Content="{u:T battle.ui.neverMind}" Width="150" Height="30" Background="#9E9E9E" Style="{StaticResource RoundedButtonStyle}" Click="BtnSkipSkill_Click"/>
                 </StackPanel>
-            </Border>
+            </ContentControl>
         </Grid>
 
         <!-- 3. 하단 컨트롤 영역 -->
-        <Grid Grid.Row="1" Background="#333333">
+        <Grid Grid.Row="1" Background="#2B3048">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto" MinHeight="65"/>
             </Grid.RowDefinitions>
+
+            <!-- 메시지 창 위쪽 픽셀 테두리 -->
+            <Rectangle Grid.RowSpan="2" Height="2" VerticalAlignment="Top" Fill="#161A28"/>
+            <Rectangle Grid.RowSpan="2" Height="2" VerticalAlignment="Top" Margin="0,2,0,0" Fill="#4A5478"/>
 
             <TextBlock Grid.Row="0" Text="{Binding BattleMessage}" Foreground="White" FontSize="12" FontWeight="Bold" FontFamily="Consolas" Margin="10,5,10,5" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
 
             <Grid Grid.Row="1">
                 <UniformGrid HorizontalAlignment="Center" Columns="2" Margin="0,0,0,10" Rows="2" 
                              Visibility="{Binding IsMainMenuVisible, Converter={StaticResource BoolToVis}}">
-                    <Button Content="{u:T battle.ui.fight}" Width="55" Height="24" Margin="3" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="ShowAttackMenu_Click"/>
-                    <Button Content="{u:T battle.ui.dodge}" Width="55" Height="24" Margin="3" Background="#1E88E5" Style="{StaticResource RoundedButtonStyle}" Click="Dodge_Click"/>
-                    <Button Content="{u:T battle.ui.bag}" Width="55" Height="24" Margin="3" Background="#FFB300" Style="{StaticResource RoundedButtonStyle}" Click="OpenInventory_Click"/>
-                    <Button Content="{u:T battle.ui.run}" Width="55" Height="24" Margin="3" Background="#757575" Style="{StaticResource RoundedButtonStyle}" Click="Run_Click"/>
+                    <Button Content="{u:T battle.ui.fight}" Width="66" Height="26" Margin="3" Background="#E53935" Style="{StaticResource RoundedButtonStyle}" Click="ShowAttackMenu_Click"/>
+                    <Button Content="{u:T battle.ui.dodge}" Width="66" Height="26" Margin="3" Background="#1E88E5" Style="{StaticResource RoundedButtonStyle}" Click="Dodge_Click"/>
+                    <Button Content="{u:T battle.ui.bag}" Width="66" Height="26" Margin="3" Background="#F0A000" Style="{StaticResource RoundedButtonStyle}" Click="OpenInventory_Click"/>
+                    <Button Content="{u:T battle.ui.run}" Width="66" Height="26" Margin="3" Background="#757575" Style="{StaticResource RoundedButtonStyle}" Click="Run_Click"/>
                 </UniformGrid>
 
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="#333333" 
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="#2B3048" 
                             Visibility="{Binding IsAttackMenuOpen, Converter={StaticResource BoolToVis}}">
                     <ItemsControl ItemsSource="{Binding CurrentSkills}">
                         <ItemsControl.ItemsPanel>
@@ -546,33 +465,29 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Width="100" Height="26" Margin="4" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="SkillButton_Click">
-                                    <Button.Resources>
-                                        <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="4"/>
-                                        </Style>
-                                    </Button.Resources>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,5,0"/>
-                                        <Border CornerRadius="3" Background="{Binding Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}" Padding="4,1">
-                                            <TextBlock Text="{Binding Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
-                                        </Border>
-                                    </StackPanel>
+                                <!-- 기술 버튼: 왼쪽 네모 = 타입 색 (타입 이름은 마우스를 올리면), 긴 기술 이름은 글자를 줄여 맞춤 -->
+                                <Button Width="100" Height="26" Margin="4" Style="{StaticResource PixelLightButton}" Click="SkillButton_Click" ToolTip="{Binding Type}">
+                                    <Grid Width="86">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="8" Height="8" Margin="0,0,4,0" VerticalAlignment="Center" BorderBrush="#2B2B36" BorderThickness="1"
+                                                Background="{Binding Type, Converter={StaticResource TypeToColor}, FallbackValue=#78909C}"/>
+                                        <Viewbox Grid.Column="1" StretchDirection="DownOnly" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="11" Foreground="#333"/>
+                                        </Viewbox>
+                                    </Grid>
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <Button Content="◀" Width="45" Height="22" Margin="0,8,0,0" Background="#E0D8C8" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CancelAttack_Click">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="11"/>
-                            </Style>
-                        </Button.Resources>
+                    <Button Content="◀" Width="45" Height="22" Margin="0,8,0,0" Style="{StaticResource PixelLightButton}" Background="#E0D8C8" Click="CancelAttack_Click">
                     </Button>
                 </StackPanel>
 
                 <!-- 동적 인벤토리 (가방) 창 -->
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,5" Background="#333333" 
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,5" Background="#2B3048" 
                             Visibility="{Binding IsBattleInventoryOpen, Converter={StaticResource BoolToVis}}">
                     <ItemsControl ItemsSource="{Binding Inventory}">
                         <ItemsControl.ItemsPanel>
@@ -582,12 +497,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Width="85" Height="25" Margin="3" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" Cursor="Hand" Click="UseBattleItem_Click">
-                                    <Button.Resources>
-                                        <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="6"/>
-                                        </Style>
-                                    </Button.Resources>
+                                <Button Width="85" Height="25" Margin="3" Style="{StaticResource PixelLightButton}" Click="UseBattleItem_Click">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="11" Foreground="#333" Margin="0,0,6,0"/>
                                         <TextBlock Text="{Binding Quantity, StringFormat={}x{0}}" FontSize="11" Foreground="#1E88E5" FontWeight="Bold"/>
@@ -596,12 +506,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <Button Content="◀" Width="45" Height="20" Background="#E0D8C8" Foreground="#333" FontWeight="Bold" Cursor="Hand" Click="CloseInventory_Click" Margin="0,5,0,0">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="10"/>
-                            </Style>
-                        </Button.Resources>
+                    <Button Content="◀" Width="45" Height="20" Style="{StaticResource PixelLightButton}" Background="#E0D8C8" Click="CloseInventory_Click" Margin="0,5,0,0">
                     </Button>
                 </StackPanel>
 
