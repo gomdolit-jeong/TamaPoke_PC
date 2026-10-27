@@ -10,43 +10,37 @@
              HorizontalAlignment="Center" VerticalAlignment="Center">
 
     <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <!-- 픽셀 버튼/상자/바 (대기 화면, 배틀 화면과 같은 스타일) -->
+            <ResourceDictionary Source="/TamaPoke;component/Views/PixelStyles.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BadgeUnlockedConverter x:Key="BadgeUnlocked"/>
 
         <!-- 🌟 새롭게 추가한 타입->색상 변환기를 등록합니다 -->
         <conv:TypeToColorConverter x:Key="TypeToColor"/>
 
-        <!-- 메달 뱃지 공통 스타일 -->
-        <Style TargetType="Border" x:Key="MedalBadgeStyle">
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Margin" Value="4"/>
-            <Setter Property="Background" Value="#DDDDDD"/>
-            <Setter Property="TextBlock.Foreground" Value="#999999"/>
+        <!-- 메달: 픽셀 칸 (없으면 회색, 얻으면 초록) -->
+        <Style TargetType="ContentControl" x:Key="MedalBadgeStyle" BasedOn="{StaticResource PixelTile}">
+            <Setter Property="Margin" Value="3"/>
             <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="#DCD7C9"/>
+            <Setter Property="Foreground" Value="#8E8A7E"/>
         </Style>
 
         <!-- ========================================== -->
         <!-- 🌟 1. 체육관 뱃지 버튼 공통 스타일 -->
         <!-- ========================================== -->
-        <Style TargetType="Button" x:Key="GymBtnStyle">
-            <Setter Property="Background" Value="#F5F5F5"/>
-            <Setter Property="BorderBrush" Value="#DDDDDD"/>
-            <Setter Property="BorderThickness" Value="1"/>
+        <Style TargetType="Button" x:Key="GymBtnStyle" BasedOn="{StaticResource PixelLightButton}">
             <Setter Property="Margin" Value="3"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Padding" Value="0"/>
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Background="#F8F9FA" ClipToBounds="True">
+    <Grid Background="#F1ECDD" ClipToBounds="True">
         <Grid.Clip>
             <EllipseGeometry Center="144,144" RadiusX="144" RadiusY="144" />
         </Grid.Clip>
@@ -64,10 +58,7 @@
                 </Style>
             </Grid.Style>
 
-            <Border Width="200" Height="110" Background="White" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="10" ShadowDepth="3" Opacity="0.3"/>
-                </Border.Effect>
+            <ContentControl Style="{StaticResource PixelPanel}" Width="210" Padding="12,14" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
 
                     <TextBlock FontSize="13" FontWeight="Bold" Foreground="#333333" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,12">
@@ -75,35 +66,21 @@
                     </TextBlock>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Content="{u:T profile.challenge}" Width="80" Height="28" Margin="4,0" Background="#E53935" Foreground="White" FontWeight="Bold" FontSize="11" Click="ConfirmGym_Click" Cursor="Hand">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-                        <Button Content="{u:T common.cancel}" Width="60" Height="28" Margin="4,0" Background="#757575" Foreground="White" FontWeight="Bold" FontSize="11" Click="CancelGym_Click" Cursor="Hand">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="6"/>
-                                </Style>
-                            </Button.Resources>
-                        </Button>
+                        <Button Content="{u:T profile.challenge}" Width="80" Height="28" Margin="4,0" Style="{StaticResource PixelTextButton}" Background="#E53935" FontWeight="Bold" FontSize="11" Click="ConfirmGym_Click" Cursor="Hand"/>
+                        <Button Content="{u:T common.cancel}" Width="60" Height="28" Margin="4,0" Style="{StaticResource PixelTextButton}" Background="#757575" FontWeight="Bold" FontSize="11" Click="CancelGym_Click" Cursor="Hand"/>
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ContentControl>
         </Grid>
 
         <!-- 공통 상단/좌우 버튼 -->
-        <Button Content="{u:T profile.close}" FontSize="11" FontWeight="Bold" Background="#E53935" Foreground="White" Width="60" Height="22" Margin="0,5,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Click="Close_Click" Cursor="Hand">
-            <Button.Resources>
-                <Style TargetType="Border">
-                    <Setter Property="CornerRadius" Value="11"/>
-                </Style>
-            </Button.Resources>
+        <Button Content="{u:T profile.close}" FontSize="11" FontWeight="Bold" Style="{StaticResource PixelTextButton}" Background="#E53935" Width="60" Height="22" Margin="0,5,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Click="Close_Click" Cursor="Hand"/>
+        <Button Style="{StaticResource PixelArrowButton}" Margin="5,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Click="PrevPage_Click">
+            <Image Source="/TamaPoke;component/Assets/UI/arrow_left.png" Width="10" Height="18" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
         </Button>
-        <Button Content="◀" FontSize="20" FontWeight="Bold" Background="Transparent" BorderThickness="0" Foreground="#888" Width="30" Height="60" Margin="5,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Cursor="Hand" Click="PrevPage_Click"/>
-        <Button Content="▶" FontSize="20" FontWeight="Bold" Background="Transparent" BorderThickness="0" Foreground="#888" Width="30" Height="60" Margin="0,0,5,0" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand" Click="NextPage_Click"/>
+        <Button Style="{StaticResource PixelArrowButton}" Margin="0,0,5,0" HorizontalAlignment="Right" VerticalAlignment="Center" Click="NextPage_Click">
+            <Image Source="/TamaPoke;component/Assets/UI/arrow_right.png" Width="10" Height="18" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+        </Button>
 
         <!-- 메인 컨텐츠 영역 -->
         <Grid Margin="35,40,35,35">
@@ -133,7 +110,7 @@
                                 <DataTemplate>
                                     <StackPanel Margin="0,0,0,10">
                                         <TextBlock Text="{Binding HeaderText}" FontSize="11" FontWeight="Bold" Foreground="#666" Margin="4,4,0,2"/>
-                                        <Separator Background="#DDD" Margin="0,0,0,4"/>
+                                        <Rectangle Height="2" Fill="#D2CAB4" Margin="0,0,0,4" SnapsToDevicePixels="True"/>
 
                                         <ItemsControl ItemsSource="{Binding Badges}">
                                             <ItemsControl.ItemsPanel>
@@ -205,19 +182,19 @@
                     <Image Source="{Binding CurrentFrame}" Width="64" Height="64" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,3"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <emoji:TextBlock Text="🔥" FontSize="11" VerticalAlignment="Center"/>
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_streak.png" Style="{StaticResource PixelIcon}" Margin="0,0,3,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{u:T profile.streak}" FontSize="11" Foreground="#777" VerticalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock Text="{Binding Streak, Converter={x:Static lc:LocFormatConverter.Instance}, ConverterParameter=profile.streak.days}" FontSize="14" FontWeight="Bold" Foreground="#E65100" HorizontalAlignment="Center" Margin="0,0,0,5"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <emoji:TextBlock Text="💖" FontSize="11" VerticalAlignment="Center"/>
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_heart.png" Style="{StaticResource PixelIcon}" Margin="0,0,3,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{u:T profile.bond}" FontSize="11" Foreground="#777" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <ProgressBar Value="{Binding Bond}" Maximum="100" Width="100" Height="8" Foreground="#E91E63" Margin="0,2,0,5"/>
+                    <ProgressBar Style="{StaticResource PixelBar}" Value="{Binding Bond}" Maximum="100" Width="100" Foreground="#E91E63" Margin="0,2,0,5"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <emoji:TextBlock Text="😋" FontSize="11" VerticalAlignment="Center"/>
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_berry_red.png" Style="{StaticResource PixelIcon}" Margin="0,0,3,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{u:T profile.favoriteBerry}" FontSize="11" Foreground="#777" VerticalAlignment="Center"/>
                     </StackPanel>
                     <emoji:TextBlock Text="{Binding FavoriteBerryName}" FontSize="13" FontWeight="Bold" Foreground="#2E7D32" HorizontalAlignment="Center"/>
@@ -241,16 +218,16 @@
 
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="160">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                        <emoji:TextBlock Text="⚔️" FontSize="16" VerticalAlignment="Center"/>
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_sword.png" Style="{StaticResource PixelIcon}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{u:T profile.stats}" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- 🌟 속성(타입) 뱃지 표시 영역 추가 -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                        <Border CornerRadius="4" Background="{Binding Type1, Converter={StaticResource TypeToColor}}" Padding="6,2" Margin="2">
+                        <Border Style="{StaticResource PixelTag}" Background="{Binding Type1, Converter={StaticResource TypeToColor}}" Margin="2">
                             <TextBlock Text="{Binding Type1}" Foreground="White" FontSize="11" FontWeight="Bold"/>
                         </Border>
-                        <Border CornerRadius="4" Background="{Binding Type2, Converter={StaticResource TypeToColor}}" Padding="6,2" Margin="2"
+                        <Border Style="{StaticResource PixelTag}" Background="{Binding Type2, Converter={StaticResource TypeToColor}}" Margin="2"
                                 Visibility="{Binding HasType2, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="{Binding Type2}" Foreground="White" FontSize="11" FontWeight="Bold"/>
                         </Border>
@@ -259,26 +236,20 @@
                     <Grid Margin="0,4">
                         <TextBlock Text="{u:T profile.stat.atk}" FontSize="11" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Left"/>
                         <TextBlock Text="{Binding TrAtk}" FontSize="11" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Right"/>
-                        <ProgressBar Value="{Binding TrAtk}" Maximum="100" Height="6" Foreground="#D32F2F" Margin="0,15,0,0"/>
+                        <ProgressBar Style="{StaticResource PixelBar}" Value="{Binding TrAtk}" Maximum="100" Foreground="#D32F2F" Margin="0,15,0,0"/>
                     </Grid>
                     <Grid Margin="0,4">
                         <TextBlock Text="{u:T profile.stat.def}" FontSize="11" FontWeight="Bold" Foreground="#1976D2" HorizontalAlignment="Left"/>
                         <TextBlock Text="{Binding TrDef}" FontSize="11" FontWeight="Bold" Foreground="#1976D2" HorizontalAlignment="Right"/>
-                        <ProgressBar Value="{Binding TrDef}" Maximum="100" Height="6" Foreground="#1976D2" Margin="0,15,0,0"/>
+                        <ProgressBar Style="{StaticResource PixelBar}" Value="{Binding TrDef}" Maximum="100" Foreground="#1976D2" Margin="0,15,0,0"/>
                     </Grid>
                     <Grid Margin="0,4">
-                        <TextBlock Text="{u:T profile.stat.spe}" FontSize="11" FontWeight="Bold" Foreground="#FBC02D" HorizontalAlignment="Left"/>
-                        <TextBlock Text="{Binding TrSpeed}" FontSize="11" FontWeight="Bold" Foreground="#FBC02D" HorizontalAlignment="Right"/>
-                        <ProgressBar Value="{Binding TrSpeed}" Maximum="100" Height="6" Foreground="#FBC02D" Margin="0,15,0,0"/>
+                        <TextBlock Text="{u:T profile.stat.spe}" FontSize="11" FontWeight="Bold" Foreground="#C98F00" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding TrSpeed}" FontSize="11" FontWeight="Bold" Foreground="#C98F00" HorizontalAlignment="Right"/>
+                        <ProgressBar Style="{StaticResource PixelBar}" Value="{Binding TrSpeed}" Maximum="100" Foreground="#FBC02D" Margin="0,15,0,0"/>
                     </Grid>
 
-                    <Button Content="{u:T profile.wildBattle}" Width="130" Height="30" Margin="0,15,0,0" Background="#E53935" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="StartBattle_Click">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="8"/>
-                            </Style>
-                        </Button.Resources>
-                    </Button>
+                    <Button Content="{u:T profile.wildBattle}" Width="130" Height="30" Margin="0,15,0,0" Style="{StaticResource PixelTextButton}" Background="#E53935" FontWeight="Bold" Cursor="Hand" Click="StartBattle_Click"/>
                 </StackPanel>
             </Grid>
 
@@ -299,7 +270,7 @@
 
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="180">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
-                        <emoji:TextBlock Text="✨" FontSize="16" VerticalAlignment="Center"/>
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_clean.png" Style="{StaticResource PixelIcon}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{u:T profile.moves}" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
                     </StackPanel>
 
@@ -311,17 +282,17 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Width="85" Height="45" Margin="2" Background="#FAFAFA" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4">
+                                <ContentControl Style="{StaticResource PixelTile}" Width="86" Height="46" Margin="2">
                                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="10" Foreground="#333" Margin="0,0,0,4" HorizontalAlignment="Center"/>
 
                                         <!-- 🌟 TypeToColorConverter를 사용하여 타입별로 배경색을 다르게 칠합니다 -->
-                                        <Border CornerRadius="3" Background="{Binding Type, Converter={StaticResource TypeToColor}}" Padding="4,1" HorizontalAlignment="Center">
+                                        <Border Style="{StaticResource PixelTag}" Background="{Binding Type, Converter={StaticResource TypeToColor}}" HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding Type}" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                         </Border>
 
                                     </StackPanel>
-                                </Border>
+                                </ContentControl>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -345,116 +316,116 @@
 
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                        <emoji:TextBlock Text="🏅" FontSize="16" VerticalAlignment="Center"/>
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_medal.png" Style="{StaticResource PixelIcon}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{u:T profile.medals}" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock Text="{Binding MedalCount, Converter={x:Static lc:LocFormatConverter.Instance}, ConverterParameter=profile.medals.count}" FontSize="11" Foreground="#777" HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
                     <WrapPanel Width="220" ItemWidth="110" HorizontalAlignment="Center">
-                        <Border>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl" BasedOn="{StaticResource MedalBadgeStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasMedalLv10}" Value="True">
-                                            <Setter Property="Background" Value="#4CAF50"/>
-                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#4CC05E"/>
+                                            <Setter Property="Foreground" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <TextBlock Text="{u:T medal.lv10}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Border>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                            </ContentControl.Style>
+                            <TextBlock FontWeight="Bold" Text="{u:T medal.lv10}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </ContentControl>
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl" BasedOn="{StaticResource MedalBadgeStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasMedalLv25}" Value="True">
-                                            <Setter Property="Background" Value="#4CAF50"/>
-                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#4CC05E"/>
+                                            <Setter Property="Foreground" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <TextBlock Text="{u:T medal.lv25}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Border>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                            </ContentControl.Style>
+                            <TextBlock FontWeight="Bold" Text="{u:T medal.lv25}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </ContentControl>
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl" BasedOn="{StaticResource MedalBadgeStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasMedalLv50}" Value="True">
-                                            <Setter Property="Background" Value="#4CAF50"/>
-                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#4CC05E"/>
+                                            <Setter Property="Foreground" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <TextBlock Text="{u:T medal.lv50}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Border>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                            </ContentControl.Style>
+                            <TextBlock FontWeight="Bold" Text="{u:T medal.lv50}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </ContentControl>
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl" BasedOn="{StaticResource MedalBadgeStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasMedalBerry}" Value="True">
-                                            <Setter Property="Background" Value="#4CAF50"/>
-                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#4CC05E"/>
+                                            <Setter Property="Foreground" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <TextBlock Text="{u:T medal.berry}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Border>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                            </ContentControl.Style>
+                            <TextBlock FontWeight="Bold" Text="{u:T medal.berry}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </ContentControl>
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl" BasedOn="{StaticResource MedalBadgeStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasMedalStreak7}" Value="True">
-                                            <Setter Property="Background" Value="#4CAF50"/>
-                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#4CC05E"/>
+                                            <Setter Property="Foreground" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <TextBlock Text="{u:T medal.streak7}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Border>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                            </ContentControl.Style>
+                            <TextBlock FontWeight="Bold" Text="{u:T medal.streak7}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </ContentControl>
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl" BasedOn="{StaticResource MedalBadgeStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasMedalBond}" Value="True">
-                                            <Setter Property="Background" Value="#4CAF50"/>
-                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#4CC05E"/>
+                                            <Setter Property="Foreground" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <TextBlock Text="{u:T medal.bond}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Border>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                            </ContentControl.Style>
+                            <TextBlock FontWeight="Bold" Text="{u:T medal.bond}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </ContentControl>
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl" BasedOn="{StaticResource MedalBadgeStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasMedalFinal}" Value="True">
-                                            <Setter Property="Background" Value="#4CAF50"/>
-                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#4CC05E"/>
+                                            <Setter Property="Foreground" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <TextBlock Text="{u:T medal.final}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Border>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource MedalBadgeStyle}">
+                            </ContentControl.Style>
+                            <TextBlock FontWeight="Bold" Text="{u:T medal.final}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </ContentControl>
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl" BasedOn="{StaticResource MedalBadgeStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasMedalFit}" Value="True">
-                                            <Setter Property="Background" Value="#4CAF50"/>
-                                            <Setter Property="TextBlock.Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#4CC05E"/>
+                                            <Setter Property="Foreground" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <TextBlock Text="{u:T medal.fit}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                            </ContentControl.Style>
+                            <TextBlock FontWeight="Bold" Text="{u:T medal.fit}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </ContentControl>
                     </WrapPanel>
                 </StackPanel>
             </Grid>
@@ -476,15 +447,15 @@
 
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="160">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                        <emoji:TextBlock Text="📈" FontSize="16" VerticalAlignment="Center"/>
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_growth.png" Style="{StaticResource PixelIcon}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{u:T profile.growth}" FontSize="16" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <TextBlock Text="{u:T profile.nextLevel}" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
-                    <ProgressBar Value="{Binding LevelProgressMinutes, Mode=OneWay}" Maximum="60" Height="10" Foreground="#4CAF50" Margin="0,4,0,10"/>
+                    <ProgressBar Style="{StaticResource PixelBar}" Value="{Binding LevelProgressMinutes, Mode=OneWay}" Maximum="60" Foreground="#4CAF50" Margin="0,4,0,10"/>
 
                     <TextBlock Text="{u:T profile.evolution}" FontSize="11" FontWeight="Bold" Foreground="#555" HorizontalAlignment="Center"/>
-                    <ProgressBar Value="{Binding EvolveProgressPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="#8E24AA" Margin="0,4,0,2"/>
+                    <ProgressBar Style="{StaticResource PixelBar}" Value="{Binding EvolveProgressPercent, Mode=OneWay}" Maximum="100" Foreground="#8E24AA" Margin="0,4,0,2"/>
                     <TextBlock Text="{Binding EvolveProgressText}" FontSize="11" Foreground="#8E24AA" HorizontalAlignment="Center" Margin="0,0,0,12"/>
 
                     <!-- 돌봄 실수 / 몸무게 (퍼펙트 바디 조건) -->
