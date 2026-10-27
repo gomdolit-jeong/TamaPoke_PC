@@ -10,6 +10,80 @@
     <!-- 🌟 핵심: 몬스터볼 테두리나 UI 없이, 오직 투명한 바탕에 포켓몬 이미지만 띄웁니다. -->
     <Grid Background="Transparent">
 
+        <!-- 💎 산책 중 메가진화 연출: 포켓몬 뒤에서 빛과 무지개 고리가 돕니다. (배틀 연출과 같은 모양) -->
+        <!-- 프레임 안에서 포켓몬 몸통은 가운데보다 조금 위에 그려지므로 고리도 살짝 올립니다. -->
+        <Grid Width="52" Height="52" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,16" IsHitTestVisible="False">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsMegaEvolving}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Ellipse>
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#CCFFFFFF" Offset="0"/>
+                        <GradientStop Color="#66FFD54F" Offset="0.5"/>
+                        <GradientStop Color="#00FFFFFF" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+                <Ellipse.Style>
+                    <Style TargetType="Ellipse">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMegaEvolving}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard Name="WalkMegaGlowAnim">
+                                        <Storyboard RepeatBehavior="Forever">
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:0.35" AutoReverse="True"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <StopStoryboard BeginStoryboardName="WalkMegaGlowAnim"/>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Ellipse.Style>
+            </Ellipse>
+            <Ellipse Margin="8" StrokeThickness="2.5" RenderTransformOrigin="0.5,0.5">
+                <Ellipse.Stroke>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FF5252" Offset="0"/>
+                        <GradientStop Color="#FFD740" Offset="0.25"/>
+                        <GradientStop Color="#69F0AE" Offset="0.5"/>
+                        <GradientStop Color="#40C4FF" Offset="0.75"/>
+                        <GradientStop Color="#E040FB" Offset="1"/>
+                    </LinearGradientBrush>
+                </Ellipse.Stroke>
+                <Ellipse.RenderTransform>
+                    <RotateTransform/>
+                </Ellipse.RenderTransform>
+                <Ellipse.Style>
+                    <Style TargetType="Ellipse">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMegaEvolving}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard Name="WalkMegaRingAnim">
+                                        <Storyboard RepeatBehavior="Forever">
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:0.8"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <StopStoryboard BeginStoryboardName="WalkMegaRingAnim"/>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Ellipse.Style>
+            </Ellipse>
+        </Grid>
+
         <!-- IdleView에서 포켓몬을 그리는 로직만 그대로 가져왔습니다! -->
         <!-- Stretch="None": 모션마다 프레임 크기가 달라도 포켓몬 크기가 일정하게 유지됩니다. -->
         <Image Source="{Binding CurrentFrame}" 

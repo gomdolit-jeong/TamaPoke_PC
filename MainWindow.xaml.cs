@@ -246,7 +246,11 @@ namespace TamaPoke
 
         private void SpawnRoamingPet(int partyIndex, GameSettings settings)
         {
-            var pet = new RoamingPet(MyPet!.Party[partyIndex], partyIndex, _activePets, settings);
+            var member = MyPet!.Party[partyIndex];
+            var pet = new RoamingPet(member, partyIndex, _activePets, settings)
+            {
+                MegaForms = MyPet.GetUsableMegaForms(member.SpeciesId), // 산책 중 가끔 메가진화 (메가링 + 스톤 + 이미지)
+            };
             pet.ToggleWalkRequested += ToggleWalkMode;
             pet.Closed += p => _activePets.Remove(p);
             _activePets.Add(pet);

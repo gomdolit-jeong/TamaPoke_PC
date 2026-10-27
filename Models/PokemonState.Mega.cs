@@ -135,6 +135,9 @@ namespace TamaPoke.Models
         private bool _isMegaEvolving;
         [JsonIgnore] public bool IsMegaEvolving { get => _isMegaEvolving; private set { if (SetProperty(ref _isMegaEvolving, value)) OnPropertyChanged(nameof(CanMegaEvolveNow)); } }
 
+        // 산책 펫의 메가진화 연출 (무지개 고리 표시)
+        public void SetMegaGlow(bool on) => IsMegaEvolving = on;
+
         // 메가 폼이 둘 이상일 때(리자몽 X/Y 등) 고르는 창
         private bool _isMegaChoiceOpen;
         [JsonIgnore] public bool IsMegaChoiceOpen { get => _isMegaChoiceOpen; private set => SetProperty(ref _isMegaChoiceOpen, value); }

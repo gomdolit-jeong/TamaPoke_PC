@@ -30,8 +30,15 @@ namespace TamaPoke.Views
         private const int RUMMAGE_TICKS = 130;     // 풀숲 뒤적이기 연출 길이 (33ms 틱, 약 4.3초)
         private const double MAX_SCREEN_RATIO = 0.8; // 창이 화면 작업 영역의 이 비율을 넘지 않도록 큰 포켓몬은 배율을 줄임
 
+        // 산책 중 메가진화: 메가진화할 수 있는 포켓몬(메가링 + 스톤 + 이미지)이 각자 정해진 때에 몇 분 동안 메가진화했다가 돌아옵니다.
+        private static readonly TimeSpan MegaDuration = TimeSpan.FromMinutes(3);
+        private const int MEGA_FIRST_MIN_MINUTES = 1, MEGA_FIRST_MAX_MINUTES = 3;   // 산책 시작 후 첫 메가진화까지
+        private const int MEGA_NEXT_MIN_MINUTES = 10, MEGA_NEXT_MAX_MINUTES = 20;   // 그 다음 메가진화까지
+        private const int MEGA_CHANGE_TICKS = 75;   // 빛나다가 모습이 바뀌는 연출 (33ms 틱, 약 2.5초)
+        private const int MEGA_SWAP_AT_TICK = 20;   // 연출이 이만큼 남았을 때 모습이 바뀜
+
         // 목적지에 도착하거나 이벤트가 생겼을 때 잠시 하는 행동
-        private enum Behavior { Walking, Sleeping, Sinking, Interacting, Rummaging }
+        private enum Behavior { Walking, Sleeping, Sinking, Interacting, Rummaging, Transforming }
 
         public PokemonState State { get; }
         public Window Window { get; }
@@ -42,6 +49,10 @@ namespace TamaPoke.Views
         // 산책 중 이 펫이 줍게 된 아이템 (풀숲 뒤적이기 연출이 끝나면 머리 위에 표시)
         public ItemDefinition? PendingFoundItem { get; set; }
 
+        // 이 포켓몬이 메가진화할 수 있는 폼 (없으면 산책 중 메가진화하지 않음)
+        public IReadOnlyList<MegaFormInfo> MegaForms { get; init; } = Array.Empty<MegaFormInfo>();
+        public bool IsMegaEvolved => _megaEndsAt != null;
+
         public event Action? ToggleWalkRequested;   // 펫 창에서 Ctrl+W
         public event Action<RoamingPet>? Closed;
 
@@ -51,9 +62,16 @@ namespace TamaPoke.Views
         private bool _isTaskbarMode;
         private double _scale;
         private double _width, _height;
-        private readonly double _baseWidth, _baseHeight; // 배율 1일 때의 창 크기
+        private double _baseWidth, _baseHeight;  // 배율 1일 때의 창 크기 (메가진화하면 메가 이미지에 맞게 바뀜)
+        private double _requestedScale;          // 설정의 배율 (화면에 맞추기 전)
         private readonly double _speed;
         private RoamingView? _roamingView;
+
+        private readonly PartyMember _member;
+        private readonly string _normalSpriteFile;
+        private DateTime _nextMegaAt;
+        private DateTime? _megaEndsAt;
+        private bool _changingToMega;
 
         private double _targetX, _targetY;
         private int _restCounter = 0;
@@ -64,6 +82,8 @@ namespace TamaPoke.Views
         {
             _others = others;
             PartyIndex = partyIndex;
+            _member = member;
+            _normalSpriteFile = member.SpriteFileName;
 
             State = new PokemonState
             {
@@ -78,10 +98,9 @@ namespace TamaPoke.Views
             _speed = BASE_ROAMING_SPEED * (0.8 + _rnd.NextDouble() * 0.4);
 
             // 가장 큰 모션 프레임이 잘리지 않는 크기로 창을 만듭니다.
-            var maxFrame = BinSpriteReader.GetMaxFrameSize(AppPaths.SpritePath(State.SpriteFileName));
-            _baseWidth = Math.Max(50.0, maxFrame.Width) * SPRITE_ZOOM;
-            _baseHeight = Math.Max(50.0, maxFrame.Height) * SPRITE_ZOOM;
-            _scale = FitScale(ScaleFrom(settings));
+            SetBaseSize(State.SpriteFileName);
+            _requestedScale = ScaleFrom(settings);
+            _scale = FitScale(_requestedScale);
             _width = _baseWidth * _scale;
             _height = _baseHeight * _scale;
 
@@ -89,6 +108,33 @@ namespace TamaPoke.Views
         }
 
         private static double ScaleFrom(GameSettings settings) => settings.RoamingPetScale; // 범위는 GameSettings에서 보장
+
+        // 이미지의 가장 큰 모션 프레임 기준으로 배율 1일 때의 창 크기를 정합니다.
+        private void SetBaseSize(string spriteFile)
+        {
+            var maxFrame = BinSpriteReader.GetMaxFrameSize(AppPaths.SpritePath(spriteFile));
+            _baseWidth = Math.Max(50.0, maxFrame.Width) * SPRITE_ZOOM;
+            _baseHeight = Math.Max(50.0, maxFrame.Height) * SPRITE_ZOOM;
+        }
+
+        // 배율/이미지가 바뀌면 창 크기를 다시 맞춥니다. (발 위치를 기준으로 커지거나 작아짐)
+        private void ResizeKeepingFeet()
+        {
+            double centerX = Window.Left + _width / 2, bottom = Window.Top + _height;
+            _scale = FitScale(_requestedScale);
+            _width = _baseWidth * _scale;
+            _height = _baseHeight * _scale;
+            Window.Width = _width;
+            Window.Height = _height;
+            if (_roamingView != null)
+            {
+                _roamingView.Width = _baseWidth / SPRITE_ZOOM;
+                _roamingView.Height = _baseHeight / SPRITE_ZOOM;
+                _roamingView.LayoutTransform = new System.Windows.Media.ScaleTransform(_scale * SPRITE_ZOOM, _scale * SPRITE_ZOOM);
+            }
+            Window.Left = centerX - _width / 2;
+            Window.Top = bottom - _height;
+        }
 
         // 레쿠쟈, 고래왕자처럼 큰 포켓몬을 크게 키워도 창이 화면을 넘지 않도록 배율을 줄입니다.
         // (창 크기와 같은 WPF 단위(DIP)로 된 주 화면 작업 영역 기준)
@@ -107,21 +153,11 @@ namespace TamaPoke.Views
         public void ApplySettings(GameSettings settings)
         {
             bool modeChanged = _isTaskbarMode != settings.IsTaskbarMode;
-            double scale = FitScale(ScaleFrom(settings));
+            bool scaleChanged = ScaleFrom(settings) != _requestedScale;
             _isTaskbarMode = settings.IsTaskbarMode;
+            _requestedScale = ScaleFrom(settings);
 
-            if (scale != _scale)
-            {
-                double centerX = Window.Left + _width / 2, bottom = Window.Top + _height;
-                _scale = scale;
-                _width = _baseWidth * _scale;
-                _height = _baseHeight * _scale;
-                Window.Width = _width;
-                Window.Height = _height;
-                if (_roamingView != null) _roamingView.LayoutTransform = new System.Windows.Media.ScaleTransform(_scale * SPRITE_ZOOM, _scale * SPRITE_ZOOM);
-                Window.Left = centerX - _width / 2;
-                Window.Top = bottom - _height;
-            }
+            if (scaleChanged) ResizeKeepingFeet();
             else if (!modeChanged) return;
 
             if (_behavior == Behavior.Walking) (_targetX, _targetY) = PickTargetOnCurrentScreen();
@@ -199,6 +235,7 @@ namespace TamaPoke.Views
             }
             Window.Show();
 
+            _nextMegaAt = DateTime.Now.AddSeconds(_rnd.Next(MEGA_FIRST_MIN_MINUTES * 60, MEGA_FIRST_MAX_MINUTES * 60 + 1)); // 펫마다 초 단위로 따로 정함
             (_targetX, _targetY) = PickTargetOnCurrentScreen();
             SetAction(PokemonState.ANIM_WALK);
             _moveTimer.Start();
@@ -249,7 +286,7 @@ namespace TamaPoke.Views
                 return;
             }
 
-            if (TryStartRummage() || TryStartInteraction()) return;
+            if (TryStartMegaChange() || TryStartRummage() || TryStartInteraction()) return;
 
             MoveTowardTarget();
         }
@@ -266,6 +303,15 @@ namespace TamaPoke.Views
                 case Behavior.Sinking:
                     if (_restCounter == 60) SetAction(PokemonState.ANIM_LEAPFORTH, 60);
                     else if (_restCounter == 30) SetAction(PokemonState.ANIM_HITGROUND, 30);
+                    break;
+                case Behavior.Transforming:
+                    // 무지개 고리가 빛나다가 모습이 바뀌고, 포즈를 취합니다.
+                    if (_restCounter == MEGA_SWAP_AT_TICK)
+                    {
+                        State.SetMegaGlow(false);
+                        if (_changingToMega) ChangeToMega(); else ChangeBack();
+                        SetAction(PokemonState.ANIM_POSE, MEGA_SWAP_AT_TICK);
+                    }
                     break;
                 case Behavior.Rummaging:
                     // 풀숲 뒤적이기: 뛰어들기 → 뒤적뒤적 → 아이템 들고 깡총
@@ -302,6 +348,54 @@ namespace TamaPoke.Views
             double y = _isTaskbarMode ? screen.WorkingArea.Bottom - _height
                                       : ClampSafe(Window.Top + Math.Sin(angle) * escapeDistance, b.Top, b.Bottom - _height);
             return (x, y);
+        }
+
+        // 메가진화 시작/해제 시점이 되면 그 자리에서 빛나기 시작합니다. (펫마다 시점이 따로라 여러 마리가 함께 메가진화할 수도 있음)
+        private bool TryStartMegaChange()
+        {
+            if (MegaForms.Count == 0 || _behavior != Behavior.Walking) return false;
+
+            if (_megaEndsAt is DateTime end)
+            {
+                if (DateTime.Now < end) return false;
+                _changingToMega = false;
+            }
+            else
+            {
+                if (DateTime.Now < _nextMegaAt) return false;
+                _changingToMega = true;
+            }
+
+            _behavior = Behavior.Transforming;
+            _restCounter = MEGA_CHANGE_TICKS;
+            State.Direction = 0;
+            State.SetMegaGlow(true);
+            SetAction(PokemonState.ANIM_CHARGE, MEGA_CHANGE_TICKS - MEGA_SWAP_AT_TICK);
+            return true;
+        }
+
+        private void ChangeToMega()
+        {
+            var form = MegaForms[_rnd.Next(MegaForms.Count)];
+            string file = SpriteForms.ApplyVariants(AppPaths.GetSpriteForms(_member.SpeciesId), form.SpriteFileName, _member.IsShiny, _member.IsFemale);
+            ChangeSprite(file);
+            State.ShowRoamingBubble("💎", 3);
+            _megaEndsAt = DateTime.Now + MegaDuration;
+        }
+
+        private void ChangeBack()
+        {
+            ChangeSprite(_normalSpriteFile);
+            _megaEndsAt = null;
+            _nextMegaAt = DateTime.Now.AddSeconds(_rnd.Next(MEGA_NEXT_MIN_MINUTES * 60, MEGA_NEXT_MAX_MINUTES * 60 + 1));
+        }
+
+        private void ChangeSprite(string file)
+        {
+            State.SpriteFileName = file;
+            SetBaseSize(file);
+            ResizeKeepingFeet();
+            State.ReloadSprite();
         }
 
         // 아이템을 줍게 된 펫: 걷다가 그 자리의 풀숲으로 뛰어듭니다.
