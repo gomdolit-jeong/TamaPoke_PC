@@ -43,41 +43,31 @@
             <Setter Property="Background" Value="#E0E0E0"/>
         </Style>
 
+        <!-- 픽셀 UI: 그림 한 칸 = 2 DIP (포켓몬과 같은 배율). 그림은 Assets/UI 에 있음 (실행 파일에 포함) -->
+        <!-- 동그란 픽셀 버튼: 진한 외곽선 + 아래쪽 그늘 + 그림자. 누르면 한 칸 내려가며 그림자를 덮음 -->
         <Style TargetType="Button" x:Key="PhysicalButton">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="Margin" Value="5,4"/>
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Margin" Value="4,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Ellipse Fill="#999999" Margin="1,2,0,0"/>
-                            <Ellipse Stroke="#777777" StrokeThickness="1">
-                                <Ellipse.Fill>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#FFFFFF" Offset="0.0"/>
-                                        <GradientStop Color="#DDDDDD" Offset="0.8"/>
-                                        <GradientStop Color="#BBBBBB" Offset="1.0"/>
-                                    </LinearGradientBrush>
-                                </Ellipse.Fill>
-                            </Ellipse>
-                            <Ellipse Margin="3,2,3,14">
-                                <Ellipse.Fill>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#CCFFFFFF" Offset="0"/>
-                                        <GradientStop Color="#00FFFFFF" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Ellipse.Fill>
-                            </Ellipse>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                        <Grid Background="Transparent">
+                            <Image x:Name="Shadow" Source="/TamaPoke;component/Assets/UI/btn_shadow.png" Width="30" Height="30" Margin="2,2,0,0"
+                                   HorizontalAlignment="Left" VerticalAlignment="Top" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            <Grid x:Name="Face" Width="30" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                <Image x:Name="FaceImage" Source="/TamaPoke;component/Assets/UI/btn_face.png" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="FaceImage" Property="Source" Value="/TamaPoke;component/Assets/UI/btn_face_hover.png"/>
+                            </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <TranslateTransform X="1" Y="1"/>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="Face" Property="Margin" Value="2,2,0,0"/>
+                                <Setter TargetName="Shadow" Property="Visibility" Value="Hidden"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.5"/>
@@ -86,6 +76,66 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- 버튼 안의 9x9 픽셀 아이콘 -->
+        <Style TargetType="Image" x:Key="PixelIcon">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="RenderOptions.BitmapScalingMode" Value="NearestNeighbor"/>
+        </Style>
+
+        <!-- 픽셀 상자: 진한 테두리 + 모서리 한 칸 깎기 + 위 하이라이트/아래 그늘 + 그림자 -->
+        <Style TargetType="ContentControl" x:Key="PixelPanel">
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Grid SnapsToDevicePixels="True">
+                            <Grid Opacity="0.27" Margin="2,2,-2,-2">
+                                <Rectangle Fill="Black" Margin="2,0"/>
+                                <Rectangle Fill="Black" Margin="0,2"/>
+                            </Grid>
+                            <Rectangle Fill="#3B3B4A" Margin="2,0"/>
+                            <Rectangle Fill="#3B3B4A" Margin="0,2"/>
+                            <Rectangle Fill="#F6F3EA" Margin="2"/>
+                            <Rectangle Fill="#FFFFFF" Margin="4,2,4,0" Height="2" VerticalAlignment="Top"/>
+                            <Rectangle Fill="#DED8C8" Margin="4,0,4,2" Height="2" VerticalAlignment="Bottom"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 픽셀 상태 바 (포켓몬 HP 바 느낌): 진한 테두리 + 위 밝은 줄/아래 어두운 줄 -->
+        <Style TargetType="ProgressBar" x:Key="PixelBar">
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Background="#3B3B4A" Padding="2" SnapsToDevicePixels="True">
+                            <Grid x:Name="PART_Track" Background="#D9D5C8">
+                                <Grid x:Name="PART_Indicator" HorizontalAlignment="Left">
+                                    <Rectangle Fill="{TemplateBinding Foreground}"/>
+                                    <Rectangle Fill="#66FFFFFF" Height="2" VerticalAlignment="Top"/>
+                                    <Rectangle Fill="#33000000" Height="2" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 픽셀 상자 안의 글자 (낮/밤 상관없이 진한 색) -->
+        <Style TargetType="TextBlock" x:Key="PanelLabel">
+            <Setter Property="Foreground" Value="#3B3B4A"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
         </Style>
 
         <!-- 씻기(거품) 애니메이션 -->
@@ -308,69 +358,72 @@
                         </Grid>
                     </Grid>
 
-                    <Grid Grid.Row="2" Margin="25,10,25,0" VerticalAlignment="Top">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                    <!-- 상태 바: 픽셀 상자 안에 2x2로 (버튼 줄과 겹치지 않게 아래 여백을 둠) -->
+                    <ContentControl Grid.Row="2" Style="{StaticResource PixelPanel}" Margin="36,4,36,0" VerticalAlignment="Top">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{u:T stat.fullness}" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
-                        <ProgressBar Grid.Row="0" Grid.Column="1" Value="{Binding Fullness}" Foreground="{Binding Fullness, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Fullness, StringFormat={}{0} / 100}"/>
-                        <TextBlock Grid.Row="0" Grid.Column="2" Text="{u:T stat.joy}" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="15,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
-                        <ProgressBar Grid.Row="0" Grid.Column="3" Value="{Binding Joy}" Foreground="{Binding Joy, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Joy, StringFormat={}{0} / 100}"/>
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{u:T stat.energy}" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
-                        <ProgressBar Grid.Row="1" Grid.Column="1" Value="{Binding Energy}" Foreground="{Binding Energy, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Energy, StringFormat={}{0} / 100}"/>
-                        <TextBlock Grid.Row="1" Grid.Column="2" Text="{u:T stat.hygiene}" Style="{StaticResource DynamicTextStyle}" FontSize="10" FontWeight="Bold" Margin="15,0,5,0" VerticalAlignment="Center" FontFamily="Consolas"/>
-                        <ProgressBar Grid.Row="1" Grid.Column="3" Value="{Binding Hygiene}" Foreground="{Binding Hygiene, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Hygiene, StringFormat={}{0} / 100}"/>
-                    </Grid>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{u:T stat.fullness}" Style="{StaticResource PanelLabel}"/>
+                            <ProgressBar Grid.Row="0" Grid.Column="1" Style="{StaticResource PixelBar}" Value="{Binding Fullness}" Foreground="{Binding Fullness, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Fullness, StringFormat={}{0} / 100}"/>
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="{u:T stat.joy}" Style="{StaticResource PanelLabel}" Margin="10,0,4,0"/>
+                            <ProgressBar Grid.Row="0" Grid.Column="3" Style="{StaticResource PixelBar}" Value="{Binding Joy}" Foreground="{Binding Joy, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Joy, StringFormat={}{0} / 100}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{u:T stat.energy}" Style="{StaticResource PanelLabel}"/>
+                            <ProgressBar Grid.Row="1" Grid.Column="1" Style="{StaticResource PixelBar}" Value="{Binding Energy}" Foreground="{Binding Energy, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Energy, StringFormat={}{0} / 100}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{u:T stat.hygiene}" Style="{StaticResource PanelLabel}" Margin="10,0,4,0"/>
+                            <ProgressBar Grid.Row="1" Grid.Column="3" Style="{StaticResource PixelBar}" Value="{Binding Hygiene}" Foreground="{Binding Hygiene, Converter={StaticResource BarColorConverter}}" ToolTip="{Binding Hygiene, StringFormat={}{0} / 100}"/>
+                        </Grid>
+                    </ContentControl>
 
                     <Grid Grid.RowSpan="3" Panel.ZIndex="50">
 
-                        <!-- 밥 주기 메뉴 팝업 -->
-                        <Border Width="180" Height="45" CornerRadius="24" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" 
-                                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" 
+                        <!-- 밥 주기 메뉴 팝업 (상태 바 상자를 그대로 덮음) -->
+                        <ContentControl Style="{StaticResource PixelPanel}" Padding="6,4,6,2"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="36,0,36,55"
                                 Visibility="{Binding IsFeedMenuOpen, Converter={StaticResource BoolToVis}}">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T food.red}" Click="FeedItem_Click" Tag="0">
-                                    <emoji:TextBlock Text="🍒" FontSize="16" Foreground="#E53935"/>
+                                    <Image Source="/TamaPoke;component/Assets/UI/icon_berry_red.png" Style="{StaticResource PixelIcon}"/>
                                 </Button>
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T food.blue}" Click="FeedItem_Click" Tag="1">
-                                    <emoji:TextBlock Text="🫐" FontSize="16" Foreground="#1E88E5"/>
+                                    <Image Source="/TamaPoke;component/Assets/UI/icon_berry_blue.png" Style="{StaticResource PixelIcon}"/>
                                 </Button>
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T food.green}" Click="FeedItem_Click" Tag="2">
-                                    <emoji:TextBlock Text="🍏" FontSize="16" Foreground="#43A047"/>
+                                    <Image Source="/TamaPoke;component/Assets/UI/icon_berry_green.png" Style="{StaticResource PixelIcon}"/>
                                 </Button>
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T food.candy}" Click="FeedItem_Click" Tag="3">
-                                    <emoji:TextBlock Text="🍬" FontSize="16" Foreground="#F06292"/>
+                                    <Image Source="/TamaPoke;component/Assets/UI/icon_candy.png" Style="{StaticResource PixelIcon}"/>
                                 </Button>
                             </StackPanel>
-                        </Border>
+                        </ContentControl>
 
-                        <!-- 미니게임 메뉴 팝업 -->
-                        <Border Width="180" Height="45" CornerRadius="28" Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="2" 
-                                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,56" 
+                        <!-- 미니게임 메뉴 팝업 (상태 바 상자를 그대로 덮음) -->
+                        <ContentControl Style="{StaticResource PixelPanel}" Padding="6,4,6,2"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="36,0,36,55"
                                 Visibility="{Binding IsPlayMenuOpen, Converter={StaticResource BoolToVis}}">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T game.ball}" Click="PlayBall_Click">
-                                    <emoji:TextBlock Text="⚽" FontSize="14" Foreground="#1E88E5"/>
+                                    <Image Source="/TamaPoke;component/Assets/UI/icon_ball.png" Style="{StaticResource PixelIcon}"/>
                                 </Button>
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T game.catch}" Click="PlayCatch_Click">
-                                    <emoji:TextBlock Text="🍎" FontSize="14" Foreground="#E53935"/>
+                                    <Image Source="/TamaPoke;component/Assets/UI/icon_catch.png" Style="{StaticResource PixelIcon}"/>
                                 </Button>
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T game.memo}" Click="PlayMemo_Click">
-                                    <emoji:TextBlock Text="🎹" FontSize="14" Foreground="#8E24AA"/>
+                                    <Image Source="/TamaPoke;component/Assets/UI/icon_memo.png" Style="{StaticResource PixelIcon}"/>
                                 </Button>
                                 <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T game.clean}" Click="PlayClean_Click">
-                                    <emoji:TextBlock Text="✨" FontSize="14" Foreground="#00ACC1"/>
+                                    <Image Source="/TamaPoke;component/Assets/UI/icon_clean.png" Style="{StaticResource PixelIcon}"/>
                                 </Button>
                             </StackPanel>
-                        </Border>
+                        </ContentControl>
                     </Grid>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18">
@@ -385,16 +438,16 @@
                             </Style>
                         </StackPanel.Style>
                         <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.feed}" Click="ToggleFeedMenu_Click" IsEnabled="{Binding IsAlive}">
-                            <emoji:TextBlock Text="🍎" FontSize="13" Foreground="#E53935"/>
+                            <Image Source="/TamaPoke;component/Assets/UI/icon_feed.png" Style="{StaticResource PixelIcon}"/>
                         </Button>
                         <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.play}" Click="TogglePlayMenu_Click" IsEnabled="{Binding IsAlive}">
-                            <emoji:TextBlock Text="🎮" FontSize="13" Foreground="#8E24AA"/>
+                            <Image Source="/TamaPoke;component/Assets/UI/icon_play.png" Style="{StaticResource PixelIcon}"/>
                         </Button>
                         <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.sleep}" Click="SleepButton_Click" IsEnabled="{Binding IsAlive}">
-                            <emoji:TextBlock Text="🌙" FontSize="13" Foreground="#FBC02D"/>
+                            <Image Source="/TamaPoke;component/Assets/UI/icon_sleep.png" Style="{StaticResource PixelIcon}"/>
                         </Button>
                         <Button Style="{StaticResource PhysicalButton}" ToolTip="{u:T idle.btn.bath}" Click="CleanButton_Click" IsEnabled="{Binding IsAlive}">
-                            <emoji:TextBlock Text="🫧" FontSize="13" Foreground="#4DD0E1"/>
+                            <Image Source="/TamaPoke;component/Assets/UI/icon_bath.png" Style="{StaticResource PixelIcon}"/>
                         </Button>
                     </StackPanel>
 

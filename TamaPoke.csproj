@@ -92,6 +92,12 @@
     </None>
   </ItemGroup>
 
+  <!-- 대기 화면 픽셀 UI (버튼/아이콘): 실행 파일 안에 포함 (XAML에서 /TamaPoke;component/Assets/UI/... 로 사용) -->
+  <ItemGroup>
+    <None Remove="Assets\UI\**" />
+    <Resource Include="Assets\UI\*.png" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Update="version.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
