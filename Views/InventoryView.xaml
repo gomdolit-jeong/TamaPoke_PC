@@ -6,7 +6,37 @@
              xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Width="288" Height="288">
 
-    <Border Background="#F2111111" Padding="25,46,25,30">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 픽셀 버튼/상자 (대기 화면, 배틀 화면과 같은 스타일) -->
+                <ResourceDictionary Source="/TamaPoke;component/Views/PixelStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- 목록 한 줄: 픽셀 칸, 마우스를 올리면 살짝 밝게 -->
+            <Style TargetType="ContentControl" x:Key="BagRow" BasedOn="{StaticResource PixelTile}">
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="Margin" Value="0,0,6,4"/>
+                <Setter Property="Padding" Value="6,0,8,2"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#FFFBEA"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- 위쪽 탭 (가방 / 메가스톤): 고른 쪽은 밝게, 아닌 쪽은 어둡게 (ShowTab에서 바꿈) -->
+            <Style TargetType="ContentControl" x:Key="BagTab" BasedOn="{StaticResource PixelTile}">
+                <Setter Property="Height" Value="28"/>
+                <Setter Property="Padding" Value="8,0,10,2"/>
+                <Setter Property="Margin" Value="3,0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border Background="#F2202436" Padding="25,40,25,26">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -18,12 +48,19 @@
             </Grid.RowDefinitions>
 
             <!-- 상단 탭: 누른 쪽 목록을 보여줍니다. -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                <TextBlock x:Name="ItemsTab" Text="{u:T bag.title}" Foreground="White" FontSize="16" FontWeight="Bold"
-                           Cursor="Hand" MouseLeftButtonDown="ItemsTab_Click"/>
-                <TextBlock Text="|" Foreground="#44FFFFFF" FontSize="16" Margin="8,0"/>
-                <TextBlock x:Name="MegaTab" Text="{u:T bag.mega.title}" Foreground="#66FFFFFF" FontSize="16" FontWeight="Bold"
-                           Cursor="Hand" MouseLeftButtonDown="MegaTab_Click"/>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+                <ContentControl x:Name="ItemsTabTile" Style="{StaticResource BagTab}" MouseLeftButtonDown="ItemsTab_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_bag.png" Style="{StaticResource PixelIcon}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="ItemsTab" Text="{u:T bag.title}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ContentControl>
+                <ContentControl x:Name="MegaTabTile" Style="{StaticResource BagTab}" MouseLeftButtonDown="MegaTab_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/TamaPoke;component/Assets/UI/icon_mega.png" Style="{StaticResource PixelIcon}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="MegaTab" Text="{u:T bag.mega.title}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ContentControl>
             </StackPanel>
 
             <!-- 🌟 동적으로 아이템을 렌더링하는 ItemsControl (스크롤 지원) -->
@@ -31,16 +68,15 @@
                 <ItemsControl ItemsSource="{Binding Inventory}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#44FFFFFF" CornerRadius="10" Padding="3,3,8,3" Margin="0,0,6,5"
-                                    Cursor="Hand" MouseLeftButtonDown="UseItem_Click" ToolTip="{Binding Description}">
+                            <ContentControl Style="{StaticResource BagRow}" Cursor="Hand" MouseLeftButtonDown="UseItem_Click" ToolTip="{Binding Description}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                        <emoji:TextBlock Text="{Binding Icon}" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{Binding Name}" Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <Image Source="{Binding IconImage}" Style="{StaticResource PixelIcon}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="#333" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                                     </StackPanel>
-                                    <TextBlock Text="{Binding Quantity, StringFormat='x {0}'}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Quantity, StringFormat='x {0}'}" Foreground="#333" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                 </Grid>
-                            </Border>
+                            </ContentControl>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -48,21 +84,26 @@
 
             <!-- 메가스톤: 메가링 상태와 완성한 스톤 / 모으는 중인 조각 -->
             <DockPanel x:Name="MegaPanel" Grid.Row="1" Visibility="Collapsed">
-                <TextBlock DockPanel.Dock="Top" Text="{Binding MegaRingText}" Foreground="#AAFFFFFF" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="20,0,20,6"/>
+                <TextBlock DockPanel.Dock="Top" Text="{Binding MegaRingText}" Foreground="#CCFFFFFF" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="10,0,10,6"/>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <ItemsControl ItemsSource="{Binding MegaStoneRows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#33FFFFFF" CornerRadius="10" Padding="8,3" Margin="0,0,6,4">
+                                <ContentControl x:Name="Row" Style="{StaticResource BagRow}" Height="28">
                                     <Grid>
-                                        <TextBlock x:Name="StoneName" Text="{Binding Name}" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" Margin="0,0,50,0" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock x:Name="StoneProgress" Text="{Binding Progress}" Foreground="#CCFFFFFF" FontSize="14" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,44,0">
+                                            <Image Source="/TamaPoke;component/Assets/UI/icon_mega.png" Style="{StaticResource PixelIcon}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="StoneName" Text="{Binding Name}" Foreground="#333" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <TextBlock x:Name="StoneProgress" Text="{Binding Progress}" Foreground="#6E6A5E" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                     </Grid>
-                                </Border>
+                                </ContentControl>
                                 <DataTemplate.Triggers>
+                                    <!-- 완성한 스톤: 금빛 칸 -->
                                     <DataTrigger Binding="{Binding IsComplete}" Value="True">
-                                        <Setter TargetName="StoneName" Property="Foreground" Value="#FFD54F"/>
-                                        <Setter TargetName="StoneProgress" Property="Foreground" Value="#FFD54F"/>
+                                        <Setter TargetName="Row" Property="Background" Value="#FFE9A8"/>
+                                        <Setter TargetName="StoneName" Property="Foreground" Value="#7A5200"/>
+                                        <Setter TargetName="StoneProgress" Property="Foreground" Value="#7A5200"/>
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>
@@ -72,15 +113,8 @@
             </DockPanel>
 
             <!-- 닫기 버튼 -->
-            <Button Grid.Row="2" Content="{u:T common.close}" Padding="0,10" Margin="40,10,40,0"
-                    FontSize="16" FontWeight="Bold" Background="#E53935" Foreground="White" BorderThickness="0"
-                    Cursor="Hand" Click="CloseButton_Click">
-                <Button.Resources>
-                    <Style TargetType="Border">
-                        <Setter Property="CornerRadius" Value="15"/>
-                    </Style>
-                </Button.Resources>
-            </Button>
+            <Button Grid.Row="2" Content="{u:T common.close}" Style="{StaticResource PixelTextButton}" Background="#E53935"
+                    Height="34" Margin="50,10,50,0" FontSize="14" Click="CloseButton_Click"/>
         </Grid>
     </Border>
 </UserControl>

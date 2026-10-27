@@ -55,6 +55,9 @@ namespace TamaPoke.Models
         [JsonIgnore] public int EffectValue => Definition.EffectValue; // 상처약: 최대 체력 대비 회복 %
         [JsonIgnore] public string Icon => Definition.Icon;
 
+        // 가방 화면의 픽셀 아이콘 (Assets/UI/item_{ItemId}.png, 실행 파일에 포함)
+        [JsonIgnore] public string IconImage => $"pack://application:,,,/TamaPoke;component/Assets/UI/item_{ItemId}.png";
+
         // 이전 버전 세이브에 저장된 아이템 이름입니다. 불러온 직후 ItemId로 변환되고, 다시 저장되지 않습니다.
         [JsonInclude, JsonPropertyName("Name"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? LegacyName { get; set; }

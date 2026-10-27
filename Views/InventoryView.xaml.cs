@@ -10,6 +10,7 @@ namespace TamaPoke.Views
         public InventoryView()
         {
             InitializeComponent();
+            ShowTab(mega: false);
         }
 
         // 상단 탭: 아이템 목록 / 메가스톤 목록 전환
@@ -20,8 +21,11 @@ namespace TamaPoke.Views
         {
             ItemsPanel.Visibility = mega ? Visibility.Collapsed : Visibility.Visible;
             MegaPanel.Visibility = mega ? Visibility.Visible : Visibility.Collapsed;
-            ItemsTab.Foreground = mega ? BrushCache.Get("#66FFFFFF") : System.Windows.Media.Brushes.White;
-            MegaTab.Foreground = mega ? System.Windows.Media.Brushes.White : BrushCache.Get("#66FFFFFF");
+            // 고른 탭은 밝은 칸 + 진한 글자, 아닌 탭은 어두운 칸 + 흐린 글자
+            ItemsTabTile.Background = BrushCache.Get(mega ? "#4A4E62" : "#F6F3EA");
+            MegaTabTile.Background = BrushCache.Get(mega ? "#F6F3EA" : "#4A4E62");
+            ItemsTab.Foreground = BrushCache.Get(mega ? "#A9ACBA" : "#333333");
+            MegaTab.Foreground = BrushCache.Get(mega ? "#333333" : "#A9ACBA");
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
