@@ -115,14 +115,14 @@
                                         <ItemsControl ItemsSource="{Binding Badges}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
-                                                    <UniformGrid Columns="4" Rows="2" Height="90" Margin="0,0,0,5" />
+                                                    <UniformGrid Columns="4" Rows="2" Height="100" Margin="0,0,0,5" />
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
 
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Button Tag="{Binding GlobalIndex}" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}" Width="36" Height="36">
-                                                        <Image Source="{Binding ImagePath}" Width="28" Height="28" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                                    <Button Tag="{Binding GlobalIndex}" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}" Width="44" Height="44">
+                                                        <Image Source="{Binding ImagePath}" Width="40" Height="40" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"> <!-- 20x20 도트 배지를 정확히 2배로 -->
                                                             <Image.Style>
                                                                 <Style TargetType="Image">
                                                                     <Setter Property="Opacity" Value="0.2"/>
