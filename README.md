@@ -11,7 +11,7 @@ Hatch an egg, raise your Pokémon, take it for walks, battle gyms, and Mega Evol
 ![WPF](https://img.shields.io/badge/UI-WPF-5C2D91?style=flat-square)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](./LICENSE)
 
-🌐 **English** · [한국어](./README.ko.md)
+🌐 **English** · [한국어](./README.ko.md) · 📘 [Manual](./MANUAL.md)
 
 <img src="./ScreenShot/Idle.jpg" width="300"/>&nbsp;&nbsp;<img src="./ScreenShot/battle.jpg" width="300"/>
 
@@ -65,6 +65,8 @@ Hatch an egg, raise your Pokémon, take it for walks, battle gyms, and Mega Evol
 
 ## 🎮 How to Play
 
+> 📘 For details on every feature, see the **[Manual](./MANUAL.md)**.
+
 Drag the Poké Ball with the left mouse button to place it anywhere on your desktop.
 
 ### Care buttons
@@ -97,7 +99,7 @@ Drag the Poké Ball with the left mouse button to place it anywhere on your desk
 <summary><b>🥚 Life cycle & evolution</b></summary>
 
 - Manage four stats — Fullness, Joy, Energy and Hygiene. Neglect causes care mistakes, and a Pokémon that is left alone too long may run away.
-- Your Pokémon gains one level per hour of real time and evolves at its evolution level (evolution can be postponed).
+- Your Pokémon gains one level per hour of running time and evolves at its evolution level (evolution can be postponed).
 - Shiny Pokémon, gender differences and regional forms can hatch.
 - When the farewell age is reached, you say goodbye and a new egg begins.
 </details>
@@ -108,12 +110,14 @@ Drag the Poké Ball with the left mouse button to place it anywhere on your desk
 - Party Pokémon walk around the desktop (or on top of the taskbar) at an adjustable size.
 - Time keeps flowing: stats never drop below a safe floor, so nobody runs away while you're busy. The whole party grows, at ⅓ of the usual speed.
 - Pokémon sometimes dive into the grass and find items such as Potions, Poké Balls — and Mega Stone shards.
+- Pokémon that can Mega Evolve sometimes do so for a few minutes while walking. Count and size settings apply instantly.
 </details>
 
 <details>
 <summary><b>⚔️ Battles, catching & gyms</b></summary>
 
 - Turn-based battles with type matchups, STAB, dodging and status conditions (burn, poison, bad poison, paralysis, sleep, freeze).
+- Speed decides who moves first (the slower side still gets a chance), and stat moves like Growl or Swords Dance change stats up to ±6 stages.
 - Weaken wild Pokémon and throw Poké Balls to catch them — if your party is full, choose who to send away.
 - Challenge 64 gym leaders from Kanto to Paldea in order, and rematch the ones you've beaten.
 - Learn new moves after winning.
