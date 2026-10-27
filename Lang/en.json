@@ -8,6 +8,8 @@
   "tray.walk": "Walk mode",
   "tray.settings": "Settings",
   "tray.update": "Update TamaPoke",
+  "tray.manual": "User manual",
+  "tray.manual.error": "Couldn't open the browser.\nPlease visit this address:\n\n{0}\n\n({1})",
   "tray.exit": "Quit",
   "exit.confirm.title": "Quit TamaPoke",
   "exit.confirm.message": "Are you sure you want to quit TamaPoke?",

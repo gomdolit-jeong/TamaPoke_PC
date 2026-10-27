@@ -40,7 +40,11 @@ namespace TamaPoke
             };
         }
 
-        private System.Windows.Forms.ToolStripMenuItem? _openMenuItem, _settingsMenuItem, _updateMenuItem, _exitMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem? _openMenuItem, _settingsMenuItem, _manualMenuItem, _updateMenuItem, _exitMenuItem;
+
+        // 사용 설명서 (GitHub에서 보면 표와 이미지가 제대로 보이므로 브라우저로 엽니다)
+        private const string MANUAL_URL_KO = "https://github.com/gomdolit-jeong/TamaPoke_PC/blob/main/MANUAL.ko.md";
+        private const string MANUAL_URL_EN = "https://github.com/gomdolit-jeong/TamaPoke_PC/blob/main/MANUAL.md";
 
         private void ApplyTrayTexts()
         {
@@ -49,6 +53,7 @@ namespace TamaPoke
             if (_openMenuItem != null) _openMenuItem.Text = Loc.T("tray.open");
             if (_walkModeMenuItem != null) _walkModeMenuItem.Text = Loc.T("tray.walk");
             if (_settingsMenuItem != null) _settingsMenuItem.Text = Loc.T("tray.settings");
+            if (_manualMenuItem != null) _manualMenuItem.Text = Loc.T("tray.manual");
             if (_updateMenuItem != null) _updateMenuItem.Text = Loc.T("tray.update");
             if (_exitMenuItem != null) _exitMenuItem.Text = Loc.T("tray.exit");
         }
@@ -78,6 +83,9 @@ namespace TamaPoke
             settingsMenuItem.ShortcutKeyDisplayString = "Ctrl+O"; // 👈 우측에 단축키 텍스트를 예쁘게 띄워줍니다.
             settingsMenuItem.Click += (s, e) => OpenSettingsWindow();
 
+            var manualMenuItem = _manualMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            manualMenuItem.Click += (s, e) => OpenManual();
+
             // 🌟 [통합 업데이트 메뉴] 하나의 버튼으로 두 기능을 순차적으로 실행합니다!
             var updateMenuItem = _updateMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             updateMenuItem.ShortcutKeyDisplayString = "Ctrl+U"; // 👈 우측에 단축키 텍스트를 예쁘게 띄워줍니다.
@@ -90,6 +98,7 @@ namespace TamaPoke
             contextMenu.Items.Add(_walkModeMenuItem);
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(settingsMenuItem);
+            contextMenu.Items.Add(manualMenuItem);
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(updateMenuItem);
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
@@ -97,6 +106,20 @@ namespace TamaPoke
 
             _notifyIcon.ContextMenuStrip = contextMenu;
             ApplyTrayTexts();
+        }
+
+        // 지금 언어에 맞는 사용 설명서를 기본 브라우저로 엽니다.
+        private void OpenManual()
+        {
+            string url = Loc.Instance.IsEnglish ? MANUAL_URL_EN : MANUAL_URL_KO;
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(Loc.F("tray.manual.error", url, ex.Message), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)

@@ -8,6 +8,8 @@
   "tray.walk": "산책 모드",
   "tray.settings": "게임 설정",
   "tray.update": "다마포케 통합 업데이트",
+  "tray.manual": "사용 설명서",
+  "tray.manual.error": "브라우저를 열지 못했습니다.\n아래 주소로 접속해 주세요.\n\n{0}\n\n({1})",
   "tray.exit": "완전히 종료하기",
   "exit.confirm.title": "다마포케 종료",
   "exit.confirm.message": "정말로 다마포케를 종료하시겠습니까?",
