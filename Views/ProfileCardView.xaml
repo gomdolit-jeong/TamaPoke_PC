@@ -122,7 +122,7 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Button Tag="{Binding GlobalIndex}" Click="GymBadge_Click" Style="{StaticResource GymBtnStyle}" Width="36" Height="36">
-                                                        <Image Source="{Binding ImagePath}" Width="28" Height="28" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                                        <Image Source="{Binding ImagePath}" Width="32" Height="32" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor">
                                                             <Image.Style>
                                                                 <Style TargetType="Image">
                                                                     <Setter Property="Opacity" Value="0.2"/>

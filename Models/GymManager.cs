@@ -57,13 +57,13 @@ namespace TamaPoke.Models
              new GymLeaderInfo { PokemonSpeciesId = 350, Level = 46 },  // 23: 아단 / Juan
 
              // =====================================
-             // === 4세대 신오지방 (Sinnoh) ===
+             // === 4세대 신오지방 (Sinnoh, DP 순서) ===
              // =====================================
              new GymLeaderInfo { PokemonSpeciesId = 409, Level = 14 },  // 24: 강석 / Roark
              new GymLeaderInfo { PokemonSpeciesId = 407, Level = 22 },  // 25: 유채 / Gardenia
-             new GymLeaderInfo { PokemonSpeciesId = 429, Level = 26 },  // 26: 멜리사 / Fantina
-             new GymLeaderInfo { PokemonSpeciesId = 448, Level = 30 },  // 27: 자망 / Maylene
-             new GymLeaderInfo { PokemonSpeciesId = 419, Level = 36 },  // 28: 맥실러 / Crasher Wake
+             new GymLeaderInfo { PokemonSpeciesId = 448, Level = 26 },  // 26: 자망 / Maylene
+             new GymLeaderInfo { PokemonSpeciesId = 419, Level = 30 },  // 27: 맥실러 / Crasher Wake
+             new GymLeaderInfo { PokemonSpeciesId = 429, Level = 36 },  // 28: 멜리사 / Fantina
              new GymLeaderInfo { PokemonSpeciesId = 411, Level = 39 },  // 29: 동관 / Byron
              new GymLeaderInfo { PokemonSpeciesId = 460, Level = 42 },  // 30: 무청 / Candice
              new GymLeaderInfo { PokemonSpeciesId = 466, Level = 49 },  // 31: 전진 / Volkner
