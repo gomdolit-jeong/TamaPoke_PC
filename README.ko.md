@@ -167,7 +167,6 @@
   * 라이선스 전문 확인: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/)
 * **Badge Images**: 체육관 배지는 공식 배지 디자인(The Pokémon Company / Nintendo / Game Freak)을 바탕으로 이 프로젝트용으로 만든 32×32 도트 그림입니다.
 * **Game Data**: 포켓몬 이름, 종족값, 진화, 기술, 메가진화 데이터는 [PokéAPI](https://pokeapi.co/) ([PokeAPI/api-data](https://github.com/PokeAPI/api-data), BSD-3-Clause)를 바탕으로 만들었습니다.
-* **Libraries**: [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (WTFPL).
 * **Disclaimer**: 이 프로젝트는 비상업적 팬 프로젝트(Fan Project)이며, 포켓몬스터(Pokémon)와 관련된 모든 저작권 및 상표권은 Nintendo, Creatures Inc., GAME FREAK inc. 에 귀속되어 있습니다.
 
 ---

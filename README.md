@@ -167,7 +167,6 @@ This desktop project was reimagined for the desktop environment by referencing t
   * Read the full license: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/).
 * **Badge Images**: Gym badges are 32×32 pixel art made for this project, based on the official badge designs (The Pokémon Company / Nintendo / Game Freak).
 * **Game Data**: Pokémon names, base stats, evolutions, moves and Mega Evolution data were generated from [PokéAPI](https://pokeapi.co/) ([PokeAPI/api-data](https://github.com/PokeAPI/api-data), BSD-3-Clause).
-* **Libraries**: [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (WTFPL).
 * **Disclaimer**: This is a non-commercial fan project. All copyrights and trademarks related to Pokémon belong to Nintendo, Creatures Inc., and GAME FREAK inc.
 
 ---
