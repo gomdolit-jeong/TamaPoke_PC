@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:u="clr-namespace:TamaPoke.Utils"
              xmlns:conv="clr-namespace:TamaPoke.Converters"
-             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Height="288" Width="288"
              HorizontalAlignment="Center" VerticalAlignment="Center">
 
@@ -50,8 +49,10 @@
         </Style>
 
         <!-- 스프라이트 위 상태이상 이모지: 위아래로 살짝 둥실둥실 -->
-        <Style TargetType="emoji:TextBlock" x:Key="AilmentFxStyle">
-            <Setter Property="FontSize" Value="16"/>
+        <Style TargetType="Image" x:Key="AilmentFxStyle">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="RenderOptions.BitmapScalingMode" Value="NearestNeighbor"/>
             <Setter Property="IsHitTestVisible" Value="False"/>
             <Setter Property="RenderTransform">
                 <Setter.Value><TranslateTransform Y="0"/></Setter.Value>
@@ -143,8 +144,8 @@
 
             <Image x:Name="EnemySprite" Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="178,54,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
-            <emoji:TextBlock Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,49,43,0" Panel.ZIndex="5"
-                             Text="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"
+            <Image Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,49,43,0" Panel.ZIndex="5"
+                             Source="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"
                              Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}"/>
 
             <!-- 💎 메가진화 연출: 메가링 반응(빛 + 무지개 고리) → 흰 섬광과 함께 메가 모습으로 -->
@@ -215,8 +216,8 @@
             <!-- 🌟 플레이어 이미지: 뒷모습(오른쪽 위를 바라봄)을 1.5배로, 발이 메시지 창 경계에 오도록 (화면 앞쪽에 있는 느낌) -->
             <Image x:Name="PlayerSprite" Source="{Binding CurrentFrame}" Width="108" Height="108" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,105,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
-            <emoji:TextBlock Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="112,0,0,60" Panel.ZIndex="5"
-                             Text="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"/>
+            <Image Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="106,0,0,40" Panel.ZIndex="5"
+                             Source="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"/>
 
             <!-- 메가진화 순간의 흰 섬광 (메가링 반응 연출이 끝날 때) -->
             <Rectangle Fill="White" Opacity="0" IsHitTestVisible="False" Panel.ZIndex="20">
@@ -263,7 +264,7 @@
                 <Image Source="/TamaPoke;component/Assets/UI/icon_ball.png" Width="18" Height="18" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
             </Grid>
 
-            <ContentControl Style="{StaticResource PixelPanel}" Margin="0,0,46,5" Padding="8,5,8,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="128">
+            <ContentControl Style="{StaticResource PixelPanel}" Margin="0,0,30,5" Padding="8,5,8,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="128">
                 <StackPanel>
                     <!-- 🌟 플레이어 이름, 상태이상, 레벨 패널 -->
                     <Grid>

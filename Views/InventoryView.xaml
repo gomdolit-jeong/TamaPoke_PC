@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:lc="clr-namespace:TamaPoke.Converters"
              xmlns:u="clr-namespace:TamaPoke.Utils"
-             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              Width="288" Height="288">
 
     <UserControl.Resources>

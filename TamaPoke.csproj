@@ -78,7 +78,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
   </ItemGroup>
 
   <!-- 다국어 문구 (Utils/Loc.cs에서 "Lang.{언어}.json" 이름으로 읽음) -->

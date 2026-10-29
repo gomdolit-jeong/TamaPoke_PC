@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              mc:Ignorable="d" 
              Background="Transparent">
 
@@ -135,21 +134,21 @@
         </Grid>
 
         <!-- 머리 위 말풍선 (산책 중 아이템을 주웠을 때 등): 나타날 때 아래에서 살짝 떠오릅니다. -->
-        <emoji:TextBlock Text="{Binding RoamingBubble, NotifyOnTargetUpdated=True}" FontSize="12"
+        <Image Source="{Binding RoamingBubble, NotifyOnTargetUpdated=True}" Width="18" Height="18" RenderOptions.BitmapScalingMode="NearestNeighbor"
                          HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,58" IsHitTestVisible="False">
-            <emoji:TextBlock.RenderTransform>
+            <Image.RenderTransform>
                 <TranslateTransform Y="0"/>
-            </emoji:TextBlock.RenderTransform>
-            <emoji:TextBlock.Style>
-                <Style TargetType="emoji:TextBlock">
+            </Image.RenderTransform>
+            <Image.Style>
+                <Style TargetType="Image">
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding RoamingBubble}" Value="">
+                        <DataTrigger Binding="{Binding RoamingBubble}" Value="{x:Null}">
                             <Setter Property="Visibility" Value="Collapsed"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
-            </emoji:TextBlock.Style>
-            <emoji:TextBlock.Triggers>
+            </Image.Style>
+            <Image.Triggers>
                 <EventTrigger RoutedEvent="Binding.TargetUpdated">
                     <BeginStoryboard>
                         <Storyboard>
@@ -158,8 +157,8 @@
                         </Storyboard>
                     </BeginStoryboard>
                 </EventTrigger>
-            </emoji:TextBlock.Triggers>
-        </emoji:TextBlock>
+            </Image.Triggers>
+        </Image>
     </Grid>
 
 </UserControl>

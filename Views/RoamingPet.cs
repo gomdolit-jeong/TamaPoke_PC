@@ -322,7 +322,9 @@ namespace TamaPoke.Views
                         SetAction(PokemonState.ANIM_HOP, 40);
                         if (PendingFoundItem != null)
                         {
-                            State.ShowRoamingBubble(PendingFoundItem.Icon);
+                            State.ShowRoamingBubble(PendingFoundItem.Id == ItemDex.MegaShard.Id
+                                ? "pack://application:,,,/TamaPoke;component/Assets/UI/icon_mega.png"
+                                : $"pack://application:,,,/TamaPoke;component/Assets/UI/item_{PendingFoundItem.Id}.png");
                             PendingFoundItem = null;
                         }
                     }
@@ -379,7 +381,7 @@ namespace TamaPoke.Views
             var form = MegaForms[_rnd.Next(MegaForms.Count)];
             string file = SpriteForms.ApplyVariants(AppPaths.GetSpriteForms(_member.SpeciesId), form.SpriteFileName, _member.IsShiny, _member.IsFemale);
             ChangeSprite(file);
-            State.ShowRoamingBubble("💎", 3);
+            State.ShowRoamingBubble("pack://application:,,,/TamaPoke;component/Assets/UI/icon_mega.png", 3);
             _megaEndsAt = DateTime.Now + MegaDuration;
         }
 

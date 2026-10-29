@@ -195,15 +195,15 @@ namespace TamaPoke.Models
         private bool _isRummaging;
         [JsonIgnore] public bool IsRummaging { get => _isRummaging; set => SetProperty(ref _isRummaging, value); }
 
-        // 산책 펫 머리 위 말풍선 (아이템을 주웠을 때 등)
-        private string _roamingBubble = string.Empty;
-        [JsonIgnore] public string RoamingBubble { get => _roamingBubble; set => SetProperty(ref _roamingBubble, value); }
+        // 산책 펫 머리 위 말풍선 그림 경로 (아이템을 주웠을 때 등). 없으면 null
+        private string? _roamingBubble;
+        [JsonIgnore] public string? RoamingBubble { get => _roamingBubble; set => SetProperty(ref _roamingBubble, value); }
 
-        public async void ShowRoamingBubble(string text, int displaySeconds = 3)
+        public async void ShowRoamingBubble(string image, int displaySeconds = 3)
         {
-            RoamingBubble = text;
+            RoamingBubble = image;
             await Task.Delay(displaySeconds * 1000);
-            if (RoamingBubble == text) RoamingBubble = string.Empty;
+            if (RoamingBubble == image) RoamingBubble = null;
         }
         #endregion
     }

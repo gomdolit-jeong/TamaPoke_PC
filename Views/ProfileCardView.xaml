@@ -4,7 +4,6 @@
              xmlns:lc="clr-namespace:TamaPoke.Converters"
              xmlns:u="clr-namespace:TamaPoke.Utils"
              xmlns:local="clr-namespace:TamaPoke.Utils.Service"
-             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
              xmlns:conv="clr-namespace:TamaPoke.Converters"
              Height="288" Width="288" 
              HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -197,7 +196,7 @@
                         <Image Source="/TamaPoke;component/Assets/UI/icon_berry_red.png" Style="{StaticResource PixelIcon}" Margin="0,0,3,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{u:T profile.favoriteBerry}" FontSize="11" Foreground="#777" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <emoji:TextBlock Text="{Binding FavoriteBerryName}" FontSize="13" FontWeight="Bold" Foreground="#2E7D32" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding FavoriteBerryName}" FontSize="13" FontWeight="Bold" Foreground="#2E7D32" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
 
