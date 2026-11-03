@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TamaPoke.Utils;
@@ -32,6 +33,131 @@ namespace TamaPoke.Models
             _playerFlinched = _enemyFlinched = false;
             _playerHasMoved = _enemyHasMoved = false;
             ClearTurnState();
+            ClearMoveLock(userIsPlayer: true);
+            ClearMoveLock(userIsPlayer: false);
+            _playerUsedMoves.Clear(); _enemyUsedMoves.Clear();
+            _playerLostTypes.Clear(); _enemyLostTypes.Clear();
+        }
+
+        // 여러 턴에 걸친 기술의 진행 상태
+        private sealed class MoveLock
+        {
+            public SkillInfo? Forced;  // 다음 턴에 자동으로 나가는 기술 (모으기 2턴째, 재충전, 고정 행동)
+            public bool Recharge;      // 다음 턴은 쉼
+            public int LockTurns;      // 고정 행동의 남은 턴
+            public bool Hidden;        // 공중날기 등으로 숨어 있어 공격에 맞지 않음
+        }
+        private readonly MoveLock _playerLock = new(), _enemyLock = new();
+        private MoveLock LockOf(bool userIsPlayer) => userIsPlayer ? _playerLock : _enemyLock;
+
+        private void SetHidden(bool userIsPlayer, bool hidden)
+        {
+            LockOf(userIsPlayer).Hidden = hidden;
+            if (userIsPlayer) IsPlayerVisible = !hidden; else IsEnemyVisible = !hidden;
+        }
+
+        // 잠듦, 풀죽음, 빗나감 등으로 끊기면 진행 중이던 기술도 끝납니다.
+        private void ClearMoveLock(bool userIsPlayer)
+        {
+            var state = LockOf(userIsPlayer);
+            state.Forced = null; state.Recharge = false; state.LockTurns = 0;
+            SetHidden(userIsPlayer, false);
+        }
+
+        // 재충전 턴이면 쉬고 true
+        private async Task<bool> RestIfRechargingAsync(bool userIsPlayer, string who)
+        {
+            if (!LockOf(userIsPlayer).Recharge) return false;
+            ClearMoveLock(userIsPlayer);
+            BattleMessage = Loc.F("battle.recharge", who);
+            await Task.Delay(1500);
+            return true;
+        }
+
+        private const int CHARGE_ANIM_TICKS = 40; // 모으는 메시지가 보이는 1.3초 동안 (33ms 단위)
+
+        // 공격 모션: 연속 공격은 연속 모션, 물리는 공격, 특수는 발사 (대부분의 스프라이트에 있는 모션만 씁니다)
+        private static int AttackAnimationFor(SkillInfo skill, int hits) =>
+            hits > 1 ? ANIM_DOUBLE : skill.Category == SkillCategory.Special ? ANIM_SHOOT : ANIM_ATTACK;
+
+        // 모으기/숨기 기술의 첫 턴이면 준비만 하고 true, 둘째 턴이면 상태를 풀고 false
+        private async Task<bool> StartChargeAsync(SkillInfo skill, bool userIsPlayer, string who)
+        {
+            if (!skill.IsCharging && !skill.IsHiding) return false;
+
+            var state = LockOf(userIsPlayer);
+            if (state.Forced?.Id == skill.Id)
+            {
+                ClearMoveLock(userIsPlayer);
+                return false;
+            }
+
+            state.Forced = skill;
+            if (skill.IsHiding) SetHidden(userIsPlayer, true);
+            else if (userIsPlayer) { PlayTempAction(ANIM_CHARGE, CHARGE_ANIM_TICKS); UpdateAnimation(ANIM_CHARGE); }
+            else { _enemyTempActionTimer = CHARGE_ANIM_TICKS; UpdateEnemyAnimation(ANIM_CHARGE); }
+            BattleMessage = Loc.F(skill.IsHiding ? "battle.hiding" : "battle.charging", who);
+            await Task.Delay(1300);
+            return true;
+        }
+
+        // 고정 행동: 처음 쓸 때 2~3턴을 정하고, 턴이 남아 있으면 다음 턴에도 자동으로 나갑니다.
+        private void AdvanceMoveLock(SkillInfo skill, bool userIsPlayer, Random rand)
+        {
+            if (!skill.IsLocking) return;
+            var state = LockOf(userIsPlayer);
+            if (state.LockTurns == 0) state.LockTurns = rand.Next(2, 4);
+            state.LockTurns--;
+            state.Forced = state.LockTurns > 0 ? skill : null;
+        }
+
+        // 맞는 쪽이 숨어 있으면 빗나갑니다. (자기 능력치만 올리는 기술은 상관없음)
+        private static bool MissesHiddenTarget(SkillInfo skill, MoveLock target) => target.Hidden && !IsSelfTargetingStatusMove(skill);
+
+        // 이번 배틀에서 쓴 기술 (비장의무기)과 잃은 타입 (불사르기, 전광쌍격)
+        private readonly HashSet<int> _playerUsedMoves = new(), _enemyUsedMoves = new();
+        private readonly List<PokemonType> _playerLostTypes = new(), _enemyLostTypes = new();
+
+        // 잃은 타입을 뺀 배틀용 정보 (상성과 자속 계산에 쓰입니다)
+        private static PokemonInfo? WithoutTypes(PokemonInfo? info, List<PokemonType> lost)
+        {
+            if (info == null || lost.Count == 0) return info;
+            return new PokemonInfo
+            {
+                Id = info.Id, BaseHp = info.BaseHp, BaseAtk = info.BaseAtk, BaseDef = info.BaseDef, BaseSpeed = info.BaseSpeed, BaseSpA = info.BaseSpA, BaseSpD = info.BaseSpD,
+                Type1 = lost.Contains(info.Type1) ? PokemonType.None : info.Type1,
+                Type2 = lost.Contains(info.Type2) ? PokemonType.None : info.Type2,
+            };
+        }
+
+        private PokemonInfo? EnemyBattleInfo => WithoutTypes(PokemonDex.Get(EnemySpeciesId), _enemyLostTypes);
+
+        private static bool HasType(PokemonInfo? info, PokemonType type) => info != null && type != PokemonType.None && (info.Type1 == type || info.Type2 == type);
+
+        // 비장의무기: 알고 있는 다른 기술이 있고, 그 기술을 모두 써 봤을 때만
+        private bool HasUsedOtherMoves(SkillInfo skill, bool userIsPlayer)
+        {
+            var known = (userIsPlayer ? Skills : EnemySkills).Where(id => id != 0 && id != skill.Id).ToList();
+            var used = userIsPlayer ? _playerUsedMoves : _enemyUsedMoves;
+            return known.Count > 0 && known.All(used.Contains);
+        }
+
+        // 이번 턴 상대의 행동과 상관없이 정해지는 조건
+        private bool MoveStateAllows(SkillInfo skill, bool userIsPlayer, bool wasFirstMove)
+        {
+            SkillAilment userAilment = userIsPlayer ? PlayerAilment : EnemyAilment;
+            SkillAilment targetAilment = userIsPlayer ? EnemyAilment : PlayerAilment;
+            PokemonInfo? userInfo = userIsPlayer ? MyBattleInfo : EnemyBattleInfo;
+            PokemonInfo? targetInfo = userIsPlayer ? EnemyBattleInfo : MyBattleInfo;
+
+            if (skill.IsUnavailable) return false;
+            if (skill.IsFirstTurnOnly && !wasFirstMove) return false;
+            if (skill.NeedsTargetAsleep && targetAilment != SkillAilment.Sleep) return false;
+            if (skill.NeedsUserAsleep && userAilment != SkillAilment.Sleep) return false;
+            if (skill.NeedsSharedType && !(HasType(targetInfo, userInfo?.Type1 ?? PokemonType.None) || HasType(targetInfo, userInfo?.Type2 ?? PokemonType.None))) return false;
+            if (skill.LosesOwnType && !HasType(userInfo, skill.Type)) return false;
+            if (skill.IsLastResort && !HasUsedOtherMoves(skill, userIsPlayer)) return false;
+            return true;
         }
 
         // 이번 턴에 고른 기술 (회피/아이템 등 기술을 안 쓴 턴은 null)과 이번 턴에 맞은 기술
@@ -42,24 +168,17 @@ namespace TamaPoke.Models
         // 조건이 맞지 않아 실패하는 기술인지 (쓴 쪽, 상대의 상태로 판단)
         private bool MoveConditionMet(SkillInfo skill, bool userIsPlayer, bool wasFirstMove)
         {
-            SkillAilment userAilment = userIsPlayer ? PlayerAilment : EnemyAilment;
-            SkillAilment targetAilment = userIsPlayer ? EnemyAilment : PlayerAilment;
             SkillInfo? targetChoice = userIsPlayer ? _enemyChoice : _playerChoice;
             SkillInfo? hitBy = userIsPlayer ? _playerHitBy : _enemyHitBy;
 
-            if (skill.IsFirstTurnOnly && !wasFirstMove) return false;
-            if (skill.NeedsTargetAsleep && targetAilment != SkillAilment.Sleep) return false;
-            if (skill.NeedsUserAsleep && userAilment != SkillAilment.Sleep) return false;
+            if (!MoveStateAllows(skill, userIsPlayer, wasFirstMove)) return false;
             if (skill.NeedsPhysicalHitFirst && hitBy?.Category != SkillCategory.Physical) return false;
             if (skill.NeedsTargetAttacking && (targetChoice == null || targetChoice.Power <= 0)) return false;
             return true;
         }
 
         // 상대 AI: 지금 쓰면 반드시 실패하는 기술은 고르지 않습니다. (상대가 뭘 고를지는 모르므로 기습/트랩셸은 후보에 둡니다)
-        private bool EnemyCanUseNow(SkillInfo skill) =>
-            !(skill.IsFirstTurnOnly && _enemyHasMoved) &&
-            !(skill.NeedsTargetAsleep && PlayerAilment != SkillAilment.Sleep) &&
-            !(skill.NeedsUserAsleep && EnemyAilment != SkillAilment.Sleep);
+        private bool EnemyCanUseNow(SkillInfo skill) => MoveStateAllows(skill, userIsPlayer: false, wasFirstMove: !_enemyHasMoved);
 
         // 급소는 공격 쪽의 낮아진 단계와 방어 쪽의 높아진 단계를 무시합니다. (원작 규칙)
         private static double AttackStage(int[] stages, BattleStat stat, bool crit) =>
@@ -76,6 +195,16 @@ namespace TamaPoke.Models
             {
                 BattleMessage = Loc.F("battle.multiHit", hitCount);
                 await Task.Delay(1000);
+            }
+
+            if (skill.NeedsRecharge && dealt > 0)
+            {
+                var state = LockOf(userIsPlayer);
+                state.Recharge = true; state.Forced = skill;
+            }
+            if (skill.LosesOwnType && dealt > 0)
+            {
+                (userIsPlayer ? _playerLostTypes : _enemyLostTypes).Add(skill.Type);
             }
 
             await ApplyDrainAsync(skill, dealt, userIsPlayer);

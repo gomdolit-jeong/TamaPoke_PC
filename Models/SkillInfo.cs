@@ -67,10 +67,22 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool FailsIfHitFirst => Id == 264;              // 힘껏펀치: 그 턴에 맞으면 실패
         [JsonIgnore] public bool NeedsPhysicalHitFirst => Id == 704;        // 트랩셸: 그 턴에 물리 공격을 맞아야 성공
         [JsonIgnore] public bool NeedsTargetAttacking => Id is 389 or 909;  // 기습, 질풍신뢰: 상대가 공격 기술을 고른 턴에만
+        [JsonIgnore] public bool NeedsSharedType => Id == 485;              // 싱크로노이즈: 상대와 타입이 겹칠 때만
+        [JsonIgnore] public bool LosesOwnType => Id is 682 or 892;          // 불사르기, 전광쌍격: 기술과 같은 타입이어야 하고, 맞히면 그 타입을 잃음
+        [JsonIgnore] public bool IsLastResort => Id == 387;                 // 비장의무기: 다른 기술을 모두 쓴 뒤에만
+
+        // 이 게임에 없는 시스템이 필요한 기술: 트림(나무열매), 아이언롤러(필드). 후보에서 빠지고, 이미 배웠으면 실패합니다.
+        [JsonIgnore] public bool IsUnavailable => Id is 562 or 798;
+
+        // 여러 턴에 걸친 기술 (원작 규칙)
+        [JsonIgnore] public bool NeedsRecharge => Id is 63 or 416 or 307 or 308 or 338 or 439 or 459 or 711 or 794 or 795; // 파괴광선 등: 맞히면 다음 턴에 쉼
+        [JsonIgnore] public bool IsCharging => Id is 13 or 76 or 130 or 143 or 669 or 553 or 554 or 800 or 905;            // 솔라빔 등: 첫 턴에 모으고 다음 턴에 공격
+        [JsonIgnore] public bool IsHiding => Id is 19 or 91 or 291 or 340 or 467 or 507 or 566;                            // 공중날기 등: 첫 턴에 숨어서 공격을 피함
+        [JsonIgnore] public bool IsLocking => Id is 37 or 80 or 200 or 833;                                                // 역린 등: 2~3턴 동안 이 기술만 씀
 
         // 이 게임에서 효과를 낼 수 있는 기술인지: 데미지가 있거나, 지원하는 상태이상/능력치 변화가 있음
         // (일격필살, 카운터, 회복기, 고정 데미지 기술 등은 제외 → 배울 기술/상대 기술 후보에서 빠짐)
-        [JsonIgnore] public bool IsSupported => Power > 0 || Ailment != SkillAilment.None || HasStatChanges;
+        [JsonIgnore] public bool IsSupported => !IsUnavailable && (Power > 0 || Ailment != SkillAilment.None || HasStatChanges);
     }
 
     // 배틀 중에만 유지되는 능력치 단계(-6 ~ +6)의 종류

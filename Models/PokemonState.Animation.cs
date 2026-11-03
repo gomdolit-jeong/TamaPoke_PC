@@ -124,6 +124,11 @@ namespace TamaPoke.Models
         private int _currentActionId = ANIM_IDLE;
         private int _enemyTempActionId = ANIM_IDLE;
         private int _enemyTempActionTimer = 0;
+        private BitmapSource[]? _enemyAnimationFrames;
+        private int[]? _enemyAnimationDurations;
+        private int _enemyFrameIndex = 0;
+        private double _enemyFrameElapsedMs = 0;
+        private const double MAIN_LOOP_MS = 33;
 
         [JsonIgnore] public bool IsEating => _tempActionTimer > 0 && _tempActionId == ANIM_EAT;
         [JsonIgnore] public bool IsPlaying => _tempActionTimer > 0 && (_tempActionId == ANIM_POSE || _tempActionId == ANIM_HOP);
@@ -165,6 +170,20 @@ namespace TamaPoke.Models
                 changed = true;
             }
             if (changed) CurrentFrame = _animationFrames[_currentFrameIndex];
+        }
+
+        // 상대 포켓몬의 공격/기 모으기 같은 임시 모션 재생 (대기 중에는 첫 장면으로 멈춰 있습니다)
+        private void AdvanceEnemyFrame()
+        {
+            if (_enemyAnimationFrames == null || _enemyAnimationFrames.Length <= 1) return;
+
+            _enemyFrameElapsedMs += MAIN_LOOP_MS;
+            double frameMs = _enemyAnimationDurations != null ? _enemyAnimationDurations[_enemyFrameIndex] * PMD_TICK_MS : DEFAULT_FRAME_MS;
+            if (_enemyFrameElapsedMs < frameMs) return;
+
+            _enemyFrameElapsedMs -= frameMs;
+            _enemyFrameIndex = (_enemyFrameIndex + 1) % _enemyAnimationFrames.Length;
+            EnemyCurrentFrame = _enemyAnimationFrames[_enemyFrameIndex];
         }
 
         private void MainLoopTimer_Tick(object? sender, EventArgs e)
@@ -209,6 +228,7 @@ namespace TamaPoke.Models
 
             if (_enemyTempActionTimer > 0)
             {
+                AdvanceEnemyFrame();
                 _enemyTempActionTimer--;
                 if (_enemyTempActionTimer <= 0 && IsBattleOpen) UpdateEnemyAnimation(ANIM_IDLE);
             }
@@ -364,7 +384,14 @@ namespace TamaPoke.Models
                         int directionRow = BATTLE_ENEMY_ROW;
 
                         List<BitmapSource> slicedFrames = SliceStripIntoFrames(targetData.Image, targetData.FrameWidth, targetData.FrameHeight, directionRow);
-                        if (slicedFrames.Count > 0) EnemyCurrentFrame = slicedFrames[0];
+                        if (slicedFrames.Count > 0)
+                        {
+                            _enemyAnimationFrames = slicedFrames.ToArray();
+                            _enemyAnimationDurations = targetData.Durations.Length == slicedFrames.Count ? targetData.Durations : null;
+                            _enemyFrameIndex = 0;
+                            _enemyFrameElapsedMs = 0;
+                            EnemyCurrentFrame = _enemyAnimationFrames[0];
+                        }
                     }
                 }
             }

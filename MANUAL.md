@@ -156,7 +156,8 @@ Start a wild battle with `⚔️ Start a wild battle` on the profile, or **wait 
 - **Turn order**: the faster side usually moves first, but the slower side has a 20% chance to go first. Paralysis halves Speed. High-priority moves such as Quick Attack go first regardless of Speed.
 - **Critical hits**: hits sometimes land critically for ×1.5 damage, and some moves crit more often.
 - **Move effects**: multi-hit (Double Slap…), HP drain (Mega Drain…), recoil (Double-Edge…) and flinching (Bite…) apply. Flinching only stops a target that hasn't moved yet that turn.
-- **Conditional moves**: Dream Eater needs a sleeping target and Snore only works while you're asleep. Focus Punch fails if you're hit that turn, and Shell Trap only fires after taking a physical hit. Sucker Punch and Thunderclap only work when the foe chose an attacking move, and Fake Out and First Impression only work as your first action.
+- **Conditional moves**: Dream Eater needs a sleeping target and Snore only works while you're asleep. Focus Punch fails if you're hit that turn, and Shell Trap only fires after taking a physical hit. Sucker Punch and Thunderclap only work when the foe chose an attacking move, and Fake Out and First Impression only work as your first action. Synchronoise needs a shared type, and Last Resort only works after using your other moves. Burn Up and Double Shock need the matching type, and the user loses that type for the battle when they hit.
+- **Multi-turn moves**: Hyper Beam and similar moves need a turn to recharge after hitting. Solar Beam and similar moves charge for a turn first, and Fly and similar moves avoid attacks while hidden. Outrage and similar moves repeat automatically for 2–3 turns. The menu doesn't appear on these turns.
 
 ### Catching
 - After you win, a `Catch` button appears. Lower HP means better odds (10% → 35% at half HP or less → 70% at 20% or less).

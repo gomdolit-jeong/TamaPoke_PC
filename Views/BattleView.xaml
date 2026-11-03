@@ -257,7 +257,7 @@
             </Grid>
 
             <!-- 🌟 플레이어 이미지: 뒷모습(오른쪽 위를 바라봄)을 1.5배로, 발이 메시지 창 경계에 오도록 (화면 앞쪽에 있는 느낌) -->
-            <Image x:Name="PlayerSprite" Style="{StaticResource PlayerSpriteHit}" Source="{Binding CurrentFrame, NotifyOnTargetUpdated=True}" TargetUpdated="Sprite_TargetUpdated" Width="108" Height="108" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,105,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+            <Image x:Name="PlayerSprite" Style="{StaticResource PlayerSpriteHit}" Source="{Binding CurrentFrame, NotifyOnTargetUpdated=True}" TargetUpdated="Sprite_TargetUpdated" Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVis}}" Width="108" Height="108" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,105,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
             <Image Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="106,0,0,40" Panel.ZIndex="5"
                              Source="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"/>

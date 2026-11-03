@@ -18,7 +18,7 @@ namespace TamaPoke.Models
         private int WildStat(int? baseStat) => BattleCalculator.Stat(baseStat ?? 50, BattleCalculator.WILD_GENE, EnemyLevel);
 
         // 배틀 중 내 포켓몬의 종족값/타입: 메가진화 중이면 메가 폼 값
-        private PokemonInfo? MyBattleInfo => ActiveMegaForm?.ToPokemonInfo() ?? PokemonDex.Get(SpeciesId);
+        private PokemonInfo? MyBattleInfo => WithoutTypes(ActiveMegaForm?.ToPokemonInfo() ?? PokemonDex.Get(SpeciesId), _playerLostTypes);
 
         [JsonIgnore]
         public int CombatMaxHp
@@ -111,6 +111,9 @@ namespace TamaPoke.Models
 
         private bool _isEnemyVisible = true;
         [JsonIgnore] public bool IsEnemyVisible { get => _isEnemyVisible; set => SetProperty(ref _isEnemyVisible, value); }
+
+        private bool _isPlayerVisible = true;
+        [JsonIgnore] public bool IsPlayerVisible { get => _isPlayerVisible; set => SetProperty(ref _isPlayerVisible, value); }
 
         private int _enemySpeciesId = 1;
         [JsonIgnore] public int EnemySpeciesId { get => _enemySpeciesId; set { if (SetProperty(ref _enemySpeciesId, value)) OnPropertyChanged(nameof(EnemyName)); } }
@@ -235,7 +238,9 @@ namespace TamaPoke.Models
 
         private SkillInfo ChooseEnemySkill()
         {
-            var enemyInfo = PokemonDex.Get(EnemySpeciesId);
+            if (_enemyLock.Forced != null) return _enemyLock.Forced; // 모으기 2턴째, 재충전, 고정 행동
+
+            var enemyInfo = EnemyBattleInfo;
             var myInfo = MyBattleInfo;
             Random rand = new Random();
 
@@ -489,10 +494,17 @@ namespace TamaPoke.Models
         private async Task PlayerActAsync(SkillInfo playerSkill, Random rand)
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0) return;
+            if (await RestIfRechargingAsync(userIsPlayer: true, PlayerBattleName)) return;
+
             bool canAct = await PlayerCanActThisTurnAsync();
-            if (!canAct && !(playerSkill.NeedsUserAsleep && PlayerAilment == SkillAilment.Sleep)) return;
+            if (!canAct && !(playerSkill.NeedsUserAsleep && PlayerAilment == SkillAilment.Sleep))
+            {
+                ClearMoveLock(userIsPlayer: true);
+                return;
+            }
             if (_playerFlinched)
             {
+                ClearMoveLock(userIsPlayer: true);
                 BattleMessage = Loc.F("battle.flinched", PlayerBattleName);
                 await Task.Delay(1500);
                 return;
@@ -505,21 +517,27 @@ namespace TamaPoke.Models
             }
 
             var myInfo = MyBattleInfo;
-            var enemyInfo = PokemonDex.Get(EnemySpeciesId);
+            var enemyInfo = EnemyBattleInfo;
 
             BattleMessage = Loc.F("battle.used", PlayerBattleName, playerSkill.Name);
             await Task.Delay(1000);
 
             bool wasFirstMove = !_playerHasMoved;
             _playerHasMoved = true;
-            if (!MoveConditionMet(playerSkill, userIsPlayer: true, wasFirstMove))
+            bool conditionMet = MoveConditionMet(playerSkill, userIsPlayer: true, wasFirstMove);
+            _playerUsedMoves.Add(playerSkill.Id);
+            if (!conditionMet)
             {
+                ClearMoveLock(userIsPlayer: true);
                 BattleMessage = Loc.T("battle.failed");
                 await Task.Delay(1500);
                 return;
             }
 
-            bool isHit = RollHit(playerSkill, _playerStages, _enemyStages, rand);
+            if (await StartChargeAsync(playerSkill, userIsPlayer: true, PlayerBattleName)) return;
+            AdvanceMoveLock(playerSkill, userIsPlayer: true, rand);
+
+            bool isHit = !MissesHiddenTarget(playerSkill, _enemyLock) && RollHit(playerSkill, _playerStages, _enemyStages, rand);
 
             if (isHit && playerSkill.Power > 0)
             {
@@ -531,6 +549,7 @@ namespace TamaPoke.Models
                 if (typeMultiplier == 0)
                 {
                     _isCounterReady = false;
+                    ClearMoveLock(userIsPlayer: true);
                     BattleMessage = Loc.F("battle.noEffectOn", Loc.F("battle.wildName", EnemyName));
                     await Task.Delay(1500);
                     return;
@@ -539,11 +558,8 @@ namespace TamaPoke.Models
                 bool counter = _isCounterReady; // 회피 뒤 반격 2배는 이번 기술의 모든 타격에 적용
                 _isCounterReady = false;
 
-                int attackAnim = playerSkill.Category == SkillCategory.Physical ? ANIM_ATTACK
-                               : playerSkill.Category == SkillCategory.Special ? ANIM_DEEPBREATH
-                               : ANIM_POSE;
-
                 int hits = BattleCalculator.RollHitCount(playerSkill, rand), landed = 0, dealt = 0;
+                int attackAnim = AttackAnimationFor(playerSkill, hits);
                 while (landed < hits && EnemyHp > 0)
                 {
                     bool crit = BattleCalculator.RollCrit(playerSkill, rand);
@@ -580,12 +596,13 @@ namespace TamaPoke.Models
             else if (isHit)
             {
                 // 위력 0인 변화 기술 (전기자석파, 칼춤, 울음소리 등)
-                PlayTempAction(ANIM_POSE, 30); UpdateAnimation(ANIM_POSE);
+                PlayTempAction(ANIM_ROTATE, 30); UpdateAnimation(ANIM_ROTATE);
                 await UseStatusMoveAsync(playerSkill, userIsPlayer: true);
             }
             else
             {
                 _isCounterReady = false;
+                ClearMoveLock(userIsPlayer: true);
                 BattleMessage = Loc.F("battle.missed", PlayerBattleName);
                 await Task.Delay(1500);
             }
@@ -602,6 +619,14 @@ namespace TamaPoke.Models
             await ProcessPlayerTurnEndAilment();
 
             if (PlayerHp <= 0 || EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
+
+            // 모으기 2턴째, 재충전, 고정 행동: 메뉴 없이 바로 다음 턴을 진행합니다.
+            if (_playerLock.Forced != null)
+            {
+                IsPlayerTurn = true;
+                await ExecuteSkillTurnAsync(_playerLock.Forced);
+                return;
+            }
 
             BattleMessage = Loc.T("battle.choose");
             IsPlayerTurn = true;
@@ -642,7 +667,7 @@ namespace TamaPoke.Models
                 return false;
             }
 
-            var targetInfo = targetIsEnemy ? PokemonDex.Get(EnemySpeciesId) : MyBattleInfo; // 메가진화 중이면 메가 폼 타입
+            var targetInfo = targetIsEnemy ? EnemyBattleInfo : MyBattleInfo; // 메가진화 중이면 메가 폼 타입
             bool alreadyAiled = (targetIsEnemy ? EnemyAilment : PlayerAilment) != SkillAilment.None;
             bool immune = AilmentHelper.IsImmune(skill, targetInfo);
 
@@ -710,8 +735,11 @@ namespace TamaPoke.Models
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || IsBattleResolved) return;
 
+            string enemyName = Loc.F("battle.wildName", EnemyName);
+            if (await RestIfRechargingAsync(userIsPlayer: false, enemyName)) return;
+
             var myInfo = MyBattleInfo;
-            var enemyInfo = PokemonDex.Get(EnemySpeciesId);
+            var enemyInfo = EnemyBattleInfo;
 
             if (EnemyAilment != SkillAilment.None)
             {
@@ -724,37 +752,48 @@ namespace TamaPoke.Models
                     BattleMessage = statusMsg;
                     await Task.Delay(1500);
                 }
-                if (!canAct && !(enemySkill.NeedsUserAsleep && EnemyAilment == SkillAilment.Sleep)) return;
+                if (!canAct && !(enemySkill.NeedsUserAsleep && EnemyAilment == SkillAilment.Sleep))
+                {
+                    ClearMoveLock(userIsPlayer: false);
+                    return;
+                }
             }
 
             if (_enemyFlinched)
             {
-                BattleMessage = Loc.F("battle.flinched", Loc.F("battle.wildName", EnemyName));
+                ClearMoveLock(userIsPlayer: false);
+                BattleMessage = Loc.F("battle.flinched", enemyName);
                 await Task.Delay(1500);
                 return;
             }
             if (enemySkill.FailsIfHitFirst && _enemyHitBy != null)
             {
-                BattleMessage = Loc.F("battle.focusLost", Loc.F("battle.wildName", EnemyName));
+                BattleMessage = Loc.F("battle.focusLost", enemyName);
                 await Task.Delay(1500);
                 return;
             }
 
-            BattleMessage = Loc.F("battle.used", Loc.F("battle.wildName", EnemyName), enemySkill.Name);
+            BattleMessage = Loc.F("battle.used", enemyName, enemySkill.Name);
             await Task.Delay(1000);
 
             bool wasFirstMove = !_enemyHasMoved;
             _enemyHasMoved = true;
-            if (!MoveConditionMet(enemySkill, userIsPlayer: false, wasFirstMove))
+            bool conditionMet = MoveConditionMet(enemySkill, userIsPlayer: false, wasFirstMove);
+            _enemyUsedMoves.Add(enemySkill.Id);
+            if (!conditionMet)
             {
+                ClearMoveLock(userIsPlayer: false);
                 BattleMessage = Loc.T("battle.failed");
                 await Task.Delay(1500);
                 return;
             }
 
+            if (await StartChargeAsync(enemySkill, userIsPlayer: false, enemyName)) return;
+            AdvanceMoveLock(enemySkill, userIsPlayer: false, rand);
+
             // 자기 능력치만 올리는 기술(칼춤 등)은 회피와 상관없이 성공합니다.
             if (playerDodged && IsSelfTargetingStatusMove(enemySkill)) playerDodged = false;
-            bool enemyHits = RollHit(enemySkill, _enemyStages, _playerStages, rand);
+            bool enemyHits = !MissesHiddenTarget(enemySkill, _playerLock) && RollHit(enemySkill, _enemyStages, _playerStages, rand);
 
             if (!playerDodged && enemyHits && enemySkill.Power > 0)
             {
@@ -765,12 +804,14 @@ namespace TamaPoke.Models
                 // 상성 0배: 데미지도 상태이상/능력치 변화도 없습니다.
                 if (typeMultiplier == 0)
                 {
+                    ClearMoveLock(userIsPlayer: false);
                     BattleMessage = Loc.F("battle.noEffectOn", PlayerBattleName);
                     await Task.Delay(1500);
                     return;
                 }
 
                 int hits = BattleCalculator.RollHitCount(enemySkill, rand), landed = 0, dealt = 0;
+                int attackAnim = AttackAnimationFor(enemySkill, hits);
                 while (landed < hits && PlayerHp > 0)
                 {
                     bool crit = BattleCalculator.RollCrit(enemySkill, rand);
@@ -782,7 +823,7 @@ namespace TamaPoke.Models
                     int enemyDamage = Math.Max(1, BattleCalculator.RawDamage((int)enemyCombatAtk, (int)myCombatDef, typeMultiplier, stabMultiplier, BattleCalculator.BurnMultiplier(enemySkill.Category, EnemyAilment), crit, enemySkill.Power));
 
                     // 공격 모션 → 이펙트 → 체력 감소 순서 (연속 공격은 타격마다)
-                    _enemyTempActionId = 1; _enemyTempActionTimer = 15; UpdateEnemyAnimation(1);
+                    _enemyTempActionId = attackAnim; _enemyTempActionTimer = 15; UpdateEnemyAnimation(attackAnim);
                     await PlaySkillFxAsync(enemySkill, targetIsEnemy: false);
 
                     IsPlayerTakingDamage = true;
@@ -805,11 +846,11 @@ namespace TamaPoke.Models
             else if (!playerDodged && enemyHits)
             {
                 // 위력 0인 변화 기술
-                _enemyTempActionId = ANIM_POSE; _enemyTempActionTimer = 30; UpdateEnemyAnimation(ANIM_POSE);
+                _enemyTempActionId = ANIM_ROTATE; _enemyTempActionTimer = 30; UpdateEnemyAnimation(ANIM_ROTATE);
                 await UseStatusMoveAsync(enemySkill, userIsPlayer: false);
             }
-            else if (playerDodged) { BattleMessage = Loc.F("battle.dodged", PlayerBattleName); await Task.Delay(1500); }
-            else { BattleMessage = Loc.F("battle.missed", Loc.F("battle.wildName", EnemyName)); await Task.Delay(1500); }
+            else if (playerDodged) { ClearMoveLock(userIsPlayer: false); BattleMessage = Loc.F("battle.dodged", PlayerBattleName); await Task.Delay(1500); }
+            else { ClearMoveLock(userIsPlayer: false); BattleMessage = Loc.F("battle.missed", enemyName); await Task.Delay(1500); }
         }
 
         private async Task ProcessEnemyTurnEndAilment()
@@ -1024,7 +1065,7 @@ namespace TamaPoke.Models
             }
             else
             {
-                IsEnemyVisible = true;
+                IsEnemyVisible = !_enemyLock.Hidden;
                 BattleMessage = Loc.F("battle.brokeFree", EnemyName);
                 await Task.Delay(2000);
 
