@@ -146,14 +146,17 @@ Start a wild battle with `⚔️ Start a wild battle` on the profile, or **wait 
 | Button | What it does |
 |---|---|
 | **Fight** | Choose one of your 4 moves |
-| **Dodge** | 70% to dodge, but if it fails the next hit does double damage |
+| **Dodge** | 70% to avoid the enemy's attack and double the damage of your next move (lost if it misses). If it fails, that turn's attack still lands |
 | **Bag** | Use items such as Potions |
 | **Run** | Leave the battle |
 
 - **Type matchups** and **STAB** (×1.5 for moves of its own type) apply.
 - **Status conditions**: burn, poison, bad poison, paralysis, sleep, freeze
 - **Stat moves**: moves with no power (Growl, Swords Dance…) raise or lower Attack, Defense, Speed and more, up to ±6 stages.
-- **Turn order**: the faster side usually moves first, but the slower side has a 20% chance to go first. Paralysis halves Speed.
+- **Turn order**: the faster side usually moves first, but the slower side has a 20% chance to go first. Paralysis halves Speed. High-priority moves such as Quick Attack go first regardless of Speed.
+- **Critical hits**: hits sometimes land critically for ×1.5 damage, and some moves crit more often.
+- **Move effects**: multi-hit (Double Slap…), HP drain (Mega Drain…), recoil (Double-Edge…) and flinching (Bite…) apply. Flinching only stops a target that hasn't moved yet that turn.
+- **Conditional moves**: Dream Eater needs a sleeping target and Snore only works while you're asleep. Focus Punch fails if you're hit that turn, and Shell Trap only fires after taking a physical hit. Sucker Punch and Thunderclap only work when the foe chose an attacking move, and Fake Out and First Impression only work as your first action.
 
 ### Catching
 - After you win, a `Catch` button appears. Lower HP means better odds (10% → 35% at half HP or less → 70% at 20% or less).

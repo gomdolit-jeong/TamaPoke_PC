@@ -53,6 +53,21 @@ namespace TamaPoke.Models
 
         [JsonIgnore] public bool HasStatChanges => StatChanges is { Count: > 0 };
 
+        public int Priority { get; set; } = 0;     // 우선도: 높은 쪽이 스피드와 상관없이 먼저 (전광석화 +1)
+        public int MinHits { get; set; } = 0;      // 연속 공격 횟수 (연속뺨치기 2~5). 0이면 한 번
+        public int MaxHits { get; set; } = 0;
+        public int Drain { get; set; } = 0;        // 입힌 데미지 중 %: 양수는 흡수, 음수는 반동
+        public int CritRate { get; set; } = 0;     // 급소 단계 (0: 1/24, 1: 1/8, 2: 1/2, 3 이상: 항상)
+        public int FlinchChance { get; set; } = 0; // 풀죽음 확률(%)
+
+        // 조건이 맞아야 성공하는 기술 (원작 규칙)
+        [JsonIgnore] public bool IsFirstTurnOnly => Id is 252 or 660;       // 속이기, 만나자마자: 처음 쓸 때만
+        [JsonIgnore] public bool NeedsTargetAsleep => Id == 138;            // 꿈먹기: 상대가 잠들어 있을 때만
+        [JsonIgnore] public bool NeedsUserAsleep => Id == 173;              // 코골기: 내가 잠들어 있을 때만 (잠든 채로 쓸 수 있음)
+        [JsonIgnore] public bool FailsIfHitFirst => Id == 264;              // 힘껏펀치: 그 턴에 맞으면 실패
+        [JsonIgnore] public bool NeedsPhysicalHitFirst => Id == 704;        // 트랩셸: 그 턴에 물리 공격을 맞아야 성공
+        [JsonIgnore] public bool NeedsTargetAttacking => Id is 389 or 909;  // 기습, 질풍신뢰: 상대가 공격 기술을 고른 턴에만
+
         // 이 게임에서 효과를 낼 수 있는 기술인지: 데미지가 있거나, 지원하는 상태이상/능력치 변화가 있음
         // (일격필살, 카운터, 회복기, 고정 데미지 기술 등은 제외 → 배울 기술/상대 기술 후보에서 빠짐)
         [JsonIgnore] public bool IsSupported => Power > 0 || Ailment != SkillAilment.None || HasStatChanges;

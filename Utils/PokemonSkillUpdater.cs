@@ -27,6 +27,7 @@ namespace TamaPoke.Utils
             public int id { get; set; }
             public int? power { get; set; }
             public int? accuracy { get; set; }
+            public int priority { get; set; }
             public ApiNamedResource type { get; set; } = new();
             public ApiNamedResource damage_class { get; set; } = new();
             public List<ApiName> names { get; set; } = new();
@@ -41,6 +42,11 @@ namespace TamaPoke.Utils
             public int ailment_chance { get; set; }
             public ApiNamedResource category { get; set; } = new();
             public int stat_chance { get; set; }
+            public int? min_hits { get; set; }
+            public int? max_hits { get; set; }
+            public int drain { get; set; }
+            public int crit_rate { get; set; }
+            public int flinch_chance { get; set; }
         }
 
         private class ApiStatChange { public int change { get; set; } public ApiNamedResource stat { get; set; } = new(); }
@@ -234,7 +240,13 @@ namespace TamaPoke.Utils
                     AilmentChance = parsedAilmentChance,
                     StatChanges = statChanges,
                     StatTarget = statTarget,
-                    StatChance = statChance
+                    StatChance = statChance,
+                    Priority = detail.priority,
+                    MinHits = detail.meta?.min_hits ?? 0,
+                    MaxHits = detail.meta?.max_hits ?? 0,
+                    Drain = detail.meta?.drain ?? 0,
+                    CritRate = detail.meta?.crit_rate ?? 0,
+                    FlinchChance = detail.meta?.flinch_chance ?? 0
                 };
             }
             catch

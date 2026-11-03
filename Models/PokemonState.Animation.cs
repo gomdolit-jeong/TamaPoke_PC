@@ -74,6 +74,10 @@ namespace TamaPoke.Models
         private BitmapSource? _enemyCurrentFrame;
         [JsonIgnore] public BitmapSource? EnemyCurrentFrame { get => _enemyCurrentFrame; set => SetProperty(ref _enemyCurrentFrame, value); }
 
+        // 대기 모션 한 칸의 크기: 모션마다 칸 크기가 달라서, 배틀 화면은 이 크기를 기준으로 배율을 고정합니다.
+        [JsonIgnore] public System.Windows.Size PlayerIdleFrameSize { get; private set; }
+        [JsonIgnore] public System.Windows.Size EnemyIdleFrameSize { get; private set; }
+
         private double _posX = 0;
         [JsonIgnore] public double PosX { get => _posX; set => SetProperty(ref _posX, value); }
         private double _posY = 0;
@@ -302,6 +306,9 @@ namespace TamaPoke.Models
                 var targetData = PickStrip(actionToLoad) ?? PickStrip(ANIM_IDLE) ?? rawStrips.FirstOrDefault(r => r != null);
                 if (targetData != null && targetData.Image != null)
                 {
+                    var idleData = PickStrip(ANIM_IDLE) ?? targetData;
+                    PlayerIdleFrameSize = new System.Windows.Size(idleData.FrameWidth, idleData.FrameHeight);
+
                     int directionRow = Direction;
 
                     if (IsBattleOpen)
@@ -352,6 +359,8 @@ namespace TamaPoke.Models
                     var targetData = rawStrips[stripIndex];
                     if (targetData != null && targetData.Image != null)
                     {
+                        var idleData = ANIM_IDLE < rawStrips.Count && rawStrips[ANIM_IDLE] != null ? rawStrips[ANIM_IDLE] : targetData;
+                        EnemyIdleFrameSize = new System.Windows.Size(idleData.FrameWidth, idleData.FrameHeight);
                         int directionRow = BATTLE_ENEMY_ROW;
 
                         List<BitmapSource> slicedFrames = SliceStripIntoFrames(targetData.Image, targetData.FrameWidth, targetData.FrameHeight, directionRow);

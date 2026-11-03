@@ -68,6 +68,49 @@
             </Style.Triggers>
         </Style>
 
+        <!-- 맞는 순간 포켓몬 흔들림 + 깜빡임 (도트 느낌이 나도록 끊어서) -->
+        <Storyboard x:Key="SpriteHitAnim">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" FillBehavior="Stop">
+                <DiscreteDoubleKeyFrame Value="-4" KeyTime="0:0:0"/>
+                <DiscreteDoubleKeyFrame Value="4" KeyTime="0:0:0.06"/>
+                <DiscreteDoubleKeyFrame Value="-4" KeyTime="0:0:0.12"/>
+                <DiscreteDoubleKeyFrame Value="4" KeyTime="0:0:0.18"/>
+                <DiscreteDoubleKeyFrame Value="-2" KeyTime="0:0:0.24"/>
+                <DiscreteDoubleKeyFrame Value="2" KeyTime="0:0:0.30"/>
+                <DiscreteDoubleKeyFrame Value="0" KeyTime="0:0:0.36"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" FillBehavior="Stop">
+                <DiscreteDoubleKeyFrame Value="0.25" KeyTime="0:0:0"/>
+                <DiscreteDoubleKeyFrame Value="1" KeyTime="0:0:0.08"/>
+                <DiscreteDoubleKeyFrame Value="0.25" KeyTime="0:0:0.16"/>
+                <DiscreteDoubleKeyFrame Value="1" KeyTime="0:0:0.24"/>
+                <DiscreteDoubleKeyFrame Value="0.25" KeyTime="0:0:0.32"/>
+                <DiscreteDoubleKeyFrame Value="1" KeyTime="0:0:0.40"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <Style TargetType="Image" x:Key="EnemySpriteHit">
+            <Setter Property="RenderTransform">
+                <Setter.Value><TranslateTransform/></Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsEnemyTakingDamage}" Value="True">
+                    <DataTrigger.EnterActions><BeginStoryboard Storyboard="{StaticResource SpriteHitAnim}"/></DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="Image" x:Key="PlayerSpriteHit">
+            <Setter Property="RenderTransform">
+                <Setter.Value><TranslateTransform/></Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsPlayerTakingDamage}" Value="True">
+                    <DataTrigger.EnterActions><BeginStoryboard Storyboard="{StaticResource SpriteHitAnim}"/></DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- 배틀 창의 글자 버튼: 픽셀 버튼 (Background가 버튼 색) -->
         <Style TargetType="Button" x:Key="RoundedButtonStyle" BasedOn="{StaticResource PixelTextButton}"/>
         </ResourceDictionary>
@@ -142,7 +185,7 @@
                 </StackPanel>
             </ContentControl>
 
-            <Image x:Name="EnemySprite" Source="{Binding EnemyCurrentFrame}" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="178,54,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+            <Image x:Name="EnemySprite" Style="{StaticResource EnemySpriteHit}" Source="{Binding EnemyCurrentFrame, NotifyOnTargetUpdated=True}" TargetUpdated="Sprite_TargetUpdated" Visibility="{Binding IsEnemyVisible, Converter={StaticResource BoolToVis}}" Width="72" Height="72" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="178,54,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
             <Image Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,49,43,0" Panel.ZIndex="5"
                              Source="{Binding EnemyAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"
@@ -214,10 +257,18 @@
             </Grid>
 
             <!-- 🌟 플레이어 이미지: 뒷모습(오른쪽 위를 바라봄)을 1.5배로, 발이 메시지 창 경계에 오도록 (화면 앞쪽에 있는 느낌) -->
-            <Image x:Name="PlayerSprite" Source="{Binding CurrentFrame}" Width="108" Height="108" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,105,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+            <Image x:Name="PlayerSprite" Style="{StaticResource PlayerSpriteHit}" Source="{Binding CurrentFrame, NotifyOnTargetUpdated=True}" TargetUpdated="Sprite_TargetUpdated" Width="108" Height="108" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,105,0,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
 
             <Image Style="{StaticResource AilmentFxStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="106,0,0,40" Panel.ZIndex="5"
                              Source="{Binding PlayerAilment, Converter={StaticResource AilmentStyle}, ConverterParameter=Fx}"/>
+
+            <!-- 기술 이펙트: 그림, 위치, 크기는 BattleView.xaml.cs에서 정합니다. -->
+            <Image x:Name="SkillFx" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="Fill" Panel.ZIndex="6" IsHitTestVisible="False"
+                   RenderOptions.BitmapScalingMode="NearestNeighbor" RenderTransformOrigin="0.5,0.5">
+                <Image.RenderTransform>
+                    <ScaleTransform x:Name="SkillFxFlip"/>
+                </Image.RenderTransform>
+            </Image>
 
             <!-- 메가진화 순간의 흰 섬광 (메가링 반응 연출이 끝날 때) -->
             <Rectangle Fill="White" Opacity="0" IsHitTestVisible="False" Panel.ZIndex="20">

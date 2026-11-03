@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using TamaPoke.Models;
 using TamaPoke.Utils;
 
@@ -23,10 +25,14 @@ namespace TamaPoke.Views
             if (e.OldValue is PokemonState oldState)
             {
                 oldState.RequestCatchAnimation -= TriggerCatchAnimation;
+                oldState.RequestSkillFx -= PlaySkillFxAsync;
+                oldState.RequestStatFx -= PlayStatFxAsync;
             }
             if (e.NewValue is PokemonState newState)
             {
                 newState.RequestCatchAnimation += TriggerCatchAnimation;
+                newState.RequestSkillFx += PlaySkillFxAsync;
+                newState.RequestStatFx += PlayStatFxAsync;
             }
         }
 
@@ -36,6 +42,148 @@ namespace TamaPoke.Views
         }
 
         private PokemonState? GetPet() => DataContext as PokemonState;
+
+        // ==========================================
+        // 스프라이트 배치: 대기 모션이 들어갈 칸과 왼쪽 위 위치
+        // ==========================================
+        private const double ENEMY_SPRITE_BOX = 72, ENEMY_SPRITE_LEFT = 178, ENEMY_SPRITE_TOP = 54;
+        private const double PLAYER_SPRITE_BOX = 108, PLAYER_SPRITE_LEFT = 26, PLAYER_SPRITE_TOP = 105;
+
+        // 모션마다 그림 칸 크기가 다르므로, 대기 모션 기준의 배율과 중심을 그대로 유지합니다. (공격 모션에서 작아지지 않게)
+        private void Sprite_TargetUpdated(object? sender, System.Windows.Data.DataTransferEventArgs e)
+        {
+            var pet = GetPet();
+            if (pet == null || sender is not System.Windows.Controls.Image sprite || sprite.Source is not BitmapSource frame) return;
+
+            bool enemy = sprite == EnemySprite;
+            var idle = enemy ? pet.EnemyIdleFrameSize : pet.PlayerIdleFrameSize;
+            if (idle.Width <= 0 || idle.Height <= 0) idle = new System.Windows.Size(frame.PixelWidth, frame.PixelHeight);
+
+            double box = enemy ? ENEMY_SPRITE_BOX : PLAYER_SPRITE_BOX;
+            double scale = box / Math.Max(idle.Width, idle.Height);
+            double centerX = (enemy ? ENEMY_SPRITE_LEFT : PLAYER_SPRITE_LEFT) + idle.Width * scale / 2;
+            double centerY = (enemy ? ENEMY_SPRITE_TOP : PLAYER_SPRITE_TOP) + idle.Height * scale / 2;
+
+            sprite.Width = frame.PixelWidth * scale;
+            sprite.Height = frame.PixelHeight * scale;
+            sprite.Margin = new Thickness(centerX - sprite.Width / 2, centerY - sprite.Height / 2, 0, 0);
+        }
+
+        // ==========================================
+        // 기술 이펙트 (Assets/UI의 fx_*.png: 가로로 이어 붙인 정사각형 프레임)
+        // ==========================================
+        private const int FX_FRAME_MS = 80;        // 터지는 이펙트 한 프레임
+        private const int SHOT_STEP_MS = 35;       // 날아가는 이펙트 한 칸
+        private const int SHOT_STEPS = 9;
+        private const int SHOT_FRAME_EVERY = 2;    // 몇 칸마다 투사체 그림을 바꿀지
+        private const double ENEMY_FX_SCALE = 2;   // 아트 1픽셀당 크기: 앞쪽의 내 포켓몬은 스프라이트처럼 1.5배
+        private const double PLAYER_FX_SCALE = 3;
+        private const double SHOT_SCALE = 2;
+        private const double FX_GROUND_ROW = 14;   // 32x32 그림 중심에서 바닥 줄까지 (아트 픽셀)
+        private const double FX_EMPTY_BOTTOM_ROWS = 2;
+        private static readonly HashSet<PokemonType> GroundFxTypes = new() { PokemonType.Ground, PokemonType.Fire, PokemonType.Ice };
+
+        private static readonly Dictionary<string, BitmapSource[]> FxFrames = new();
+
+        private static BitmapSource[] GetFxFrames(string name)
+        {
+            if (FxFrames.TryGetValue(name, out var frames)) return frames;
+            var sheet = new BitmapImage(new Uri($"pack://application:,,,/TamaPoke;component/Assets/UI/{name}.png"));
+            int size = sheet.PixelHeight;
+            frames = new BitmapSource[sheet.PixelWidth / size];
+            for (int i = 0; i < frames.Length; i++)
+            {
+                frames[i] = new CroppedBitmap(sheet, new Int32Rect(i * size, 0, size, size));
+                frames[i].Freeze();
+            }
+            return FxFrames[name] = frames;
+        }
+
+        // 스프라이트에서 실제로 보이는 부분의 범위 (포켓몬마다 크기와 칸 안의 위치가 다릅니다)
+        private System.Windows.Rect FxBounds(bool enemy)
+        {
+            BattleArea.UpdateLayout(); // 방금 모션이 바뀌었으면 새 크기와 위치로 계산
+            var sprite = enemy ? EnemySprite : PlayerSprite;
+            var bounds = new System.Windows.Rect(0, 0, sprite.ActualWidth, sprite.ActualHeight);
+            if (sprite.Source is BitmapSource source)
+            {
+                var bgra = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
+                int w = bgra.PixelWidth, h = bgra.PixelHeight;
+                var pixels = new byte[w * h * 4];
+                bgra.CopyPixels(pixels, w * 4, 0);
+
+                int left = w, right = -1, top = h, bottom = -1;
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        if (pixels[(y * w + x) * 4 + 3] == 0) continue;
+                        left = Math.Min(left, x); right = Math.Max(right, x);
+                        top = Math.Min(top, y); bottom = Math.Max(bottom, y);
+                    }
+                }
+                if (right >= 0)
+                {
+                    double sx = sprite.ActualWidth / w, sy = sprite.ActualHeight / h;
+                    bounds = new System.Windows.Rect(left * sx, top * sy, (right - left + 1) * sx, (bottom - top + 1) * sy);
+                }
+            }
+            return new System.Windows.Rect(sprite.TranslatePoint(bounds.TopLeft, BattleArea), bounds.Size);
+        }
+
+        // 이펙트 중심: 보통은 몸통 중심, 땅에서 솟는 이펙트는 그림의 바닥 줄이 발밑에 오도록
+        private System.Windows.Point FxCenter(bool enemy, bool onGround, double scale)
+        {
+            var bounds = FxBounds(enemy);
+            double x = bounds.Left + bounds.Width / 2;
+            return new System.Windows.Point(x, onGround ? bounds.Bottom - FX_GROUND_ROW * scale : bounds.Top + bounds.Height / 2);
+        }
+
+        // 그림이 오른쪽을 향해 그려져 있으니 내 포켓몬 쪽으로 갈 때는 뒤집습니다.
+        private void ShowFx(BitmapSource frame, System.Windows.Point center, double scale, bool targetIsEnemy)
+        {
+            double size = frame.PixelHeight * scale;
+            SkillFx.Source = frame;
+            SkillFx.Width = SkillFx.Height = size;
+            // 아래쪽 메시지 창에 잘리지 않도록 전투 화면 안에 맞춥니다. (그림 맨 아래 줄은 거의 비어 있어 살짝 넘어가도 됩니다)
+            double top = Math.Min(center.Y - size / 2, BattleArea.ActualHeight - size + FX_EMPTY_BOTTOM_ROWS * scale);
+            SkillFx.Margin = new Thickness(Math.Round(center.X - size / 2), Math.Round(top), 0, 0);
+            SkillFxFlip.ScaleX = targetIsEnemy ? 1 : -1;
+            SkillFx.Visibility = Visibility.Visible;
+        }
+
+        private async Task PlayBurstAsync(string name, bool targetIsEnemy, bool onGround = false)
+        {
+            double scale = targetIsEnemy ? ENEMY_FX_SCALE : PLAYER_FX_SCALE;
+            var center = FxCenter(targetIsEnemy, onGround, scale);
+            foreach (var frame in GetFxFrames(name))
+            {
+                ShowFx(frame, center, scale, targetIsEnemy);
+                await Task.Delay(FX_FRAME_MS);
+            }
+            SkillFx.Visibility = Visibility.Collapsed;
+        }
+
+        // 특수 기술은 쓴 쪽에서 날아가서 터지고, 나머지는 맞는 쪽에서 바로 터집니다.
+        private async Task PlaySkillFxAsync(SkillInfo skill, bool targetIsEnemy)
+        {
+            string type = skill.Type.ToString().ToLowerInvariant();
+            if (skill.Category == SkillCategory.Special)
+            {
+                var frames = GetFxFrames($"fx_shot_{type}");
+                System.Windows.Point from = FxCenter(!targetIsEnemy, false, SHOT_SCALE), to = FxCenter(targetIsEnemy, false, SHOT_SCALE);
+                for (int i = 0; i <= SHOT_STEPS; i++)
+                {
+                    double t = (double)i / SHOT_STEPS;
+                    var at = new System.Windows.Point(from.X + (to.X - from.X) * t, from.Y + (to.Y - from.Y) * t);
+                    ShowFx(frames[i / SHOT_FRAME_EVERY % frames.Length], at, SHOT_SCALE, targetIsEnemy);
+                    await Task.Delay(SHOT_STEP_MS);
+                }
+            }
+            await PlayBurstAsync($"fx_skill_{type}", targetIsEnemy, GroundFxTypes.Contains(skill.Type));
+        }
+
+        private Task PlayStatFxAsync(bool rose, bool targetIsEnemy) => PlayBurstAsync(rose ? "fx_stat_up" : "fx_stat_down", targetIsEnemy);
 
         // ==========================================
         // 메인 메뉴 및 공격 관련 이벤트

@@ -6,6 +6,7 @@ namespace TamaPoke.Models
     public static class AilmentHelper
     {
         private static readonly Random rand = new Random();
+        private const int THUNDER_WAVE_MOVE_ID = 86;
 
         // 1. 상태이상 초기 지속 턴 수 결정
         public static int GetInitialTurns(SkillAilment ailment)
@@ -18,7 +19,14 @@ namespace TamaPoke.Models
         }
 
         // 타입에 따른 상태이상 면역 (불꽃-화상, 얼음-얼음, 전기-마비, 독/강철-독)
-        public static bool IsImmune(SkillAilment ailment, PokemonType type1, PokemonType type2)
+        // 전기자석파는 상태이상을 거는 변화 기술 중 유일하게 타입 상성도 따릅니다. (땅 타입에게 무효, 원작 규칙)
+        public static bool IsImmune(SkillInfo skill, PokemonInfo? target)
+        {
+            if (skill.Id == THUNDER_WAVE_MOVE_ID && BattleCalculator.TypeMultiplier(skill.Type, target) == 0) return true;
+            return IsImmune(skill.Ailment, target?.Type1 ?? PokemonType.Normal, target?.Type2 ?? PokemonType.None);
+        }
+
+        private static bool IsImmune(SkillAilment ailment, PokemonType type1, PokemonType type2)
         {
             bool Has(PokemonType t) => type1 == t || type2 == t;
             return ailment switch

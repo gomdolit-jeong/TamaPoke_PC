@@ -7,6 +7,7 @@ namespace TamaPoke.Models
     public static class BattleCalculator
     {
         public const double STAB_BONUS = 1.5;   // 자속 보정 (기술 타입 = 사용 포켓몬 타입)
+        public const double CRIT_BONUS = 1.5;   // 급소 보정
         public const double GYM_BONUS = 1.1;    // 관장 포켓몬 보정
         public const int WILD_GENE = 15;        // 야생 포켓몬 유전자 고정값
         public const int GYM_GENE = 31;         // 관장 포켓몬 유전자 고정값
@@ -29,16 +30,39 @@ namespace TamaPoke.Models
         public static double StabMultiplier(PokemonType moveType, PokemonInfo? attacker) =>
             attacker != null && (attacker.Type1 == moveType || attacker.Type2 == moveType) ? STAB_BONUS : 1.0;
 
-        // 데미지: max(2, 공격 - 방어/2) × 상성 × 자속 × 위력/50  (최소 1 보정은 호출하는 쪽에서)
-        public static int RawDamage(int attack, int defense, double typeMultiplier, double stabMultiplier, int power) =>
-            (int)(Math.Max(2, attack - (defense / 2)) * typeMultiplier * stabMultiplier * (power / 50.0));
+        // 화상 보정: 화상 상태에서 쓰는 물리 기술의 데미지 절반 (원작 규칙)
+        public static double BurnMultiplier(SkillCategory category, SkillAilment attackerAilment) =>
+            category == SkillCategory.Physical && attackerAilment == SkillAilment.Burn ? 0.5 : 1.0;
 
-        // 상성 안내 문구 (메시지 앞에 붙임, 줄바꿈 포함)
-        public static string EffectivenessText(double typeMultiplier)
+        // 급소 판정: 단계 0은 1/24, 1은 1/8, 2는 1/2, 3 이상은 항상 (원작 규칙)
+        public static bool RollCrit(SkillInfo skill, Random rand) => rand.Next(skill.CritRate switch { <= 0 => 24, 1 => 8, 2 => 2, _ => 1 }) == 0;
+
+        // 연속 공격 횟수: 범위가 있으면 2회 35%, 3회 35%, 4회 15%, 5회 15% (원작 규칙)
+        public static int RollHitCount(SkillInfo skill, Random rand)
+        {
+            if (skill.MaxHits <= 1) return 1;
+            if (skill.MinHits >= skill.MaxHits) return skill.MaxHits;
+            int roll = rand.Next(100);
+            int extra = roll < 35 ? 0 : roll < 70 ? 1 : roll < 85 ? 2 : 3;
+            return Math.Min(skill.MaxHits, skill.MinHits + extra);
+        }
+
+        // 데미지: max(2, 공격 - 방어/2) × 상성 × 자속 × 화상 × 급소 × 위력/50  (최소 1 보정은 호출하는 쪽에서)
+        public static int RawDamage(int attack, int defense, double typeMultiplier, double stabMultiplier, double burnMultiplier, bool crit, int power) =>
+            (int)(Math.Max(2, attack - (defense / 2)) * typeMultiplier * stabMultiplier * burnMultiplier * (crit ? CRIT_BONUS : 1.0) * (power / 50.0));
+
+        // 급소와 상성 안내 문구 (메시지 앞에 붙임, 줄바꿈 포함)
+        public static string HitText(double typeMultiplier, bool crit)
+        {
+            string effectiveness = EffectivenessText(typeMultiplier);
+            if (!crit) return effectiveness;
+            return effectiveness.Length > 0 ? $"{Loc.T("battle.crit")} {effectiveness}" : Loc.T("battle.crit") + "\n";
+        }
+
+        private static string EffectivenessText(double typeMultiplier)
         {
             if (typeMultiplier >= 2.0) return Loc.T("battle.eff.super");
             if (typeMultiplier > 0 && typeMultiplier <= 0.5) return Loc.T("battle.eff.notVery");
-            if (typeMultiplier == 0) return Loc.T("battle.eff.none");
             return "";
         }
     }
