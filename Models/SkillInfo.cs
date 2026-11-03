@@ -78,7 +78,10 @@ namespace TamaPoke.Models
         [JsonIgnore] public bool NeedsRecharge => Id is 63 or 416 or 307 or 308 or 338 or 439 or 459 or 711 or 794 or 795; // 파괴광선 등: 맞히면 다음 턴에 쉼
         [JsonIgnore] public bool IsCharging => Id is 13 or 76 or 130 or 143 or 669 or 553 or 554 or 800 or 905;            // 솔라빔 등: 첫 턴에 모으고 다음 턴에 공격
         [JsonIgnore] public bool IsHiding => Id is 19 or 91 or 291 or 340 or 467 or 507 or 566;                            // 공중날기 등: 첫 턴에 숨어서 공격을 피함
-        [JsonIgnore] public bool IsLocking => Id is 37 or 80 or 200 or 833;                                                // 역린 등: 2~3턴 동안 이 기술만 씀
+        [JsonIgnore] public bool IsRolling => Id is 205 or 301;                                                            // 구르기, 아이스볼: 5턴 동안 맞힐 때마다 위력 2배
+        [JsonIgnore] public bool IsUproar => Id == 253;                                                                    // 소란피기: 3턴 동안 아무도 잠들지 못함
+        [JsonIgnore] public bool IsLocking => Id is 37 or 80 or 200 or 833 || IsRolling || IsUproar;                       // 역린 등: 여러 턴 동안 이 기술만 씀
+        [JsonIgnore] public bool IsTrapping => Id is 20 or 35 or 83 or 128 or 250 or 328 or 463 or 611 or 779 or 819;      // 조이기 등: 4~5턴 동안 묶어서 턴마다 데미지, 도망 불가
 
         // 이 게임에서 효과를 낼 수 있는 기술인지: 데미지가 있거나, 지원하는 상태이상/능력치 변화가 있음
         // (일격필살, 카운터, 회복기, 고정 데미지 기술 등은 제외 → 배울 기술/상대 기술 후보에서 빠짐)

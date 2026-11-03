@@ -27,12 +27,14 @@ namespace TamaPoke.Views
                 oldState.RequestCatchAnimation -= TriggerCatchAnimation;
                 oldState.RequestSkillFx -= PlaySkillFxAsync;
                 oldState.RequestStatFx -= PlayStatFxAsync;
+                oldState.RequestChargeFx -= PlayChargeFxAsync;
             }
             if (e.NewValue is PokemonState newState)
             {
                 newState.RequestCatchAnimation += TriggerCatchAnimation;
                 newState.RequestSkillFx += PlaySkillFxAsync;
                 newState.RequestStatFx += PlayStatFxAsync;
+                newState.RequestChargeFx += PlayChargeFxAsync;
             }
         }
 
@@ -81,6 +83,7 @@ namespace TamaPoke.Views
         private const double SHOT_SCALE = 2;
         private const double FX_GROUND_ROW = 14;   // 32x32 그림 중심에서 바닥 줄까지 (아트 픽셀)
         private const double FX_EMPTY_BOTTOM_ROWS = 2;
+        private const int CHARGE_FX_LOOPS = 4;     // 4프레임 × 80ms × 4회 = 모으는 메시지 시간(1.3초)
         private static readonly HashSet<PokemonType> GroundFxTypes = new() { PokemonType.Ground, PokemonType.Fire, PokemonType.Ice };
 
         private static readonly Dictionary<string, BitmapSource[]> FxFrames = new();
@@ -184,6 +187,13 @@ namespace TamaPoke.Views
         }
 
         private Task PlayStatFxAsync(bool rose, bool targetIsEnemy) => PlayBurstAsync(rose ? "fx_stat_up" : "fx_stat_down", targetIsEnemy);
+
+        // 기 모으기: 빛 입자가 힘을 모으는 쪽의 몸통으로 모여드는 그림을 반복합니다.
+        private async Task PlayChargeFxAsync(SkillInfo skill, bool userIsPlayer)
+        {
+            string name = $"fx_charge_{skill.Type.ToString().ToLowerInvariant()}";
+            for (int i = 0; i < CHARGE_FX_LOOPS; i++) await PlayBurstAsync(name, targetIsEnemy: !userIsPlayer);
+        }
 
         // ==========================================
         // 메인 메뉴 및 공격 관련 이벤트

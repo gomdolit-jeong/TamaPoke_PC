@@ -37,6 +37,8 @@ namespace TamaPoke.Models
             ClearMoveLock(userIsPlayer: false);
             _playerUsedMoves.Clear(); _enemyUsedMoves.Clear();
             _playerLostTypes.Clear(); _enemyLostTypes.Clear();
+            _playerTrapTurns = _enemyTrapTurns = 0;
+            _playerTrapSkill = _enemyTrapSkill = null;
         }
 
         // 여러 턴에 걸친 기술의 진행 상태
@@ -45,7 +47,62 @@ namespace TamaPoke.Models
             public SkillInfo? Forced;  // 다음 턴에 자동으로 나가는 기술 (모으기 2턴째, 재충전, 고정 행동)
             public bool Recharge;      // 다음 턴은 쉼
             public int LockTurns;      // 고정 행동의 남은 턴
+            public SkillInfo? LockSkill; // 고정 행동 중인 기술 (마지막 턴이 끝날 때까지 유지)
+            public int RollCount;      // 구르기 등을 연속으로 맞힌 횟수
             public bool Hidden;        // 공중날기 등으로 숨어 있어 공격에 맞지 않음
+        }
+
+        private const int ROLLING_TURNS = 5, UPROAR_TURNS = 3;
+        private bool IsUproarActive => _playerLock.LockSkill?.IsUproar == true || _enemyLock.LockSkill?.IsUproar == true;
+
+        // 구르기, 아이스볼: 맞힐 때마다 위력 2배 (30 → 60 → 120 → 240 → 480)
+        private int PowerOf(SkillInfo skill, bool userIsPlayer) =>
+            skill.IsRolling ? skill.Power << Math.Min(LockOf(userIsPlayer).RollCount, ROLLING_TURNS - 1) : skill.Power;
+
+        // 묶기 기술 상태: 남은 턴과 묶은 기술 (묶인 쪽 기준)
+        private const int TRAP_DAMAGE_DIVISOR = 8;
+        private int _playerTrapTurns, _enemyTrapTurns;
+        private SkillInfo? _playerTrapSkill, _enemyTrapSkill;
+
+        // 턴이 끝날 때 묶인 쪽이 데미지를 받고, 턴이 다 되면 풀려납니다.
+        private async Task ProcessTrapDamageAsync(bool targetIsPlayer)
+        {
+            int turns = targetIsPlayer ? _playerTrapTurns : _enemyTrapTurns;
+            int hp = targetIsPlayer ? PlayerHp : EnemyHp;
+            if (turns <= 0 || hp <= 0) return;
+
+            int maxHp = targetIsPlayer ? PlayerMaxHp : EnemyMaxHp;
+            string who = targetIsPlayer ? PlayerBattleName : Loc.F("battle.wildName", EnemyName);
+            string moveName = (targetIsPlayer ? _playerTrapSkill : _enemyTrapSkill)?.Name ?? "";
+            int damage = Math.Max(1, maxHp / TRAP_DAMAGE_DIVISOR);
+
+            if (targetIsPlayer) { PlayerHp = Math.Max(0, hp - damage); IsPlayerTakingDamage = true; }
+            else { EnemyHp = Math.Max(0, hp - damage); IsEnemyTakingDamage = true; }
+            BattleMessage = Loc.F("battle.trapTick", who, moveName, damage);
+            await Task.Delay(HIT_SHAKE_MS);
+            IsPlayerTakingDamage = false; IsEnemyTakingDamage = false;
+            await Task.Delay(HIT_REST_MS);
+
+            turns--;
+            if (targetIsPlayer) _playerTrapTurns = turns; else _enemyTrapTurns = turns;
+            if (turns == 0 && (targetIsPlayer ? PlayerHp : EnemyHp) > 0)
+            {
+                BattleMessage = Loc.F("battle.trapFree", who, moveName);
+                await Task.Delay(1000);
+            }
+        }
+
+        // 소란피기: 맞는 쪽이 잠들어 있으면 깨웁니다.
+        private async Task WakeByUproarAsync(SkillInfo skill, bool userIsPlayer)
+        {
+            if (!skill.IsUproar) return;
+            bool targetIsPlayer = !userIsPlayer;
+            if ((targetIsPlayer ? PlayerAilment : EnemyAilment) != SkillAilment.Sleep) return;
+
+            if (targetIsPlayer) { PlayerAilment = SkillAilment.None; _playerAilmentTurns = 0; }
+            else { EnemyAilment = SkillAilment.None; _enemyAilmentTurns = 0; }
+            BattleMessage = Loc.F("battle.uproarWake", targetIsPlayer ? PlayerBattleName : Loc.F("battle.wildName", EnemyName));
+            await Task.Delay(1000);
         }
         private readonly MoveLock _playerLock = new(), _enemyLock = new();
         private MoveLock LockOf(bool userIsPlayer) => userIsPlayer ? _playerLock : _enemyLock;
@@ -60,7 +117,7 @@ namespace TamaPoke.Models
         private void ClearMoveLock(bool userIsPlayer)
         {
             var state = LockOf(userIsPlayer);
-            state.Forced = null; state.Recharge = false; state.LockTurns = 0;
+            state.Forced = null; state.Recharge = false; state.LockTurns = 0; state.LockSkill = null; state.RollCount = 0;
             SetHidden(userIsPlayer, false);
         }
 
@@ -97,16 +154,21 @@ namespace TamaPoke.Models
             else if (userIsPlayer) { PlayTempAction(ANIM_CHARGE, CHARGE_ANIM_TICKS); UpdateAnimation(ANIM_CHARGE); }
             else { _enemyTempActionTimer = CHARGE_ANIM_TICKS; UpdateEnemyAnimation(ANIM_CHARGE); }
             BattleMessage = Loc.F(skill.IsHiding ? "battle.hiding" : "battle.charging", who);
-            await Task.Delay(1300);
+            await Task.WhenAll(Task.Delay(1300), skill.IsCharging ? PlayChargeFxAsync(skill, userIsPlayer) : Task.CompletedTask);
             return true;
         }
 
-        // 고정 행동: 처음 쓸 때 2~3턴을 정하고, 턴이 남아 있으면 다음 턴에도 자동으로 나갑니다.
+        // 고정 행동: 처음 쓸 때 턴 수를 정하고, 턴이 남아 있으면 다음 턴에도 자동으로 나갑니다.
         private void AdvanceMoveLock(SkillInfo skill, bool userIsPlayer, Random rand)
         {
             if (!skill.IsLocking) return;
             var state = LockOf(userIsPlayer);
-            if (state.LockTurns == 0) state.LockTurns = rand.Next(2, 4);
+            if (state.LockTurns == 0)
+            {
+                state.LockTurns = skill.IsRolling ? ROLLING_TURNS : skill.IsUproar ? UPROAR_TURNS : rand.Next(2, 4);
+                state.LockSkill = skill;
+                state.RollCount = 0;
+            }
             state.LockTurns--;
             state.Forced = state.LockTurns > 0 ? skill : null;
         }
@@ -163,7 +225,12 @@ namespace TamaPoke.Models
         // 이번 턴에 고른 기술 (회피/아이템 등 기술을 안 쓴 턴은 null)과 이번 턴에 맞은 기술
         private SkillInfo? _playerChoice, _enemyChoice, _playerHitBy, _enemyHitBy;
 
-        private void ClearTurnState() => _playerChoice = _enemyChoice = _playerHitBy = _enemyHitBy = null;
+        private void ClearTurnState()
+        {
+            _playerChoice = _enemyChoice = _playerHitBy = _enemyHitBy = null;
+            if (_playerLock.LockTurns == 0) _playerLock.LockSkill = null; // 고정 행동은 마지막 턴이 끝날 때 해제
+            if (_enemyLock.LockTurns == 0) _enemyLock.LockSkill = null;
+        }
 
         // 조건이 맞지 않아 실패하는 기술인지 (쓴 쪽, 상대의 상태로 판단)
         private bool MoveConditionMet(SkillInfo skill, bool userIsPlayer, bool wasFirstMove)
@@ -205,6 +272,15 @@ namespace TamaPoke.Models
             if (skill.LosesOwnType && dealt > 0)
             {
                 (userIsPlayer ? _playerLostTypes : _enemyLostTypes).Add(skill.Type);
+            }
+            if (skill.IsRolling && dealt > 0) LockOf(userIsPlayer).RollCount++;
+            if (skill.IsTrapping && dealt > 0 && (userIsPlayer ? EnemyHp : PlayerHp) > 0 && (userIsPlayer ? _enemyTrapTurns : _playerTrapTurns) == 0)
+            {
+                int turns = rand.Next(4, 6);
+                if (userIsPlayer) { _enemyTrapTurns = turns; _enemyTrapSkill = skill; }
+                else { _playerTrapTurns = turns; _playerTrapSkill = skill; }
+                BattleMessage = Loc.F("battle.trapStart", userIsPlayer ? Loc.F("battle.wildName", EnemyName) : PlayerBattleName, skill.Name);
+                await Task.Delay(1000);
             }
 
             await ApplyDrainAsync(skill, dealt, userIsPlayer);

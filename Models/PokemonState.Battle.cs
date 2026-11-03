@@ -160,6 +160,9 @@ namespace TamaPoke.Models
         private Task PlaySkillFxAsync(SkillInfo skill, bool targetIsEnemy) => RequestSkillFx?.Invoke(skill, targetIsEnemy) ?? Task.CompletedTask;
         private Task PlayStatFxAsync(bool rose, bool targetIsEnemy) => RequestStatFx?.Invoke(rose, targetIsEnemy) ?? Task.CompletedTask;
 
+        public event Func<SkillInfo, bool, Task>? RequestChargeFx;  // 기술, 힘을 모으는 쪽이 내 포켓몬인지
+        private Task PlayChargeFxAsync(SkillInfo skill, bool userIsPlayer) => RequestChargeFx?.Invoke(skill, userIsPlayer) ?? Task.CompletedTask;
+
         private bool _isCounterReady = false;
         [JsonIgnore] public int[] EnemySkills { get; set; } = new int[4] { 0, 0, 0, 0 };
 
@@ -433,6 +436,11 @@ namespace TamaPoke.Models
         {
             if (!IsBattleOpen || PlayerHp <= 0 || EnemyHp <= 0 || !IsPlayerTurn) return;
             MarkBattleAttended();
+            if (playerAction == BattleAction.Run && _playerTrapTurns > 0)
+            {
+                BattleMessage = Loc.F("battle.trapped", PlayerBattleName); // 턴을 쓰지 않고 다시 고릅니다.
+                return;
+            }
             IsPlayerTurn = false; Random rand = new Random();
 
             if (playerAction == BattleAction.Run)
@@ -536,6 +544,7 @@ namespace TamaPoke.Models
 
             if (await StartChargeAsync(playerSkill, userIsPlayer: true, PlayerBattleName)) return;
             AdvanceMoveLock(playerSkill, userIsPlayer: true, rand);
+            await WakeByUproarAsync(playerSkill, userIsPlayer: true);
 
             bool isHit = !MissesHiddenTarget(playerSkill, _enemyLock) && RollHit(playerSkill, _playerStages, _enemyStages, rand);
 
@@ -568,7 +577,7 @@ namespace TamaPoke.Models
                     if (IsGymBattle) enemyCombatDef *= BattleCalculator.GYM_BONUS;
                     enemyCombatDef *= DefenseStage(_enemyStages, special ? BattleStat.SpDefense : BattleStat.Defense, crit);
 
-                    int damage = BattleCalculator.RawDamage((int)myCombatAtk, (int)enemyCombatDef, typeMultiplier, stabMultiplier, BattleCalculator.BurnMultiplier(playerSkill.Category, PlayerAilment), crit, playerSkill.Power);
+                    int damage = BattleCalculator.RawDamage((int)myCombatAtk, (int)enemyCombatDef, typeMultiplier, stabMultiplier, BattleCalculator.BurnMultiplier(playerSkill.Category, PlayerAilment), crit, PowerOf(playerSkill, userIsPlayer: true));
                     if (counter) damage *= 2;
                     damage = Math.Max(1, damage);
 
@@ -617,6 +626,8 @@ namespace TamaPoke.Models
 
             await ProcessEnemyTurnEndAilment();
             await ProcessPlayerTurnEndAilment();
+            await ProcessTrapDamageAsync(targetIsPlayer: false);
+            await ProcessTrapDamageAsync(targetIsPlayer: true);
 
             if (PlayerHp <= 0 || EnemyHp <= 0) { await CheckBattleEndAsync(); return; }
 
@@ -668,7 +679,8 @@ namespace TamaPoke.Models
             }
 
             var targetInfo = targetIsEnemy ? EnemyBattleInfo : MyBattleInfo; // 메가진화 중이면 메가 폼 타입
-            bool alreadyAiled = (targetIsEnemy ? EnemyAilment : PlayerAilment) != SkillAilment.None;
+            bool alreadyAiled = (targetIsEnemy ? EnemyAilment : PlayerAilment) != SkillAilment.None
+                                || (skill.Ailment == SkillAilment.Sleep && IsUproarActive); // 소란피기 중에는 아무도 잠들지 못함
             bool immune = AilmentHelper.IsImmune(skill, targetInfo);
 
             if (alreadyAiled || immune)
@@ -790,6 +802,7 @@ namespace TamaPoke.Models
 
             if (await StartChargeAsync(enemySkill, userIsPlayer: false, enemyName)) return;
             AdvanceMoveLock(enemySkill, userIsPlayer: false, rand);
+            await WakeByUproarAsync(enemySkill, userIsPlayer: false);
 
             // 자기 능력치만 올리는 기술(칼춤 등)은 회피와 상관없이 성공합니다.
             if (playerDodged && IsSelfTargetingStatusMove(enemySkill)) playerDodged = false;
@@ -820,7 +833,7 @@ namespace TamaPoke.Models
                     enemyCombatAtk *= AttackStage(_enemyStages, special ? BattleStat.SpAttack : BattleStat.Attack, crit);
                     double myCombatDef = (special ? CombatSpDef : CombatDef) * DefenseStage(_playerStages, special ? BattleStat.SpDefense : BattleStat.Defense, crit);
 
-                    int enemyDamage = Math.Max(1, BattleCalculator.RawDamage((int)enemyCombatAtk, (int)myCombatDef, typeMultiplier, stabMultiplier, BattleCalculator.BurnMultiplier(enemySkill.Category, EnemyAilment), crit, enemySkill.Power));
+                    int enemyDamage = Math.Max(1, BattleCalculator.RawDamage((int)enemyCombatAtk, (int)myCombatDef, typeMultiplier, stabMultiplier, BattleCalculator.BurnMultiplier(enemySkill.Category, EnemyAilment), crit, PowerOf(enemySkill, userIsPlayer: false)));
 
                     // 공격 모션 → 이펙트 → 체력 감소 순서 (연속 공격은 타격마다)
                     _enemyTempActionId = attackAnim; _enemyTempActionTimer = 15; UpdateEnemyAnimation(attackAnim);
