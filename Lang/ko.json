@@ -125,6 +125,8 @@
   "battle.appear": "앗! 야생 {0}이(가) 나타났다!",
   "battle.appear.shiny": "앗! 색이 다른 야생 {0}이(가) 나타났다!",
   "notify.wild.title": "야생 포켓몬 출현!",
+  "notify.sprite.title": "새 포켓몬 이미지",
+  "notify.sprite.message": "새 이미지가 올라왔어요. 눌러서 업데이트 창을 열 수 있어요. (용량이 커서 시간이 걸려요)",
   "battle.choose": "행동을 선택하세요.",
   "battle.ran": "무사히 도망쳤다!",
   "battle.dodge.ready": "적의 공격을 피할 준비를 했다!\n(카운터 대기)",

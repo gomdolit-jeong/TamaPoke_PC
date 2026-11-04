@@ -36,6 +36,8 @@ namespace TamaPoke.Utils
                 progress?.Report(Loc.T("update.sprite.start"));
                 progress?.Report(Loc.T("update.sprite.slow"));
 
+                string? latestSha = await SpriteUpdateChecker.GetLatestShaAsync(); // 받는 이미지가 어느 시점인지 기록해 둡니다.
+
                 // 🌟 서버 통신 시작 (전체를 기다리지 않고 응답 헤더만 오면 바로 통과)
                 using HttpResponseMessage response = await client.GetAsync(RepoZipUrl, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
@@ -115,9 +117,10 @@ namespace TamaPoke.Utils
                 progress?.Report(Loc.F("update.sprite.missing", missingIds.Count));
                 progress?.Report(Loc.T("update.sprite.converting"));
 
-                string convertResult = SpriteConverter.BatchConvertAll(sourceSpriteFolder, targetResourceDir, targetTrackerPath);
+                string convertResult = SpriteConverter.BatchConvertAll(sourceSpriteFolder, targetResourceDir, targetTrackerPath, out bool converted);
                 BinSpriteReader.ClearCache(); // 새로 만든 bin(재생시간 포함)을 다시 읽도록 캐시 초기화
                 SpriteForms.ResetCache();     // 새로 생긴 포켓몬 이미지를 부화/진화 후보에 반영
+                if (converted) SpriteUpdateChecker.MarkInstalled(latestSha);
                 progress?.Report(convertResult);
             }
             catch (TaskCanceledException)

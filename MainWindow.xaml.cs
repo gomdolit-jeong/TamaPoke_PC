@@ -68,6 +68,13 @@ namespace TamaPoke
 
             _notifyIcon.Visible = true;
             _notifyIcon.DoubleClick += (s, e) => BringBackToMain();
+            _notifyIcon.BalloonTipClicked += (s, e) =>
+            {
+                if (!_isSpriteBalloonShown) return;
+                _isSpriteBalloonShown = false;
+                OpenUpdateWindow(false, false, true);
+            };
+            _notifyIcon.BalloonTipClosed += (s, e) => _isSpriteBalloonShown = false;
 
             var contextMenu = new System.Windows.Forms.ContextMenuStrip();
 
@@ -137,6 +144,30 @@ namespace TamaPoke
 
             // 화면이 뜬 뒤에 세이브/데이터 이상을 안내합니다.
             Dispatcher.BeginInvoke(ShowStartupWarnings, DispatcherPriority.ApplicationIdle);
+
+            // 켜 둔 채로 오래 쓰는 앱이라 시작할 때와 그 뒤 주기적으로 새 포켓몬 이미지를 확인합니다. (실제 확인은 하루 한 번)
+            _ = CheckSpriteUpdateAsync();
+            _spriteCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromHours(SPRITE_CHECK_TIMER_HOURS) };
+            _spriteCheckTimer.Tick += async (s, ev) => await CheckSpriteUpdateAsync();
+            _spriteCheckTimer.Start();
+        }
+
+        // ==========================================
+        // 🌟 새 포켓몬 이미지 안내 (풍선 알림을 누르면 스프라이트만 체크된 업데이트 창이 열립니다)
+        // ==========================================
+        private const int SPRITE_CHECK_TIMER_HOURS = 6;
+        private DispatcherTimer? _spriteCheckTimer;
+        private bool _isSpriteBalloonShown;
+
+        private async System.Threading.Tasks.Task CheckSpriteUpdateAsync()
+        {
+            if (MyPet == null || _notifyIcon == null || !MyPet.Settings.UseTrayNotifications) return;
+            if (ResourceCheck.GetSpriteState(out _, out _) != ResourceCheck.SpriteState.Ok) return; // 이미지가 없으면 시작 안내에서 이미 묻습니다.
+
+            if (!await SpriteUpdateChecker.CheckForUpdateAsync()) return;
+
+            _isSpriteBalloonShown = true;
+            _notifyIcon.ShowBalloonTip(10000, Loc.T("notify.sprite.title"), Loc.T("notify.sprite.message"), System.Windows.Forms.ToolTipIcon.Info);
         }
 
         // 세이브 복구/손상, 필요한 리소스(Data 파일, 포켓몬 이미지)가 없거나 깨진 경우를 알립니다.

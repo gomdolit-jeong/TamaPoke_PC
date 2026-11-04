@@ -125,6 +125,8 @@
   "battle.appear": "A wild {0} appeared!",
   "battle.appear.shiny": "Whoa! A shiny wild {0} appeared!",
   "notify.wild.title": "A wild Pokémon appeared!",
+  "notify.sprite.title": "New Pokémon sprites",
+  "notify.sprite.message": "New sprites are available. Click to open the updater. (It's a large download.)",
   "battle.choose": "What will you do?",
   "battle.ran": "Got away safely!",
   "battle.dodge.ready": "Ready to dodge!\n(Counter ready)",

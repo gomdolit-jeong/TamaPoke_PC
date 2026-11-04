@@ -20,8 +20,9 @@ namespace TamaPoke.Utils
 		/// <summary>
 		/// 안전하게 모든 하위 폴더를 탐색하며 애니메이션 에셋을 압축된 .bin 파일로 구워냅니다.
 		/// </summary>
-		public static string BatchConvertAll(string pmdSpriteRootFolder, string outputFolder, string trackerJsonPath)
+		public static string BatchConvertAll(string pmdSpriteRootFolder, string outputFolder, string trackerJsonPath, out bool completed)
 		{
+			completed = false;
 			if (!Directory.Exists(outputFolder)) Directory.CreateDirectory(outputFolder);
 
 			if (!File.Exists(trackerJsonPath))
@@ -85,6 +86,7 @@ namespace TamaPoke.Utils
 				else failCount++;
 			}
 
+			completed = true;
 			return Loc.F("update.convert.done", successCount, skipCount, failCount);
 		}
 
