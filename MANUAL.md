@@ -259,6 +259,8 @@ Start with `Ctrl` + `W` or **Walk mode** in the tray menu. The widget hides and 
 
 > On first run, if sprites or data are missing, the updater opens with the needed items already checked.
 
+> When a new TamaPoke version is out, a tray notification tells you once. Clicking it opens the updater with the program item checked.
+
 > When the sprite source changes, a tray notification lets you know. The source changes often and the download is large, so this appears at most once a month and only if tray notifications are on. Clicking it opens the updater with sprites checked.
 
 ---

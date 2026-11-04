@@ -60,6 +60,28 @@ namespace TamaPoke.Utils
             return null;
         }
 
+        // 새 버전 안내: 같은 버전은 한 번만 알립니다. (기록은 설정 파일과 따로 둬서 설정 저장에 덮어써지지 않게)
+        private static string NoticePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update_notice.txt");
+
+        // 처음 보는 버전이면 기록하고 true
+        public static bool TryMarkNotified(string version)
+        {
+            try
+            {
+                if (File.Exists(NoticePath) && File.ReadAllText(NoticePath).Trim() == version) return false;
+                File.WriteAllText(NoticePath, version);
+            }
+            catch { }
+            return true;
+        }
+
+        // 안내할 새 버전이 있으면 그 정보를 돌려줍니다. (인터넷이 안 되면 null)
+        public static async Task<AppVersionInfo?> CheckForNewVersionToNotifyAsync()
+        {
+            var info = await CheckForUpdatesAsync();
+            return info != null && TryMarkNotified(info.Version) ? info : null;
+        }
+
         // ==========================================
         // 🌟 싹 가져온 다운로드 및 배치 파일 생성 로직 (백그라운드 전담)
         // ==========================================

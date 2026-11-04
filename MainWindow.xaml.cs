@@ -70,11 +70,11 @@ namespace TamaPoke
             _notifyIcon.DoubleClick += (s, e) => BringBackToMain();
             _notifyIcon.BalloonTipClicked += (s, e) =>
             {
-                if (!_isSpriteBalloonShown) return;
-                _isSpriteBalloonShown = false;
-                OpenUpdateWindow(false, false, true);
+                var action = _balloonClickAction;
+                _balloonClickAction = null;
+                action?.Invoke();
             };
-            _notifyIcon.BalloonTipClosed += (s, e) => _isSpriteBalloonShown = false;
+            _notifyIcon.BalloonTipClosed += (s, e) => _balloonClickAction = null;
 
             var contextMenu = new System.Windows.Forms.ContextMenuStrip();
 
@@ -145,29 +145,42 @@ namespace TamaPoke
             // 화면이 뜬 뒤에 세이브/데이터 이상을 안내합니다.
             Dispatcher.BeginInvoke(ShowStartupWarnings, DispatcherPriority.ApplicationIdle);
 
-            // 켜 둔 채로 오래 쓰는 앱이라 시작할 때와 그 뒤 주기적으로 새 포켓몬 이미지를 확인합니다. (실제 확인은 하루 한 번)
-            _ = CheckSpriteUpdateAsync();
-            _spriteCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromHours(SPRITE_CHECK_TIMER_HOURS) };
-            _spriteCheckTimer.Tick += async (s, ev) => await CheckSpriteUpdateAsync();
-            _spriteCheckTimer.Start();
+            // 켜 둔 채로 오래 쓰는 앱이라 시작할 때와 그 뒤 주기적으로 새 버전과 새 포켓몬 이미지를 확인합니다.
+            _ = CheckForUpdatesInBackgroundAsync();
+            _updateCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromHours(UPDATE_CHECK_TIMER_HOURS) };
+            _updateCheckTimer.Tick += async (s, ev) => await CheckForUpdatesInBackgroundAsync();
+            _updateCheckTimer.Start();
         }
 
         // ==========================================
-        // 🌟 새 포켓몬 이미지 안내 (풍선 알림을 누르면 스프라이트만 체크된 업데이트 창이 열립니다)
+        // 🌟 업데이트 안내 (풍선 알림을 누르면 해당 항목만 체크된 업데이트 창이 열립니다)
         // ==========================================
-        private const int SPRITE_CHECK_TIMER_HOURS = 6;
-        private DispatcherTimer? _spriteCheckTimer;
-        private bool _isSpriteBalloonShown;
+        private const int UPDATE_CHECK_TIMER_HOURS = 6;
+        private DispatcherTimer? _updateCheckTimer;
+        private Action? _balloonClickAction; // 지금 떠 있는 풍선 알림을 눌렀을 때 할 일
 
-        private async System.Threading.Tasks.Task CheckSpriteUpdateAsync()
+        private void ShowActionBalloon(string title, string message, Action onClick)
+        {
+            if (_notifyIcon == null) return;
+            _notifyIcon.ShowBalloonTip(10000, title, message, System.Windows.Forms.ToolTipIcon.Info);
+            _balloonClickAction = onClick;
+        }
+
+        // 새 프로그램 버전(새 버전마다 한 번)을 먼저 보고, 없으면 새 포켓몬 이미지(최대 한 달에 한 번)를 봅니다.
+        private async System.Threading.Tasks.Task CheckForUpdatesInBackgroundAsync()
         {
             if (MyPet == null || _notifyIcon == null || !MyPet.Settings.UseTrayNotifications) return;
+
+            var newVersion = await AppVersionUpdater.CheckForNewVersionToNotifyAsync();
+            if (newVersion != null)
+            {
+                ShowActionBalloon(Loc.F("notify.app.title", newVersion.Version), Loc.T("notify.app.message"), () => OpenUpdateWindow(false, false, false, true));
+                return;
+            }
+
             if (ResourceCheck.GetSpriteState(out _, out _) != ResourceCheck.SpriteState.Ok) return; // 이미지가 없으면 시작 안내에서 이미 묻습니다.
-
-            if (!await SpriteUpdateChecker.CheckForUpdateAsync()) return;
-
-            _isSpriteBalloonShown = true;
-            _notifyIcon.ShowBalloonTip(10000, Loc.T("notify.sprite.title"), Loc.T("notify.sprite.message"), System.Windows.Forms.ToolTipIcon.Info);
+            if (await SpriteUpdateChecker.CheckForUpdateAsync())
+                ShowActionBalloon(Loc.T("notify.sprite.title"), Loc.T("notify.sprite.message"), () => OpenUpdateWindow(false, false, true));
         }
 
         // 세이브 복구/손상, 필요한 리소스(Data 파일, 포켓몬 이미지)가 없거나 깨진 경우를 알립니다.
@@ -233,7 +246,7 @@ namespace TamaPoke
             ApplyWalkSettings(); // 산책 중이면 바뀐 마릿수/크기를 바로 반영
         });
         public void OpenUpdateWindow() => Dispatcher.Invoke(() => ShowDialogOverMain(new UpdateProgressWindow()));
-        public void OpenUpdateWindow(bool data, bool skill, bool sprite) => Dispatcher.Invoke(() => ShowDialogOverMain(new UpdateProgressWindow(data, skill, sprite)));
+        public void OpenUpdateWindow(bool data, bool skill, bool sprite, bool program = false) => Dispatcher.Invoke(() => ShowDialogOverMain(new UpdateProgressWindow(data, skill, sprite, program)));
 
         public void ConfirmAndExit()
         {
