@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO; // 🌟 오류 해결의 핵심! 파일 경로 도구를 사용하겠다고 선언합니다.
-using TamaPoke.Utils;
+﻿using System.IO; // 🌟 오류 해결의 핵심! 파일 경로 도구를 사용하겠다고 선언합니다.
 
 namespace TamaPoke.Models
 {
@@ -11,7 +8,7 @@ namespace TamaPoke.Models
         public string RegionName { get; set; } = string.Empty;
         public int BadgeNumber { get; set; }
 
-        // 버튼을 눌렀을 때 몇 번째 배지인지(1~72) 식별하기 위한 고유 번호
+        // 버튼을 눌렀을 때 몇 번째 배지인지(1~64) 식별하기 위한 고유 번호
         public int GlobalIndex { get; set; }
 
         // "Kanto_1.png" 형태로 경로를 자동 생성합니다!

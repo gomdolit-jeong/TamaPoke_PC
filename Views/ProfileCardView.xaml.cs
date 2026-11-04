@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
 using TamaPoke.Models; // PokemonState 등의 데이터 모델을 사용하기 위해 꼭 필요합니다.
 
 namespace TamaPoke.Views

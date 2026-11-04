@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
-using System.Text.Encodings.Web; // 🌟 한글 저장을 위한 네임스페이스
 using TamaPoke.Models;
 
 namespace TamaPoke.Utils
@@ -26,7 +21,6 @@ namespace TamaPoke.Utils
         {
             public int gender_rate { get; set; }
             public List<ApiName> names { get; set; } = new();
-            public ApiNamedResource evolution_chain { get; set; } = new();
         }
         private class ApiName { public string name { get; set; } = ""; public ApiNamedResource language { get; set; } = new(); }
 
@@ -39,7 +33,7 @@ namespace TamaPoke.Utils
         }
         private class ApiEvolutionDetail { public int? min_level { get; set; } }
 
-        public static async Task GenerateOfflineDataJsonAsync(IProgress<string>? progress = null, Action<string, string>? trayNotifier = null)
+        public static async Task GenerateOfflineDataJsonAsync(IProgress<string>? progress = null)
         {
             var allPokemonData = new List<PokemonInfo>();
 

@@ -1,17 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
+﻿using System.Text.Json.Serialization;
 using TamaPoke.Utils;
 using TamaPoke.Utils.Service;
 
@@ -177,6 +164,10 @@ namespace TamaPoke.Models
             }
         }
 
+        // 저절로 나오는 야생 배틀이 메뉴를 보는 중에 끼어들지 않게 합니다. (프로필, 배틀, 미니게임, 산책 중에는 Tick이 여기까지 오지 않습니다)
+        private bool CanAutoEncounter =>
+            !IsModalWindowOpen && !IsPartyOpen && !IsDexOpen && !IsInventoryOpen && !IsFeedMenuOpen && !IsPlayMenuOpen;
+
         private void ProcessIdleBehaviors()
         {
             if (!IsSleeping && !IsCeremony && !IsBattleOpen && _tempActionTimer <= 0)
@@ -186,7 +177,7 @@ namespace TamaPoke.Models
                     Random moveRand = new Random(); int r = moveRand.Next(100);
                     if (r < 35)
                     {
-                        if (moveRand.Next(10000) < 3)
+                        if (moveRand.Next(10000) < 3 && CanAutoEncounter)
                         {
                             StartWildBattle(autoEncounter: true);
                         }

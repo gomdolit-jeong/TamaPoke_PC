@@ -1,6 +1,4 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows;
 using System.Windows.Input;
 using System.ComponentModel; // 🌟 상태 변화 알림을 받기 위해 필수적인 네임스페이스입니다.
 using TamaPoke.Models;

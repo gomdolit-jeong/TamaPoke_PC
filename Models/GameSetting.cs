@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace TamaPoke.Models
+﻿namespace TamaPoke.Models
 {
     public class GameSettings
     {

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using TamaPoke.Models;
@@ -51,7 +49,6 @@ namespace TamaPoke.Views
 
         // 이 포켓몬이 메가진화할 수 있는 폼 (없으면 산책 중 메가진화하지 않음)
         public IReadOnlyList<MegaFormInfo> MegaForms { get; init; } = Array.Empty<MegaFormInfo>();
-        public bool IsMegaEvolved => _megaEndsAt != null;
 
         public event Action? ToggleWalkRequested;   // 펫 창에서 Ctrl+W
         public event Action<RoamingPet>? Closed;

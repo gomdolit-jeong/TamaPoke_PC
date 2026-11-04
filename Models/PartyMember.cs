@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using TamaPoke.Utils;
@@ -70,8 +68,8 @@ namespace TamaPoke.Models
         {
             get
             {
-                var pokemon = PokemonDex.Get(SpeciesId);
-                return pokemon != null ? pokemon.Type1.ToString().ToUpper() : "";
+                if (PokemonDex.Get(SpeciesId) == null) return "";
+                return PokemonForms.GetTypes(SpeciesId, SpriteFileName).Type1.ToString().ToUpper(); // 알로라 폼 등 폼에 맞는 타입
             }
         }
 
@@ -80,9 +78,9 @@ namespace TamaPoke.Models
         {
             get
             {
-                var pokemon = PokemonDex.Get(SpeciesId);
-                if (pokemon == null || pokemon.Type2 == PokemonType.None) return "";
-                return pokemon.Type2.ToString().ToUpper();
+                if (PokemonDex.Get(SpeciesId) == null) return "";
+                var type2 = PokemonForms.GetTypes(SpeciesId, SpriteFileName).Type2;
+                return type2 == PokemonType.None ? "" : type2.ToString().ToUpper();
             }
         }
 

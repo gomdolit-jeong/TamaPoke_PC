@@ -1,10 +1,7 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows;
 using System.Windows.Input;
 using System.ComponentModel; // 🌟 상태 변화 알림을 받기 위해 추가
 using TamaPoke.Models;
-using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Views
 {
@@ -80,16 +77,6 @@ namespace TamaPoke.Views
                     pet.TapDirt(dirtId);
                     e.Handled = true;
                 }
-            }
-        }
-
-        private void PokemonImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            var pet = GetPet();
-            if (pet != null && pet.IsCleanGameOpen)
-            {
-                pet.TriggerAttackMotion();
-                e.Handled = true;
             }
         }
 

@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using TamaPoke.Utils;
-using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Models
 {
@@ -23,6 +15,9 @@ namespace TamaPoke.Models
         public ObservableCollection<BadgeRegionGroup> BadgeGroups { get; set; } = new ObservableCollection<BadgeRegionGroup>();
 
         public static bool IsGamePaused { get; set; } = false;
+
+        // 설정, 업데이트 같은 별도 창이 떠 있는 동안 (시간은 흐르지만 야생 배틀이 끼어들지 않게)
+        public static bool IsModalWindowOpen { get; set; } = false;
 
         public void InitializeBadgesList()
         {
@@ -306,8 +301,7 @@ namespace TamaPoke.Models
         #region 메인 UI 상태 (Main UI)
 
         private bool _isMuted = true;
-        public bool IsMuted { get => _isMuted; set { if (SetProperty(ref _isMuted, value)) OnPropertyChanged(nameof(SoundIcon)); } }
-        [JsonIgnore] public string SoundIcon => IsMuted ? "🔇" : "🔊";
+        public bool IsMuted { get => _isMuted; set => SetProperty(ref _isMuted, value); }
 
         private string _evolutionMessage = "";
         [JsonIgnore] public string EvolutionMessage { get => _evolutionMessage; set { SetProperty(ref _evolutionMessage, value); OnPropertyChanged(nameof(MoodText)); } }
@@ -356,7 +350,7 @@ namespace TamaPoke.Models
                 // 잠깐 보여주는 이벤트 메시지 (기술 습득 결과, 산책 요약 등)
                 if (!string.IsNullOrEmpty(_eventMessage)) return _eventMessage;
 
-                if (IsBattleOpen) return Loc.T("mood.battle");
+                if (IsBattleOpen) return Loc.T(IsGymBattle ? "mood.gymBattle" : "mood.battle");
                 if (IsProfileOpen) return Loc.T("mood.profile");
                 if (IsBallGameOpen) return Loc.T("mood.game.ball");
                 if (IsCatchGameOpen) return Loc.T("mood.game.catch");

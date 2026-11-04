@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using TamaPoke.Models;
@@ -237,7 +234,9 @@ namespace TamaPoke
         private void ShowDialogOverMain(Window dialog)
         {
             if (this.IsVisible) dialog.Owner = this;
-            dialog.ShowDialog();
+            PokemonState.IsModalWindowOpen = true;
+            try { dialog.ShowDialog(); }
+            finally { PokemonState.IsModalWindowOpen = false; }
         }
 
         public void OpenSettingsWindow() => Dispatcher.Invoke(() =>

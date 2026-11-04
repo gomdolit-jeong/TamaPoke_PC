@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing; // NuGet 패키지 관리자에서 'System.Drawing.Common' 설치 필요
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using System.Xml;
 

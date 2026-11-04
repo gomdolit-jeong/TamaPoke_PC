@@ -1,6 +1,4 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows;
 using System.ComponentModel; // 🌟 상태 변화 알림을 받기 위해 추가
 using TamaPoke.Models;
 

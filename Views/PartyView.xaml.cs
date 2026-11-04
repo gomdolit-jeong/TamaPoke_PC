@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
 using TamaPoke.Models;
 using TamaPoke.Utils;
 
@@ -89,11 +88,8 @@ namespace TamaPoke.Views
                 System.Windows.MessageBox.Show(Loc.T("party.released.message"), Loc.T("party.released.title"));
             }
 
-            // 창 닫기 로직 (ViewModel 바인딩을 사용 중이시라면 state.IsPartyOpen = false; 만 하셔도 됩니다)
+            // 창 닫기 (ViewModel 바인딩으로 처리) 하셔도 됩니다)
             if (state != null) state.IsPartyOpen = false;
-
-            // 만약 Window라면 this.Close(); 를 유지해 주세요.
-            // this.Close(); 
         }
     }
 }

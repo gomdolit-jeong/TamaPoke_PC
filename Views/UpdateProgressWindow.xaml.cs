@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Windows;
+﻿using System.Windows;
 using TamaPoke.Models;
 using TamaPoke.Utils;
 
@@ -100,7 +98,7 @@ namespace TamaPoke.Views
                 {
                     lbLogs.Items.Add("======================================");
                     lbLogs.Items.Add(Loc.T("update.step.data"));
-                    await PokemonDataUpdater.GenerateOfflineDataJsonAsync(progress, null);
+                    await PokemonDataUpdater.GenerateOfflineDataJsonAsync(progress);
 
                     _currentTaskIndex++;
                     pbStatus.Value = _currentTaskIndex * _progressPerTask;
@@ -110,7 +108,7 @@ namespace TamaPoke.Views
                 {
                     lbLogs.Items.Add("======================================");
                     lbLogs.Items.Add(Loc.T("update.step.skill"));
-                    await PokemonSkillUpdater.GenerateOfflineSkillJsonAsync(progress, null);
+                    await PokemonSkillUpdater.GenerateOfflineSkillJsonAsync(progress);
 
                     _currentTaskIndex++;
                     pbStatus.Value = _currentTaskIndex * _progressPerTask;

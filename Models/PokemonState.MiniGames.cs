@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 using TamaPoke.Utils.Service;
 using TamaPoke.Utils;
@@ -24,10 +20,9 @@ namespace TamaPoke.Models
         [JsonIgnore]
         public bool CanStartActivity => !(IsEgg || IsSleeping || IsCeremony || IsAnyMiniGameOpen || IsProfileOpen || IsBattleOpen);
 
-        [JsonIgnore] public bool IsMinigameOpen => IsBallGameOpen;
 
         private bool _isBallGameOpen = false;
-        [JsonIgnore] public bool IsBallGameOpen { get => _isBallGameOpen; set { if (SetProperty(ref _isBallGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsMinigameOpen)); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
+        [JsonIgnore] public bool IsBallGameOpen { get => _isBallGameOpen; set { if (SetProperty(ref _isBallGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }
 
         private bool _isCatchGameOpen = false;
         [JsonIgnore] public bool IsCatchGameOpen { get => _isCatchGameOpen; set { if (SetProperty(ref _isCatchGameOpen, value)) { if (!value) ResetPosition(); OnPropertyChanged(nameof(IsAliveAndNotEgg)); OnPropertyChanged(nameof(MoodText)); } } }

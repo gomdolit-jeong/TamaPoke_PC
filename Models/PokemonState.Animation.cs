@@ -1,19 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
+﻿using System.IO;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using TamaPoke.Utils;
-using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Models
 {
@@ -25,7 +14,7 @@ namespace TamaPoke.Models
         public const int ANIM_ATTACK = 1;       // 공격 (물리적인 기본 타격)
         public const int ANIM_STRIKE = 2;       // 강하게 치기 (연속 치기나 강한 타격)
         public const int ANIM_SHOOT = 3;        // 발사 (광선이나 특수 공격 발사)
-        public const int ANIM_SHAKE = 4;        // 몸 털기 (목욕 후 물기를 털어내는 동작 등)
+        public const int ANIM_SHAKE = 4;        // 4번 칸: 포켓몬마다 달라요 (Twirl, SpAttack, RearUp 등). 몸 털기 전용 모션이 아닙니다. (지금은 씻은 뒤에 사용)
         public const int ANIM_SLEEP = 5;        // 잠자기 (바닥에 웅크리거나 엎드려 쿨쿨 잠듦)
         public const int ANIM_HURT = 6;         // 맞아서 아파하기 (가벼운 데미지를 입었을 때)
         public const int ANIM_IDLE = 7;         // 대기 상태 (가만히 서서 숨만 쉬는 기본 동작)
@@ -122,7 +111,6 @@ namespace TamaPoke.Models
             _isAutoAction = true;
         }
         private int _currentActionId = ANIM_IDLE;
-        private int _enemyTempActionId = ANIM_IDLE;
         private int _enemyTempActionTimer = 0;
         private BitmapSource[]? _enemyAnimationFrames;
         private int[]? _enemyAnimationDurations;
@@ -361,7 +349,6 @@ namespace TamaPoke.Models
 
         private void UpdateEnemyAnimation(int actionToLoad)
         {
-            _enemyTempActionId = actionToLoad;
             string spriteFolder = AppPaths.SpriteFolder;
             // 야생은 배틀 시작 때 정한 이미지(이로치/특수 폼 포함)를 그대로 보여줍니다. 잡으면 같은 이미지로 파티에 들어갑니다.
             string enemyPath = Path.Combine(spriteFolder, string.IsNullOrEmpty(_enemySpriteFileName) ? $"p{EnemySpeciesId:D4}.bin" : _enemySpriteFileName);

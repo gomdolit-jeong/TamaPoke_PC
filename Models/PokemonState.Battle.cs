@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Windows.Media;
+﻿using System.Text.Json.Serialization;
 using TamaPoke.Utils;
 
 namespace TamaPoke.Models
@@ -18,7 +12,15 @@ namespace TamaPoke.Models
         private int WildStat(int? baseStat) => BattleCalculator.Stat(baseStat ?? 50, BattleCalculator.WILD_GENE, EnemyLevel);
 
         // 배틀 중 내 포켓몬의 종족값/타입: 메가진화 중이면 메가 폼 값
-        private PokemonInfo? MyBattleInfo => WithoutTypes(ActiveMegaForm?.ToPokemonInfo() ?? PokemonDex.Get(SpeciesId), _playerLostTypes);
+        private PokemonInfo? MyBattleInfo
+        {
+            get
+            {
+                if (ActiveMegaForm?.ToPokemonInfo() is { } mega) return WithBattleTypes(mega, mega.Type1, mega.Type2, _playerLostTypes);
+                var (type1, type2) = PokemonForms.GetTypes(SpeciesId, SpriteFileName); // 알로라 폼 등 폼에 맞는 타입
+                return WithBattleTypes(PokemonDex.Get(SpeciesId), type1, type2, _playerLostTypes);
+            }
+        }
 
         [JsonIgnore]
         public int CombatMaxHp
@@ -169,7 +171,7 @@ namespace TamaPoke.Models
         private void GenerateEnemySkills()
         {
             for (int i = 0; i < 4; i++) EnemySkills[i] = 0;
-            var d = PokemonDex.Get(EnemySpeciesId);
+            var d = EnemyBattleInfo;
             if (d == null) return;
 
             int n = SkillDex.GetLearnCount(EnemySpeciesId);
@@ -836,7 +838,7 @@ namespace TamaPoke.Models
                     int enemyDamage = Math.Max(1, BattleCalculator.RawDamage((int)enemyCombatAtk, (int)myCombatDef, typeMultiplier, stabMultiplier, BattleCalculator.BurnMultiplier(enemySkill.Category, EnemyAilment), crit, PowerOf(enemySkill, userIsPlayer: false)));
 
                     // 공격 모션 → 이펙트 → 체력 감소 순서 (연속 공격은 타격마다)
-                    _enemyTempActionId = attackAnim; _enemyTempActionTimer = 15; UpdateEnemyAnimation(attackAnim);
+                    _enemyTempActionTimer = 15; UpdateEnemyAnimation(attackAnim);
                     await PlaySkillFxAsync(enemySkill, targetIsEnemy: false);
 
                     IsPlayerTakingDamage = true;
@@ -859,7 +861,7 @@ namespace TamaPoke.Models
             else if (!playerDodged && enemyHits)
             {
                 // 위력 0인 변화 기술
-                _enemyTempActionId = ANIM_ROTATE; _enemyTempActionTimer = 30; UpdateEnemyAnimation(ANIM_ROTATE);
+                _enemyTempActionTimer = 30; UpdateEnemyAnimation(ANIM_ROTATE);
                 await UseStatusMoveAsync(enemySkill, userIsPlayer: false);
             }
             else if (playerDodged) { ClearMoveLock(userIsPlayer: false); BattleMessage = Loc.F("battle.dodged", PlayerBattleName); await Task.Delay(1500); }

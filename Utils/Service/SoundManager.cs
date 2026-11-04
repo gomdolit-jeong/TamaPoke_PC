@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Media;
-using System.Threading.Tasks;
 
 namespace TamaPoke.Utils.Service
 {
@@ -12,12 +10,8 @@ namespace TamaPoke.Utils.Service
         public static readonly (int f, int ms)[] N_EAT = { (660, 45), (0, 12), (660, 45) };
         public static readonly (int f, int ms)[] N_PLAY = { (784, 45), (988, 60) };
         public static readonly (int f, int ms)[] N_HEART = { (1047, 55), (1319, 90) };
-        public static readonly (int f, int ms)[] N_HATCH = { (523, 80), (659, 80), (784, 110), (1047, 170) };
-        public static readonly (int f, int ms)[] N_EVOLVE = { (523, 80), (659, 80), (784, 80), (1047, 90), (1319, 230) };
         public static readonly (int f, int ms)[] N_MEDAL = { (784, 70), (0, 25), (784, 70), (0, 25), (1047, 200) };
         public static readonly (int f, int ms)[] N_DENY = { (300, 110), (200, 170) };
-        public static readonly (int f, int ms)[] N_BYE = { (784, 150), (659, 150), (523, 280) };
-        public static readonly (int f, int ms)[] N_LEVEL = { (784, 70), (1047, 130) };
 
         /// <summary>
         /// 지정된 음표들을 바탕으로 메모리에서 WAV 오디오 데이터를 실시간으로 합성하여 재생합니다.

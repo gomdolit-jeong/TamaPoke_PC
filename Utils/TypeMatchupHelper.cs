@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-// 🌟 핵심 해결책: Models 네임스페이스를 가져와서 단일 PokemonType을 사용하게 합니다!
+﻿// 🌟 핵심 해결책: Models 네임스페이스를 가져와서 단일 PokemonType을 사용하게 합니다!
 using TamaPoke.Models;
 
 namespace TamaPoke.Utils

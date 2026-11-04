@@ -1,19 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using TamaPoke.Utils;
-using TamaPoke.Utils.Service;
 
 namespace TamaPoke.Models
 {
@@ -65,7 +53,6 @@ namespace TamaPoke.Models
         private static readonly string SaveFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "save.json");
         private static readonly string BackupFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "save.bak.json");
         private static readonly string TempFilePath = SaveFilePath + ".tmp";
-        public static bool CheckSaveFileExists() => File.Exists(SaveFilePath);
 
         public enum SaveLoadResult { NewGame, Loaded, RestoredFromBackup, Corrupted }
 

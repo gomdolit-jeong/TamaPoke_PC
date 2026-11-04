@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using TamaPoke.Utils;
+﻿using TamaPoke.Utils;
 
 namespace TamaPoke.Models
 {

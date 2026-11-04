@@ -1,7 +1,5 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using TamaPoke.ViewModels;
-using TamaPoke.Models;
 using TamaPoke.Utils;
 
 namespace TamaPoke.Views

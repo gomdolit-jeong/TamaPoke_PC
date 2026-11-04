@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Brush = System.Windows.Media.Brush;
 using BrushConverter = System.Windows.Media.BrushConverter;
 

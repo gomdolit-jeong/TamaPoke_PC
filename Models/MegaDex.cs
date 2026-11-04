@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TamaPoke.Utils;
@@ -77,9 +74,6 @@ namespace TamaPoke.Models
                 Console.WriteLine($"[에러] 메가진화 데이터 로드 중 예외 발생: {ex.Message}");
             }
         }
-
-        // 해당 포켓몬의 메가 폼 전체 (이미지 유무와 무관)
-        public static List<MegaFormInfo> GetForms(int speciesId) => AllForms.Where(f => f.SpeciesId == speciesId).ToList();
 
         // 이미지까지 있어서 지금 메가진화할 수 있는 폼
         public static List<MegaFormInfo> GetAvailableForms(int speciesId) => AllForms.Where(f => f.SpeciesId == speciesId && f.HasSprite).ToList();

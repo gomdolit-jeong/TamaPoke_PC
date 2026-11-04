@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
+﻿using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 namespace TamaPoke.Models
@@ -226,11 +224,6 @@ namespace TamaPoke.Models
             SyncMainToLeader();
             UpdatePartyFirstFlags();
             IsPartyOpen = true;
-        }
-
-        public void CloseParty()
-        {
-            IsPartyOpen = false;
         }
     }
 }
