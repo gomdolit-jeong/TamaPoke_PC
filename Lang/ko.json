@@ -324,6 +324,7 @@
   "update.step.program": "[4] 다마포케 프로그램 최신 버전 확인 중...",
   "update.currentVersion": "- 현재 프로그램 버전: v{0}",
   "update.checking": "- 서버에서 최신 버전을 확인하고 있습니다...",
+  "update.checkFailed": "⚠️ 서버에 연결하지 못해 버전을 확인하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.",
   "update.found": "✨ 새로운 업데이트가 발견되었습니다! (v{0})",
   "update.upToDate": "✅ 현재 최신 버전을 사용 중입니다. 업데이트가 필요하지 않습니다.",
   "update.applied": "🚨 새 버전이 적용되었습니다. 창을 닫으면 프로그램이 재시작됩니다!",

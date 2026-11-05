@@ -27,6 +27,14 @@
     <Page Remove="Data\**" />
   </ItemGroup>
 
+  <!-- 전투 테스트는 별도 프로젝트입니다. (Tests/BattleTests) -->
+  <ItemGroup>
+    <Compile Remove="Tests\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Tests\**" />
+    <Page Remove="Tests\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="Assets\Resource\monsterball.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

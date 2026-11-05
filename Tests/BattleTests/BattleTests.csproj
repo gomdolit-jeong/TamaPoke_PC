@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 전투 규칙 회귀 테스트. 저장소 폴더에서 Tests/BattleTests 프로젝트를 Release로 실행합니다. (연출 대기 때문에 약 10분 걸립니다)
+       기술 데이터는 git에 없어서 bin/Debug의 Data를 씁니다. 일부 항목은 실제 GitHub에 접속합니다. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\TamaPoke.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="gh_commits.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\bin\Debug\net9.0-windows\Data\*.json" Link="Data\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

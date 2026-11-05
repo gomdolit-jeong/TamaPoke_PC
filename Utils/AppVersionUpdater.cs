@@ -13,6 +13,9 @@ namespace TamaPoke.Utils
         public string DownloadUrl { get; set; } = string.Empty;
     }
 
+    // 버전 확인 결과: 서버 응답을 제대로 받았는지와, 새 버전 정보(없으면 null)
+    public readonly record struct UpdateCheckResult(bool Succeeded, AppVersionInfo? NewVersion);
+
     public class AppVersionUpdater
     {
         private static readonly HttpClient _httpClient = new HttpClient();
@@ -34,28 +37,32 @@ namespace TamaPoke.Utils
             return "1.0.0.0";
         }
 
-        public static async Task<AppVersionInfo?> CheckForUpdatesAsync()
+        // 실패(연결 오류, 잘못된 응답)를 "최신 버전"과 구분해서 돌려줍니다.
+        public static async Task<UpdateCheckResult> CheckForUpdatesAsync()
         {
             try
             {
-                string localVersionString = GetLocalVersion();
-                Version localVersion = new Version(localVersionString);
-
                 var response = await _httpClient.GetAsync(SERVER_VERSION_URL);
                 if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    var serverInfo = JsonSerializer.Deserialize<AppVersionInfo>(json);
-
-                    if (serverInfo != null && !string.IsNullOrEmpty(serverInfo.Version))
-                    {
-                        Version serverVersion = new Version(serverInfo.Version);
-                        if (serverVersion > localVersion) return serverInfo;
-                    }
-                }
+                    return ParseServerVersion(await response.Content.ReadAsStringAsync(), GetLocalVersion());
             }
             catch { }
-            return null;
+            return new UpdateCheckResult(false, null);
+        }
+
+        public static UpdateCheckResult ParseServerVersion(string json, string localVersion)
+        {
+            try
+            {
+                var serverInfo = JsonSerializer.Deserialize<AppVersionInfo>(json);
+                if (serverInfo == null || string.IsNullOrEmpty(serverInfo.Version)) return new UpdateCheckResult(false, null);
+                bool isNewer = new Version(serverInfo.Version) > new Version(localVersion);
+                return new UpdateCheckResult(true, isNewer ? serverInfo : null);
+            }
+            catch
+            {
+                return new UpdateCheckResult(false, null);
+            }
         }
 
         // 새 버전 안내: 같은 버전은 한 번만 알립니다. (기록은 설정 파일과 따로 둬서 설정 저장에 덮어써지지 않게)
@@ -76,7 +83,7 @@ namespace TamaPoke.Utils
         // 안내할 새 버전이 있으면 그 정보를 돌려줍니다. (인터넷이 안 되면 null)
         public static async Task<AppVersionInfo?> CheckForNewVersionToNotifyAsync()
         {
-            var info = await CheckForUpdatesAsync();
+            var info = (await CheckForUpdatesAsync()).NewVersion;
             return info != null && TryMarkNotified(info.Version) ? info : null;
         }
 

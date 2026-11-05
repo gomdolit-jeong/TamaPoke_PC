@@ -133,7 +133,8 @@ namespace TamaPoke.Views
                     progress?.Report(Loc.F("update.currentVersion", localVersion));
                     progress?.Report(Loc.T("update.checking"));
 
-                    var updateInfo = await AppVersionUpdater.CheckForUpdatesAsync();
+                    var check = await AppVersionUpdater.CheckForUpdatesAsync();
+                    var updateInfo = check.NewVersion;
 
                     if (updateInfo != null)
                     {
@@ -149,7 +150,7 @@ namespace TamaPoke.Views
                     }
                     else
                     {
-                        progress?.Report(Loc.T("update.upToDate"));
+                        progress?.Report(Loc.T(check.Succeeded ? "update.upToDate" : "update.checkFailed"));
                     }
 
                     _currentTaskIndex++;

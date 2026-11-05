@@ -127,6 +127,29 @@ namespace TamaPoke.Models
             return true;
         }
 
+        private const int HIT_MOTION_TICKS = 15;
+        private const int FAINT_HOLD_TICKS = 9999; // 내 포켓몬: 패배 후 배틀이 닫힐 때까지
+
+        // 맞은 쪽 모션: 쓰러졌으면 기절 모션을 재생하고 마지막 장면에서 멈춥니다.
+        private void PlayHitMotion(bool targetIsEnemy)
+        {
+            bool fainted = (targetIsEnemy ? EnemyHp : PlayerHp) <= 0;
+            int motion = fainted ? ANIM_FAINT : ANIM_HURT;
+
+            if (targetIsEnemy)
+            {
+                if (_enemyMotion == ANIM_FAINT) return;
+                _enemyTempActionTimer = fainted ? 0 : HIT_MOTION_TICKS;
+                UpdateEnemyAnimation(motion);
+            }
+            else
+            {
+                if (_currentActionId == ANIM_FAINT) return;
+                PlayTempAction(motion, fainted ? FAINT_HOLD_TICKS : HIT_MOTION_TICKS);
+                UpdateAnimation(motion);
+            }
+        }
+
         private const int CHARGE_ANIM_TICKS = 40; // 모으는 메시지가 보이는 1.3초 동안 (33ms 단위)
 
         // 공격 모션: 연속 공격은 연속 모션, 물리는 공격, 특수는 발사 (대부분의 스프라이트에 있는 모션만 씁니다)

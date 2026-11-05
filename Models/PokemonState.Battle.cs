@@ -12,6 +12,8 @@ namespace TamaPoke.Models
         private int WildStat(int? baseStat) => BattleCalculator.Stat(baseStat ?? 50, BattleCalculator.WILD_GENE, EnemyLevel);
 
         // 배틀 중 내 포켓몬의 종족값/타입: 메가진화 중이면 메가 폼 값
+        private PokemonInfo? MyBaseInfo => ActiveMegaForm?.ToPokemonInfo() ?? PokemonDex.Get(SpeciesId);
+
         private PokemonInfo? MyBattleInfo
         {
             get
@@ -27,7 +29,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                return BattleCalculator.MaxHp(MyBattleInfo?.BaseHp ?? 50, Genes.HpGene + (TrDef / 4), Level);
+                return BattleCalculator.MaxHp(MyBaseInfo?.BaseHp ?? 50, Genes.HpGene + (TrDef / 4), Level);
             }
         }
 
@@ -36,7 +38,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                return BattleCalculator.Stat(MyBattleInfo?.BaseAtk ?? 50, Genes.AtkGene + (TrAtk / 4), Level);
+                return BattleCalculator.Stat(MyBaseInfo?.BaseAtk ?? 50, Genes.AtkGene + (TrAtk / 4), Level);
             }
         }
 
@@ -45,7 +47,7 @@ namespace TamaPoke.Models
         {
             get
             {
-                return BattleCalculator.Stat(MyBattleInfo?.BaseDef ?? 50, Genes.DefGene + (TrDef / 4), Level);
+                return BattleCalculator.Stat(MyBaseInfo?.BaseDef ?? 50, Genes.DefGene + (TrDef / 4), Level);
             }
         }
 
@@ -54,13 +56,13 @@ namespace TamaPoke.Models
         {
             get
             {
-                return BattleCalculator.Stat(MyBattleInfo?.BaseSpeed ?? 50, Genes.SpeGene + (TrSpeed / 4), Level);
+                return BattleCalculator.Stat(MyBaseInfo?.BaseSpeed ?? 50, Genes.SpeGene + (TrSpeed / 4), Level);
             }
         }
 
         // 특수 기술용 능력치 (특수공격은 노력치 그대로, 특수방어는 노력치 절반을 더함)
-        [JsonIgnore] public int CombatSpAtk => BattleCalculator.Stat(MyBattleInfo?.BaseSpA ?? 50, Genes.AtkGene - 80, Level) + TrAtk;
-        [JsonIgnore] public int CombatSpDef => BattleCalculator.Stat(MyBattleInfo?.BaseSpD ?? 50, Genes.DefGene - 80, Level) + (TrDef / 2);
+        [JsonIgnore] public int CombatSpAtk => BattleCalculator.Stat(MyBaseInfo?.BaseSpA ?? 50, Genes.AtkGene - 80, Level) + TrAtk;
+        [JsonIgnore] public int CombatSpDef => BattleCalculator.Stat(MyBaseInfo?.BaseSpD ?? 50, Genes.DefGene - 80, Level) + (TrDef / 2);
         #endregion
 
         #region 배틀 시스템 UI 상태 (Battle System UI)
@@ -279,10 +281,10 @@ namespace TamaPoke.Models
                     double typeMult = BattleCalculator.TypeMultiplier(m.Type, myInfo);
                     double stabMult = BattleCalculator.StabMultiplier(m.Type, enemyInfo);
                     int enemyAtk = WildStat(m.Category == SkillCategory.Special ? enemyInfo?.BaseSpA : enemyInfo?.BaseAtk);
-                    int expectedDamage = BattleCalculator.RawDamage(enemyAtk, m.Category == SkillCategory.Special ? CombatSpDef : CombatDef, typeMult, stabMult, BattleCalculator.BurnMultiplier(m.Category, EnemyAilment), crit: false, m.Power);
+                    int DamageAt(int power) => BattleCalculator.RawDamage(enemyAtk, m.Category == SkillCategory.Special ? CombatSpDef : CombatDef, typeMult, stabMult, BattleCalculator.BurnMultiplier(m.Category, EnemyAilment), crit: false, power);
 
-                    score = expectedDamage;
-                    if (expectedDamage >= PlayerHp) score += 1000;
+                    score = DamageAt(BattleCalculator.ExpectedPower(m));
+                    if (DamageAt(BattleCalculator.SurePower(m)) >= PlayerHp) score += 1000;
 
                     int acc = m.Accuracy == 0 ? 100 : m.Accuracy;
                     score = score * acc / 100;
@@ -340,6 +342,7 @@ namespace TamaPoke.Models
         {
             _battleSerial++;
             _battleAttended = false;
+            _enemyTempActionTimer = 0;
             ResetStatStages();
         }
 
@@ -394,7 +397,7 @@ namespace TamaPoke.Models
             EnemyHp = EnemyMaxHp;
 
             GenerateEnemySkills();
-            UpdateEnemyAnimation(0);
+            UpdateEnemyAnimation(ANIM_IDLE);
 
             IsBattleOpen = true; IsPlayerTurn = false;
             BattleMessage = Loc.F(IsEnemyShiny ? "battle.appear.shiny" : "battle.appear", EnemyName);
@@ -410,6 +413,8 @@ namespace TamaPoke.Models
 
         public void CloseBattle()
         {
+            // 기절 모션을 먼저 풉니다. (메가진화를 풀 때 스프라이트를 다시 읽어 현재 모션이 바뀌므로 그 전에)
+            if (_tempActionId == ANIM_FAINT) PlayTempAction(ANIM_IDLE, 0);
             EndMegaEvolution();
             IsBattleOpen = false;
             IsGymBattle = false;
@@ -595,7 +600,7 @@ namespace TamaPoke.Models
 
                     BattleMessage = Loc.F("battle.damage.dealt", BattleCalculator.HitText(typeMultiplier, crit), damage);
 
-                    _enemyTempActionTimer = 15; UpdateEnemyAnimation(6);
+                    PlayHitMotion(targetIsEnemy: true);
 
                     await Task.Delay(hits > 1 ? MULTI_HIT_SHAKE_MS : HIT_SHAKE_MS);
                     IsEnemyTakingDamage = false;
@@ -849,7 +854,7 @@ namespace TamaPoke.Models
 
                     BattleMessage = Loc.F("battle.damage.taken", BattleCalculator.HitText(typeMultiplier, crit), PlayerBattleName, enemyDamage);
 
-                    PlayTempAction(6, 15); UpdateAnimation(6);
+                    PlayHitMotion(targetIsEnemy: false);
 
                     await Task.Delay(hits > 1 ? MULTI_HIT_SHAKE_MS : HIT_SHAKE_MS);
                     IsPlayerTakingDamage = false;
@@ -890,6 +895,8 @@ namespace TamaPoke.Models
         private async Task CheckBattleEndAsync()
         {
             IsPlayerTurn = false; // 턴 잠금
+            if (PlayerHp <= 0) PlayHitMotion(targetIsEnemy: false); // 지속 데미지나 반동으로 쓰러진 경우에도 기절 모션
+            if (EnemyHp <= 0) PlayHitMotion(targetIsEnemy: true);
 
             if (PlayerHp <= 0)
             {
@@ -1218,7 +1225,7 @@ namespace TamaPoke.Models
             EnemyHp = EnemyMaxHp;
 
             GenerateEnemySkills(); // 관장 레벨까지 배우는 자력기 중 자기 타입/위력 높은 기술 우선
-            UpdateEnemyAnimation(0);
+            UpdateEnemyAnimation(ANIM_IDLE);
 
             IsBattleOpen = true; IsPlayerTurn = false;
             BattleMessage = Loc.F("battle.gym.intro", leader.LeaderName);

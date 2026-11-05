@@ -46,6 +46,18 @@ namespace TamaPoke.Models
             return Math.Min(skill.MaxHits, skill.MinHits + extra);
         }
 
+        // 상대 AI가 기술을 고를 때 쓰는 기대 위력: 연속 공격은 평균 횟수만큼, 구르기는 위력이 커지는 만큼 (5턴을 다 맞히기는 어려워 3배)
+        public static int ExpectedPower(SkillInfo skill)
+        {
+            if (skill.IsRolling) return skill.Power * 3;
+            if (skill.MaxHits <= 1) return skill.Power;
+            double hits = skill.MinHits >= skill.MaxHits ? skill.MaxHits : skill.MinHits + 1.1; // 2~5회의 평균은 3.1회
+            return (int)(skill.Power * hits);
+        }
+
+        // 반드시 들어가는 위력: 연속 공격은 최소 횟수만큼, 구르기는 첫 타격만 (AI의 "쓰러뜨릴 수 있나" 판단용)
+        public static int SurePower(SkillInfo skill) => skill.Power * Math.Max(1, skill.MinHits);
+
         // 데미지: max(2, 공격 - 방어/2) × 상성 × 자속 × 화상 × 급소 × 위력/50  (최소 1 보정은 호출하는 쪽에서)
         public static int RawDamage(int attack, int defense, double typeMultiplier, double stabMultiplier, double burnMultiplier, bool crit, int power) =>
             (int)(Math.Max(2, attack - (defense / 2)) * typeMultiplier * stabMultiplier * burnMultiplier * (crit ? CRIT_BONUS : 1.0) * (power / 50.0));

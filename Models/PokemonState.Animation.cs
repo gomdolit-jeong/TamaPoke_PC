@@ -112,6 +112,7 @@ namespace TamaPoke.Models
         }
         private int _currentActionId = ANIM_IDLE;
         private int _enemyTempActionTimer = 0;
+        private int _enemyMotion = ANIM_IDLE;
         private BitmapSource[]? _enemyAnimationFrames;
         private int[]? _enemyAnimationDurations;
         private int _enemyFrameIndex = 0;
@@ -152,6 +153,8 @@ namespace TamaPoke.Models
             double frameMs = GetCurrentFrameDurationMs();
             while (_frameElapsedMs >= frameMs)
             {
+                if (_currentActionId == ANIM_FAINT && _currentFrameIndex == _animationFrames.Length - 1) { _frameElapsedMs = 0; break; } // 기절은 마지막 장면에서 멈춤
+
                 _frameElapsedMs -= frameMs;
                 _currentFrameIndex = (_currentFrameIndex + 1) % _animationFrames.Length;
                 frameMs = GetCurrentFrameDurationMs();
@@ -164,6 +167,7 @@ namespace TamaPoke.Models
         private void AdvanceEnemyFrame()
         {
             if (_enemyAnimationFrames == null || _enemyAnimationFrames.Length <= 1) return;
+            if (_enemyMotion == ANIM_FAINT && _enemyFrameIndex == _enemyAnimationFrames.Length - 1) return; // 기절은 마지막 장면에서 멈춤
 
             _enemyFrameElapsedMs += MAIN_LOOP_MS;
             double frameMs = _enemyAnimationDurations != null ? _enemyAnimationDurations[_enemyFrameIndex] * PMD_TICK_MS : DEFAULT_FRAME_MS;
@@ -214,7 +218,8 @@ namespace TamaPoke.Models
                 }
             }
 
-            if (_enemyTempActionTimer > 0)
+            if (_enemyMotion == ANIM_FAINT) AdvanceEnemyFrame(); // 쓰러진 상대는 타이머와 상관없이 기절 모션 유지
+            else if (_enemyTempActionTimer > 0)
             {
                 AdvanceEnemyFrame();
                 _enemyTempActionTimer--;
@@ -306,15 +311,20 @@ namespace TamaPoke.Models
             [ANIM_SHOOT] = ANIM_ATTACK,
             [ANIM_FLOAT] = ANIM_ROTATE,
             [ANIM_TUMBLE] = ANIM_ROTATE,
-            [ANIM_SHAKE] = ANIM_ROTATE,
             [ANIM_PULL] = ANIM_SWING,
         };
 
+        // 응가, 배고픔처럼 계속 유지되는 상태의 모션: 전용 모션이 없으면 대체 모션을 끝없이 반복하지 않고 대기로 둡니다.
+        // (기운 없음을 잠자기로 대체하면 실제로 자는 것과 구분되지 않습니다)
+        private static readonly HashSet<int> ContinuousStateMotions = new() { ANIM_PAIN, ANIM_CRINGE, ANIM_SINK, ANIM_EVENTSLEEP };
+
         // 실제로 재생할 모션 번호: 요청한 모션 → 대체 모션 → 대기 → 첫 번째 모션 순서 (아무것도 없으면 -1)
-        public static int ResolveMotion(IReadOnlyList<SpriteFrameData?> strips, int action)
+        // continuous: 잠깐 나오는 동작이 아니라 상태가 유지되는 동안 계속 재생하는 경우
+        public static int ResolveMotion(IReadOnlyList<SpriteFrameData?> strips, int action, bool continuous = false)
         {
             bool Has(int index) => index >= 0 && index < strips.Count && strips[index]?.Image != null;
 
+            if (continuous && ContinuousStateMotions.Contains(action) && !Has(action)) action = ANIM_IDLE;
             while (!Has(action) && MotionFallbacks.TryGetValue(action, out int next)) action = next;
             if (Has(action)) return action;
             if (Has(ANIM_IDLE)) return ANIM_IDLE;
@@ -355,7 +365,8 @@ namespace TamaPoke.Models
             if (rawStrips != null && rawStrips.Count > 0)
             {
                 SpriteFrameData? PickStrip(int index) => index >= 0 && index < rawStrips.Count ? rawStrips[index] : null;
-                int motion = ResolveMotion(rawStrips, actionToLoad);
+                bool continuous = !(_tempActionTimer > 0 && _tempActionId == actionToLoad);
+                int motion = ResolveMotion(rawStrips, actionToLoad, continuous);
                 var targetData = PickStrip(motion);
                 if (targetData != null && targetData.Image != null)
                 {
@@ -371,7 +382,7 @@ namespace TamaPoke.Models
                     else if (!IsFreeRoaming)
                     {
                         // 애니메이션을 강제하는 코드를 빼고 깔끔하게 복구!
-                        directionRow = SideViewActions.Contains(motion) ? 6 : 0;
+                        directionRow = SideViewActions.Contains(actionToLoad) ? 6 : 0;
                     }
 
                     if (targetData.Image.PixelHeight / targetData.FrameHeight < 2)
@@ -394,6 +405,7 @@ namespace TamaPoke.Models
 
         private void UpdateEnemyAnimation(int actionToLoad)
         {
+            _enemyMotion = actionToLoad;
             string spriteFolder = AppPaths.SpriteFolder;
             // 야생은 배틀 시작 때 정한 이미지(이로치/특수 폼 포함)를 그대로 보여줍니다. 잡으면 같은 이미지로 파티에 들어갑니다.
             string enemyPath = Path.Combine(spriteFolder, string.IsNullOrEmpty(_enemySpriteFileName) ? $"p{EnemySpeciesId:D4}.bin" : _enemySpriteFileName);

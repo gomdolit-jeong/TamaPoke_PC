@@ -324,6 +324,7 @@
   "update.step.program": "[4] Checking for the latest TamaPoke version...",
   "update.currentVersion": "- Current version: v{0}",
   "update.checking": "- Checking the server for the latest version...",
+  "update.checkFailed": "⚠️ Couldn't reach the server to check the version. Check your internet connection and try again.",
   "update.found": "✨ A new update is available! (v{0})",
   "update.upToDate": "✅ You're on the latest version. No update needed.",
   "update.applied": "🚨 The new version is ready. Close this window to restart!",
