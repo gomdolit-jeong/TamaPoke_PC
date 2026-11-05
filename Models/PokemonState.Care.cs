@@ -266,7 +266,7 @@ namespace TamaPoke.Models
 
             if (!IsAnyMiniGameOpen && !IsBattleOpen)
             {
-                PlayTempAction(ANIM_SHAKE, 30);
+                PlayTempAction(ANIM_ROTATE, 30); // 씻은 뒤 몸을 터는 느낌
                 CheckStateAndAnimate();
             }
         }

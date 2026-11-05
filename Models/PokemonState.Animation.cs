@@ -14,7 +14,7 @@ namespace TamaPoke.Models
         public const int ANIM_ATTACK = 1;       // 공격 (물리적인 기본 타격)
         public const int ANIM_STRIKE = 2;       // 강하게 치기 (연속 치기나 강한 타격)
         public const int ANIM_SHOOT = 3;        // 발사 (광선이나 특수 공격 발사)
-        public const int ANIM_SHAKE = 4;        // 4번 칸: 포켓몬마다 달라요 (Twirl, SpAttack, RearUp 등). 몸 털기 전용 모션이 아닙니다. (지금은 씻은 뒤에 사용)
+        public const int ANIM_SHAKE = 4;        // 4번 칸: 포켓몬마다 달라요 (Twirl, SpAttack, RearUp 등). 몸 털기 전용 모션이 아닙니다.
         public const int ANIM_SLEEP = 5;        // 잠자기 (바닥에 웅크리거나 엎드려 쿨쿨 잠듦)
         public const int ANIM_HURT = 6;         // 맞아서 아파하기 (가벼운 데미지를 입었을 때)
         public const int ANIM_IDLE = 7;         // 대기 상태 (가만히 서서 숨만 쉬는 기본 동작)
@@ -280,6 +280,51 @@ namespace TamaPoke.Models
         private const int BATTLE_PLAYER_ROW = 3; // 배틀 중 내 포켓몬: 뒷모습으로 상대(오른쪽 위)를 바라봄
         private const int BATTLE_ENEMY_ROW = 7;  // 상대 포켓몬: 앞모습으로 나(왼쪽 아래)를 바라봄
 
+        // 모션이 없는 스프라이트용 대체 모션. 0~12번은 대부분 있지만 13번 이후는 약 20%의 스프라이트에만 있습니다.
+        private static readonly Dictionary<int, int> MotionFallbacks = new()
+        {
+            [ANIM_EAT] = ANIM_DOUBLE,
+            [ANIM_POSE] = ANIM_HOP,
+            [ANIM_NOD] = ANIM_HOP,
+            [ANIM_WAKE] = ANIM_HOP,
+            [ANIM_DEEPBREATH] = ANIM_CHARGE,
+            [ANIM_PAIN] = ANIM_HURT,
+            [ANIM_CRINGE] = ANIM_HURT,
+            [ANIM_SINK] = ANIM_HURT,
+            [ANIM_TRIP] = ANIM_HURT,
+            [ANIM_LOSTBALANCE] = ANIM_HURT,
+            [ANIM_TUMBLEBACK] = ANIM_HURT,
+            [ANIM_HITGROUND] = ANIM_HURT,
+            [ANIM_FAINT] = ANIM_HURT,
+            [ANIM_EVENTSLEEP] = ANIM_SLEEP,
+            [ANIM_LAYING] = ANIM_SLEEP,
+            [ANIM_LEAPFORTH] = ANIM_ATTACK,
+            [ANIM_HEAD] = ANIM_ATTACK,
+            [ANIM_STRIKE] = ANIM_ATTACK,
+            [ANIM_SWING] = ANIM_ATTACK,
+            [ANIM_DOUBLE] = ANIM_ATTACK,
+            [ANIM_SHOOT] = ANIM_ATTACK,
+            [ANIM_FLOAT] = ANIM_ROTATE,
+            [ANIM_TUMBLE] = ANIM_ROTATE,
+            [ANIM_SHAKE] = ANIM_ROTATE,
+            [ANIM_PULL] = ANIM_SWING,
+        };
+
+        // 실제로 재생할 모션 번호: 요청한 모션 → 대체 모션 → 대기 → 첫 번째 모션 순서 (아무것도 없으면 -1)
+        public static int ResolveMotion(IReadOnlyList<SpriteFrameData?> strips, int action)
+        {
+            bool Has(int index) => index >= 0 && index < strips.Count && strips[index]?.Image != null;
+
+            while (!Has(action) && MotionFallbacks.TryGetValue(action, out int next)) action = next;
+            if (Has(action)) return action;
+            if (Has(ANIM_IDLE)) return ANIM_IDLE;
+            for (int i = 0; i < strips.Count; i++)
+            {
+                if (Has(i)) return i;
+            }
+            return -1;
+        }
+
         private void UpdateAnimation(int actionToLoad)
         {
             _currentActionId = actionToLoad;
@@ -309,9 +354,9 @@ namespace TamaPoke.Models
 
             if (rawStrips != null && rawStrips.Count > 0)
             {
-                // 요청한 모션이 없는(비어 있는) 스프라이트는 IDLE → 첫 번째 유효 모션 순으로 대체합니다.
                 SpriteFrameData? PickStrip(int index) => index >= 0 && index < rawStrips.Count ? rawStrips[index] : null;
-                var targetData = PickStrip(actionToLoad) ?? PickStrip(ANIM_IDLE) ?? rawStrips.FirstOrDefault(r => r != null);
+                int motion = ResolveMotion(rawStrips, actionToLoad);
+                var targetData = PickStrip(motion);
                 if (targetData != null && targetData.Image != null)
                 {
                     var idleData = PickStrip(ANIM_IDLE) ?? targetData;
@@ -326,7 +371,7 @@ namespace TamaPoke.Models
                     else if (!IsFreeRoaming)
                     {
                         // 애니메이션을 강제하는 코드를 빼고 깔끔하게 복구!
-                        directionRow = SideViewActions.Contains(actionToLoad) ? 6 : 0;
+                        directionRow = SideViewActions.Contains(motion) ? 6 : 0;
                     }
 
                     if (targetData.Image.PixelHeight / targetData.FrameHeight < 2)
@@ -359,11 +404,8 @@ namespace TamaPoke.Models
                 var rawStrips = Utils.BinSpriteReader.LoadFramesFromBin(enemyPath);
                 if (rawStrips != null && rawStrips.Count > 0)
                 {
-                    int stripIndex = actionToLoad;
-                    if (stripIndex >= rawStrips.Count) stripIndex = rawStrips.Count - 1;
-                    if (stripIndex < 0) stripIndex = 0;
-
-                    var targetData = rawStrips[stripIndex];
+                    int motion = ResolveMotion(rawStrips, actionToLoad);
+                    var targetData = motion >= 0 ? rawStrips[motion] : null;
                     if (targetData != null && targetData.Image != null)
                     {
                         var idleData = ANIM_IDLE < rawStrips.Count && rawStrips[ANIM_IDLE] != null ? rawStrips[ANIM_IDLE] : targetData;
